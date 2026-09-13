@@ -1,5 +1,7 @@
 # 最初の環境設定
 
+配布元のキットから、作成時に表示された絶対パスの作品フォルダへCodexを開き直してから設定する。アプリとVS Codeの操作は、Codexが[開き直しの案内](knowledge/codex-operation.md#作品フォルダでcodexを開き直す)に沿って、その時点の最新公式情報を調べて説明する。現在の作業フォルダにこの作品の `project.json` と `AGENTS.md` があることを確認する。
+
 作品名はproject.jsonに記録される。config/review-profiles.jsonのdefaultsを作品に合わせ、必要なシーンをscenesへ追加する。解決例と意味はknowledge/review-workflow.md。
 
 input/に作品固有の入力、assets/characters/にキャラ参照、assets/references/に背景などの参照、workflows/にComfyUIワークフロー、output/に生成物を置く。指示・採否・検証結果はdocs/に残す。

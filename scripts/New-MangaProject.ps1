@@ -100,7 +100,11 @@ try {
     [IO.File]::WriteAllText((Join-Path $target 'project.json'), ($project | ConvertTo-Json -Depth 10), $utf8)
     $manifest = [ordered]@{ version = $version; createdAt = $createdAt; files = $snapshot }
     [IO.File]::WriteAllText((Join-Path $target 'docs\distribution-snapshot.json'), ($manifest | ConvertTo-Json -Depth 10), $utf8)
-    [pscustomobject]@{ ProjectName = $ProjectName; Path = $displayTarget; Version = $version; CopiedFiles = $package.Count }
+    Write-Host "漫画プロジェクトを作成しました。作成先の絶対パス: $target"
+    Write-Host 'このフォルダでCodexを開き直してください。作品フォルダで新しい会話を始めてから漫画を制作します。'
+    Write-Host 'Codexは案内時点の最新公式情報を調べ、ChatGPTのWindows用・Mac用アプリでCodexとして開く手順と、VS Codeで開く手順の両方を、出典URL・確認日付きで説明してください。'
+    Write-Host '手順の確認項目は、作品側の docs/knowledge/codex-operation.md を参照してください。'
+    [pscustomobject]@{ ProjectName = $ProjectName; Path = $displayTarget; AbsolutePath = $target; Version = $version; CopiedFiles = $package.Count }
 } catch {
     if ($created) { Write-Warning "作成が失敗しました。確認用の途中出力を保持しています: $displayTarget" }
     throw

@@ -1,22 +1,23 @@
-"""公開対象の文書・コードを検査し、公開用フォルダとZIPを書き出す。"""
+"""このフォルダから直接コミットする公開対象の文書・コード・PNGを検査する。"""
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 from pathlib import Path
 import re
-import shutil
+import struct
 import unicodedata
 from urllib.parse import unquote
-import zipfile
+import zlib
 
 ROOT = Path(__file__).resolve().parents[1]
 ROOT_FILES = ('.gitignore', '.gitattributes', 'README.md', 'AGENTS.md', 'LICENSE', 'distribution-version.txt')
 DOC_FILES = ('README.md', 'architecture.md', 'SOURCES.md', 'RIGHTS.md', 'publication.md')
-PUBLIC_TREES = ('docs/knowledge', 'skills', 'templates/manga-project', 'scripts', 'tests')
+PUBLIC_TREES = ('docs/knowledge', 'skills', 'templates/manga-project', 'scripts', 'tests', 'examples')
 EXTENSIONS = {'.md', '.py', '.ps1', '.json'}
+PNG_SIGNATURE = b'\x89PNG\r\n\x1a\n'
+PNG_IMAGE_CHUNKS = {b'IHDR', b'PLTE', b'IDAT', b'IEND', b'tRNS'}
 SPECIAL_FILES = {'.gitignore', '.env.example'}
 OLD_FOLDER_NAME = 'Proto' + 'type'
 ABSOLUTE_PATH = re.compile(r'(?<![\w])(?:[A-Za-z]:[\\/]|\\\\[\w.-]+\\[\w.$ -]+|/(?:Users|home|mnt|tmp|opt|var)/)')
@@ -58,12 +59,44 @@ def public_files(root=ROOT):
                 relative_path = path.relative_to(root).as_posix()
                 if path.is_symlink() or (getattr(path.stat(), 'st_file_attributes', 0) & 0x400):
                     raise ValueError(f'公開範囲にリンクがあります: {relative_path}')
-                if path.suffix not in EXTENSIONS and name not in SPECIAL_FILES:
+                example_png = relative == 'examples' and path.suffix == '.png'
+                if path.suffix not in EXTENSIONS and name not in SPECIAL_FILES and not example_png:
                     raise ValueError(f'公開範囲に想定外のファイルがあります: {relative_path}')
                 if (name.startswith('.env') and name != '.env.example') or '.secrets' in path.parts:
                     raise ValueError(f'公開範囲に秘密設定があります: {relative_path}')
                 files.append(path)
     return sorted(set(files))
+
+
+def png_chunks(data):
+    """PNGの区切りとCRCを検査し、再圧縮せず各チャンクを取り出す。"""
+    if not data.startswith(PNG_SIGNATURE):
+        raise ValueError('PNGの署名が不正です。')
+    chunks, offset = [], len(PNG_SIGNATURE)
+    while offset < len(data):
+        if offset + 12 > len(data):
+            raise ValueError('PNGチャンクが途中で切れています。')
+        length = struct.unpack_from('>I', data, offset)[0]
+        end = offset + length + 12
+        if end > len(data):
+            raise ValueError('PNGチャンクの長さが不正です。')
+        kind = data[offset + 4:offset + 8]
+        crc = struct.unpack_from('>I', data, end - 4)[0]
+        if zlib.crc32(data[offset + 4:end - 4]) != crc:
+            raise ValueError('PNGチャンクのCRCが一致しません。')
+        if not chunks and (kind != b'IHDR' or length != 13):
+            raise ValueError('PNGの先頭に正しいIHDRがありません。')
+        if kind[0] & 32 == 0 and kind not in PNG_IMAGE_CHUNKS:
+            raise ValueError('PNGに未対応の必須チャンクがあります。')
+        chunks.append((kind, data[offset:end]))
+        offset = end
+        if kind == b'IEND':
+            if length or offset != len(data):
+                raise ValueError('PNGの終端または末尾データが不正です。')
+            if not any(name == b'IDAT' for name, _ in chunks):
+                raise ValueError('PNGに画像データがありません。')
+            return chunks
+    raise ValueError('PNGにIENDがありません。')
 
 
 def anchors(body):
@@ -110,6 +143,13 @@ def check(root=ROOT):
     errors, local_links = [], 0
     for path in files:
         relative = path.relative_to(root).as_posix()
+        if path.suffix == '.png':
+            try:
+                if any(kind not in PNG_IMAGE_CHUNKS for kind, _ in png_chunks(path.read_bytes())):
+                    errors.append(f'PNGに公開前に除去するメタ情報があります: {relative}')
+            except ValueError as error:
+                errors.append(f'PNGの検査に失敗しました: {relative}: {error}')
+            continue
         body = path.read_text(encoding='utf-8-sig')
         without_urls = URL.sub('', body)
         if OLD_FOLDER_NAME.lower() in without_urls.lower():
@@ -148,44 +188,13 @@ def check(root=ROOT):
             'files': len(files), 'local_links': local_links, 'errors': errors}
 
 
-def export(output, root=ROOT):
-    root, output = Path(root).resolve(), Path(output).resolve()
-    report = check(root)
-    if report['errors']:
-        raise ValueError('\n'.join(report['errors']))
-    # 公開対象への書き出し混入を避け、専用の一時領域へ限定する。
-    if not output.is_relative_to(root / '.work') or output == root / '.work':
-        raise ValueError('公開用書き出し先は .work/ 内の新しいフォルダにしてください。')
-    archive = Path(str(output) + '.zip')
-    verification = Path(str(output) + '.manifest.json')
-    if output.exists() or archive.exists() or verification.exists():
-        raise FileExistsError('書き出し先・ZIP・検証記録が既にあります。新しい名前を指定してください。')
-    selected = public_files(root)
-    output.mkdir(parents=True)
-    inventory = []
-    for path in selected:
-        relative = path.relative_to(root)
-        destination = output / relative
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(path, destination)
-        inventory.append({'path': relative.as_posix(), 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()})
-    with zipfile.ZipFile(archive, 'x', zipfile.ZIP_DEFLATED) as bundle:
-        for item in inventory:
-            bundle.write(output / item['path'], item['path'])
-    verification.write_text(json.dumps({'version': report['version'], 'files': inventory}, ensure_ascii=False, indent=2), encoding='utf-8')
-    return {**report, 'output': output.relative_to(root).as_posix(), 'zip': archive.relative_to(root).as_posix(),
-            'manifest': verification.relative_to(root).as_posix()}
-
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest='command', required=True)
     sub.add_parser('check')
-    export_parser = sub.add_parser('export')
-    export_parser.add_argument('--output', required=True, type=Path)
-    args = parser.parse_args()
+    parser.parse_args()
     try:
-        report = check() if args.command == 'check' else export(args.output)
+        report = check()
     except (OSError, ValueError) as error:
         parser.exit(1, str(error) + '\n')
     print(json.dumps(report, ensure_ascii=False, indent=2))

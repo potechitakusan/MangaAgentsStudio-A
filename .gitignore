@@ -1,4 +1,4 @@
-# 公開用の文書・コードだけを許可する。形式は scripts/public_release.py に合わせる。
+# 公開用の文書・コードと examples/ のPNGを許可する。形式は scripts/public_release.py に合わせる。
 *
 !*/
 !*.md
@@ -8,6 +8,7 @@
 
 # 公開する入口を明示する。制作物とローカル記録は含めない。
 /*
+/特別な理由でこのフォルダの中で漫画を作ります.txt
 !/.gitignore
 !/.gitattributes
 !/README.md
@@ -19,6 +20,8 @@
 !/skills/
 !/templates/
 !/tests/
+!/examples/
+!/examples/**/*.png
 /templates/*
 !/templates/manga-project/
 !/templates/manga-project/.gitignore

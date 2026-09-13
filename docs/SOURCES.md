@@ -2,7 +2,7 @@
 
 漫画・物語・映画的演出・画像制作・任意の動画試作・運用の参考にした外部情報をまとめる。
 
-本文の参照先101件に加え、末尾に補助調査の10件を残している。
+本文の参照先105件に加え、末尾に補助調査の10件を残している。
 
 日付は保存されていた確認記録に基づく。取得日が不明な資料は2026-09-12を補完日とし、実際の閲覧確認日と区別する。ここへの掲載は原典全文の読了、現在の仕様、再配布許可を意味しない。適用範囲と未確認事項は各知識文書を参照する。
 
@@ -91,6 +91,10 @@
 | [NovelAI公式画像API](https://image.novelai.net/docs/index.html) | 2026-09-12 |
 | [AGENTS.md公式文書](https://learn.chatgpt.com/docs/agent-configuration/agents-md) | 2026-09-12 |
 | [OpenAI公式Skills文書](https://learn.chatgpt.com/docs/build-skills) | 2026-09-12 |
+| [ChatGPTデスクトップアプリ](https://learn.chatgpt.com/docs/app) | 2026-09-13 |
+| [ChatGPT Quickstart](https://learn.chatgpt.com/docs/quickstart) | 2026-09-13 |
+| [Projects and chats](https://learn.chatgpt.com/docs/projects) | 2026-09-13 |
+| [Codex IDE extension](https://learn.chatgpt.com/docs/codex/ide) | 2026-09-13 |
 | [MIT License原文](https://opensource.org/license/mit) | 2026-09-13 |
 | [MiniMax始終フレーム系ガイド](https://raw.githubusercontent.com/MiniMax-AI/MiniMax-H3/main/skills/h3-prompt-writing/references/base-en.txt) | 2026-09-12 |
 | [MiniMax全参照ガイド](https://raw.githubusercontent.com/MiniMax-AI/MiniMax-H3/main/skills/h3-prompt-writing/references/ref-en.txt) | 2026-09-12 |

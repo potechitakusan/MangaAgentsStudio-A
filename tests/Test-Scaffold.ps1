@@ -22,8 +22,14 @@ function Write-Json($Value, [string]$Path) {
     [IO.File]::WriteAllText($Path, ($Value | ConvertTo-Json -Depth 20), [Text.UTF8Encoding]::new($false))
 }
 $japaneseName = ([string][char]0x661f) + [char]0x6e21 + [char]0x308a + ' Test'
-$result = & $maker -ProjectName $japaneseName -DestinationParent $testRoot
+# 配布検証用の空プロジェクトだけを .work/ に作り、ここでは漫画を制作しない。
+$result = & $maker -ProjectName $japaneseName -DestinationParent $testRoot -InformationVariable creationMessages
 $projectRoot = (Resolve-Path -LiteralPath $result.Path).ProviderPath
+Check (@($result).Count -eq 1) '開き直し案内がスクリプトの戻り値に混入しない'
+Check (([IO.Path]::IsPathRooted($result.AbsolutePath)) -and ($result.AbsolutePath -eq $projectRoot) -and
+       (-not [IO.Path]::IsPathRooted($result.Path))) '表示用の絶対パスが実在する作品と一致し、従来の相対パスも保持する'
+$creationText = ($creationMessages | Out-String -Width 4096)
+Check ($creationText.Contains($projectRoot) -and $creationText.Contains('このフォルダでCodexを開き直してください')) '作成先を省略せず開き直しを案内する'
 $project = Get-Content -LiteralPath (Join-Path $projectRoot 'project.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 Check ($project.name -ceq $japaneseName) 'Japanese project name survives JSON round trip'
 Check ((Split-Path $projectRoot -Parent) -eq $testRoot) 'Project is a direct child of the selected parent'
@@ -35,6 +41,8 @@ Check ((Get-FileHash -LiteralPath (Join-Path $projectRoot 'docs\toolkit-license.
 Check ($project.distributionVersion -eq (Get-Content -LiteralPath (Join-Path $root 'distribution-version.txt') -Raw).Trim()) '作品の配布版が原本の版と一致する'
 Check (@(Get-ChildItem -LiteralPath (Join-Path $projectRoot '.secrets') -Force).Count -eq 0) 'Secret directory starts empty'
 $snapshot = Get-Content -LiteralPath (Join-Path $projectRoot 'docs\distribution-snapshot.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+Check (@($project.PSObject.Properties.Name | Where-Object { $_ -match 'Path' }).Count -eq 0 -and
+       @($snapshot.files | Where-Object { [IO.Path]::IsPathRooted($_.path) }).Count -eq 0) '作成結果の絶対パスを作品設定や配布記録に保存しない'
 $hashesValid = $true
 foreach ($entry in $snapshot.files) {
     if ((Get-FileHash -LiteralPath (Join-Path $projectRoot $entry.path)).Hash -ne $entry.sha256) { $hashesValid = $false }
@@ -43,8 +51,9 @@ Check $hashesValid 'Every distributed file matches its recorded SHA-256'
 $originalHash = (Get-FileHash -LiteralPath (Join-Path $projectRoot 'project.json')).Hash
 Must-Fail { & $maker -ProjectName $japaneseName -DestinationParent $testRoot } 'Existing project is rejected'
 Check ((Get-FileHash -LiteralPath (Join-Path $projectRoot 'project.json')).Hash -eq $originalHash) 'Existing project remains unchanged'
-$null = & $maker -ProjectName 'PreviewOnly' -DestinationParent $testRoot -WhatIf
+$previewResult = & $maker -ProjectName 'PreviewOnly' -DestinationParent $testRoot -WhatIf -InformationVariable previewMessages
 Check (-not (Test-Path -LiteralPath (Join-Path $testRoot 'PreviewOnly'))) 'WhatIf does not create files'
+Check ($null -eq $previewResult -and -not (($previewMessages | Out-String).Contains('このフォルダでCodexを開き直してください'))) 'WhatIfで作成完了や開き直しを案内しない'
 $null = & $maker -ProjectName 'PreviewOnly' -WhatIf
 Check (-not (Test-Path -LiteralPath (Join-Path (Split-Path $root -Parent) 'PreviewOnly'))) 'Default sibling destination preview is read only'
 Must-Fail { & $maker -ProjectName '..\escape' -DestinationParent $testRoot } 'Path traversal is rejected'
