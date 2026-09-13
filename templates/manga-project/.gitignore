@@ -1,0 +1,7 @@
+.secrets/
+.env
+.env.*
+!.env.example
+.work/
+__pycache__/
+*.log

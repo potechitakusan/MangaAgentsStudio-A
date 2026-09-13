@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "defaults": {
+    "immersion": 5,
+    "cinema": 4,
+    "story": 4,
+    "readability": 5,
+    "characterConsistency": 4,
+    "terminology": 3
+  },
+  "presets": {
+    "daily": {
+      "immersion": 5,
+      "cinema": 3,
+      "story": 3
+    },
+    "psychological": {
+      "immersion": 5,
+      "cinema": 5,
+      "story": 4
+    },
+    "battle": {
+      "immersion": 5,
+      "cinema": 5,
+      "readability": 5,
+      "characterConsistency": 5
+    },
+    "confession": {
+      "immersion": 5,
+      "cinema": 4,
+      "story": 4
+    },
+    "exposition": {
+      "immersion": 4,
+      "cinema": 3,
+      "readability": 5,
+      "terminology": 5
+    }
+  },
+  "scenes": {}
+}

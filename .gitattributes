@@ -1,0 +1,8 @@
+* text=auto
+*.md text eol=lf
+*.py text eol=lf
+*.ps1 text eol=crlf
+/backup export-ignore
+/.work export-ignore
+/docs/PLAN.md export-ignore
+/docs/PROGRESS.md export-ignore
