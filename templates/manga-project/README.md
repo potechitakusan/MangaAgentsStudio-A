@@ -1,6 +1,6 @@
 # 漫画プロジェクト
 
-作品名と配布元は `project.json`。まず `docs/story/BRIEF.md` に狙いを書き、`docs/PLAN.md` と `docs/PROGRESS.md` を更新する。
+作品名と配布元は `project.json`。制作開始時に [OPTION.md](OPTION.md) の９項目を反映し、`docs/story/BRIEF.md` に狙いを書き、`docs/PLAN.md` と `docs/PROGRESS.md` を更新する。変更したい設定はOPTIONの「現在の設定」を編集するか会話で伝える。未記載はデフォルトを使い、開始後の編集は意図を確認してから反映する。
 
 - 共通知識の入口: [制作運用](docs/knowledge/review-workflow.md)
 - 記録依頼がある場合のフィードバック: [フィードバック手順](docs/knowledge/feedback-workflow.md)

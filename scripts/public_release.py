@@ -16,6 +16,7 @@ ROOT_FILES = ('.gitignore', '.gitattributes', 'README.md', 'AGENTS.md', 'LICENSE
 DOC_FILES = ('README.md', 'architecture.md', 'SOURCES.md', 'RIGHTS.md', 'publication.md')
 PUBLIC_TREES = ('docs/knowledge', 'skills', 'templates/manga-project', 'scripts', 'tests', 'examples')
 EXTENSIONS = {'.md', '.py', '.ps1', '.json'}
+PANEL_ROOT = 'templates/manga-project/templates/panel-templates'
 PNG_SIGNATURE = b'\x89PNG\r\n\x1a\n'
 PNG_IMAGE_CHUNKS = {b'IHDR', b'PLTE', b'IDAT', b'IEND', b'tRNS'}
 SPECIAL_FILES = {'.gitignore', '.env.example'}
@@ -60,7 +61,13 @@ def public_files(root=ROOT):
                 if path.is_symlink() or (getattr(path.stat(), 'st_file_attributes', 0) & 0x400):
                     raise ValueError(f'公開範囲にリンクがあります: {relative_path}')
                 example_png = relative == 'examples' and path.suffix == '.png'
-                if path.suffix not in EXTENSIONS and name not in SPECIAL_FILES and not example_png:
+                panel_asset = (
+                    relative_path == f'{PANEL_ROOT}/index.html'
+                    or (path.parent.relative_to(root).as_posix() in (f'{PANEL_ROOT}/svg', f'{PANEL_ROOT}/guides') and path.suffix == '.svg')
+                    or (path.parent.relative_to(root).as_posix() in (f'{PANEL_ROOT}/png', f'{PANEL_ROOT}/previews') and path.suffix == '.png')
+                )
+                panel_renderer = relative_path == 'scripts/render_panel_templates.cjs'
+                if path.suffix not in EXTENSIONS and name not in SPECIAL_FILES and not example_png and not panel_asset and not panel_renderer:
                     raise ValueError(f'公開範囲に想定外のファイルがあります: {relative_path}')
                 if (name.startswith('.env') and name != '.env.example') or '.secrets' in path.parts:
                     raise ValueError(f'公開範囲に秘密設定があります: {relative_path}')
@@ -131,7 +138,7 @@ def distributed_target(root, target):
         relative = target.relative_to(root).as_posix()
     except ValueError:
         return target
-    if relative.startswith(('docs/story/', 'docs/production/', 'docs/reviews/', 'docs/experiments/', 'docs/feedback/')):
+    if relative.startswith(('docs/story/', 'docs/production/', 'docs/reviews/', 'docs/experiments/', 'docs/feedback/', 'templates/panel-templates/', 'config/')):
         return template / relative
     return target
 

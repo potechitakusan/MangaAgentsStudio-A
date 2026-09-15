@@ -1,0 +1,126 @@
+{
+  "id": "P3-12-straight",
+  "name": "３コマ・１コマ・２コマ・直線",
+  "summary": "１コマ・２コマ。ページの主コマで人物を見せる。",
+  "panelCount": 3,
+  "family": "1-2",
+  "rows": [
+    1,
+    2
+  ],
+  "rowHeightRatios": [
+    0.5,
+    0.5
+  ],
+  "splitPositionsFromLeft": [
+    0.5,
+    0.5
+  ],
+  "widthPattern": "等幅",
+  "shortWidePanel": false,
+  "verticalTilt": 0,
+  "horizontalTilt": 0,
+  "diagonal": false,
+  "frequency": "通常",
+  "usage": [
+    "導入",
+    "決め",
+    "余韻"
+  ],
+  "extra": false,
+  "restrictionGroup": null,
+  "readingDirection": "段ごとに右から左、上から下",
+  "panels": [
+    {
+      "id": "panel-01",
+      "order": 1,
+      "row": 1,
+      "position": "全幅",
+      "role": "基本",
+      "polygon": [
+        [
+          60,
+          60
+        ],
+        [
+          940,
+          60
+        ],
+        [
+          940,
+          734.82
+        ],
+        [
+          60,
+          734.82
+        ]
+      ]
+    },
+    {
+      "id": "panel-02",
+      "order": 2,
+      "row": 2,
+      "position": "右",
+      "role": "基本",
+      "polygon": [
+        [
+          509.68,
+          765.18
+        ],
+        [
+          940,
+          765.18
+        ],
+        [
+          940,
+          1440.0
+        ],
+        [
+          509.68,
+          1440.0
+        ]
+      ]
+    },
+    {
+      "id": "panel-03",
+      "order": 3,
+      "row": 2,
+      "position": "左",
+      "role": "基本",
+      "polygon": [
+        [
+          60,
+          765.18
+        ],
+        [
+          490.32,
+          765.18
+        ],
+        [
+          490.32,
+          1440.0
+        ],
+        [
+          60,
+          1440.0
+        ]
+      ]
+    }
+  ],
+  "modifiers": [],
+  "baseTemplateId": null,
+  "coordinateSystem": {
+    "width": 1000,
+    "height": 1500,
+    "origin": "左上",
+    "unit": "SVGユーザー単位",
+    "pngScale": 2
+  },
+  "assets": {
+    "svg": "svg/P3-12-straight.svg",
+    "guideSvg": "guides/P3-12-straight.svg",
+    "transparentPng": "png/P3-12-straight.png",
+    "previewPng": "previews/P3-12-straight.png",
+    "json": "json/P3-12-straight.json"
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "id": "P2-half",
+  "name": "２コマ・上下２分割",
+  "summary": "真ん中で上下均等に２分割した横長２コマ。２つの場面の対比や、静かな時間の流れを見せる。",
+  "panelCount": 2,
+  "family": "1-1",
+  "rows": [
+    1,
+    1
+  ],
+  "rowHeightRatios": [
+    0.5,
+    0.5
+  ],
+  "splitPositionsFromLeft": [
+    0.5,
+    0.5
+  ],
+  "widthPattern": "等幅",
+  "shortWidePanel": false,
+  "verticalTilt": 0,
+  "horizontalTilt": 0,
+  "diagonal": false,
+  "frequency": "通常",
+  "usage": [
+    "場面対比",
+    "時間の経過",
+    "静かな余韻"
+  ],
+  "extra": false,
+  "restrictionGroup": null,
+  "readingDirection": "段ごとに右から左、上から下",
+  "panels": [
+    {
+      "id": "panel-01",
+      "order": 1,
+      "row": 1,
+      "position": "全幅",
+      "role": "基本",
+      "polygon": [
+        [
+          60,
+          60
+        ],
+        [
+          940,
+          60
+        ],
+        [
+          940,
+          734.82
+        ],
+        [
+          60,
+          734.82
+        ]
+      ]
+    },
+    {
+      "id": "panel-02",
+      "order": 2,
+      "row": 2,
+      "position": "全幅",
+      "role": "基本",
+      "polygon": [
+        [
+          60,
+          765.18
+        ],
+        [
+          940,
+          765.18
+        ],
+        [
+          940,
+          1440.0
+        ],
+        [
+          60,
+          1440.0
+        ]
+      ]
+    }
+  ],
+  "modifiers": [],
+  "baseTemplateId": null,
+  "coordinateSystem": {
+    "width": 1000,
+    "height": 1500,
+    "origin": "左上",
+    "unit": "SVGユーザー単位",
+    "pngScale": 2
+  },
+  "assets": {
+    "svg": "svg/P2-half.svg",
+    "guideSvg": "guides/P2-half.svg",
+    "transparentPng": "png/P2-half.png",
+    "previewPng": "previews/P2-half.png",
+    "json": "json/P2-half.json"
+  }
+}

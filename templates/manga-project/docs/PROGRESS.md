@@ -17,7 +17,14 @@
 - 知識はdocs/MANGA-KNOWHOW.md、引き継ぎと検証はdocs/production/PSD-HANDOFF.mdを参照。
 
 ## 次に行うこと
-- docs/story/BRIEF.mdに今回の制作目的と制約を記し、docs/PLAN.mdを具体化。
+- OPTION.mdの実効設定を反映し、docs/story/BRIEF.mdに今回の制作目的と制約を記してdocs/PLAN.mdを具体化。
+
+## 制作オプション
+
+- 状態：未着手。作品で制作を開始したときに、採用した９項目の実効値と出所を記録する。
+- 確認済みのOPTION.md：未確認（開始時に有無・SHA-256・日付を記録）。
+- 保留する変更：なし。開始後は変更前後の値とユーザーの回答を記録し、回答前に採用値を上書きしない。
+- 手順：[制作オプション](knowledge/project-options.md)。
 
 ## 履歴
 - 初期作成。フィードバックは記録依頼時のみ。

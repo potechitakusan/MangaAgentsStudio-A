@@ -65,7 +65,11 @@ foreach ($mapping in $mappings) {
         if ($relative -match '(^|[\\/])(\.secrets|\.git)([\\/]|$)' -or
             ($file.Name -like '.env*' -and $file.Name -ne '.env.example') -or
             $file.Name -match '(?i)(secret|credential|api[-_]?key|token)') { throw "Secret-like package filename: $relative" }
-        if ($file.Extension -notin $mapping.Extensions -and $file.Name -notin $mapping.Special) { throw "Unexpected package file type: $relative" }
+        $panelAsset = $mapping.Source -eq 'templates\manga-project' -and (
+            $relative -eq 'templates\panel-templates\index.html' -or
+            $relative -match '^templates\\panel-templates\\(svg|guides)\\[^\\]+\.svg$' -or
+            $relative -match '^templates\\panel-templates\\(png|previews)\\[^\\]+\.png$')
+        if ($file.Extension -notin $mapping.Extensions -and $file.Name -notin $mapping.Special -and -not $panelAsset) { throw "Unexpected package file type: $relative" }
         $destination = if ($mapping.Target) { Join-Path $mapping.Target $relative } else { $relative }
         $package.Add([pscustomobject]@{ Source = $file.FullName; Destination = $destination })
     }
@@ -73,6 +77,8 @@ foreach ($mapping in $mappings) {
 $resolver = Join-Path $PSScriptRoot 'Resolve-ReviewProfile.ps1'
 $null = & $resolver -ConfigPath (Join-Path $sourceRootPath 'templates\manga-project\config\review-profiles.json')
 $package.Add([pscustomobject]@{ Source = $resolver; Destination = 'scripts\Resolve-ReviewProfile.ps1' })
+$validator = Join-Path $PSScriptRoot 'validate_panel_plan.py'
+$package.Add([pscustomobject]@{ Source = $validator; Destination = 'scripts\validate_panel_plan.py' })
 $package.Add([pscustomobject]@{ Source = (Join-Path $sourceRootPath 'LICENSE'); Destination = 'docs\toolkit-license.txt' })
 if (@($package | Group-Object Destination | Where-Object Count -gt 1).Count -gt 0) { throw 'Duplicate destination in package.' }
 $version = (Get-Content -LiteralPath (Join-Path $sourceRootPath 'distribution-version.txt') -Raw -Encoding UTF8).Trim()

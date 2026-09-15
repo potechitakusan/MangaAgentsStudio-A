@@ -1,0 +1,128 @@
+{
+  "id": "P3-horizontal-down-right",
+  "name": "３コマ・３段・右下がり",
+  "summary": "横長コマを上から３段に配置。傾斜版も同じ３段として使用回数を数える。",
+  "panelCount": 3,
+  "family": "horizontal-three",
+  "rows": [
+    1,
+    1,
+    1
+  ],
+  "rowHeightRatios": [
+    0.3333333333333333,
+    0.3333333333333333,
+    0.3333333333333333
+  ],
+  "splitPositionsFromLeft": [
+    0.5,
+    0.5,
+    0.5
+  ],
+  "widthPattern": "等幅",
+  "shortWidePanel": false,
+  "verticalTilt": 0,
+  "horizontalTilt": 0.035,
+  "diagonal": true,
+  "frequency": "回数制限",
+  "usage": [
+    "アクション",
+    "時間の区切り"
+  ],
+  "extra": false,
+  "restrictionGroup": "horizontal-three",
+  "readingDirection": "段ごとに右から左、上から下",
+  "panels": [
+    {
+      "id": "panel-01",
+      "order": 1,
+      "row": 1,
+      "position": "全幅",
+      "role": "基本",
+      "polygon": [
+        [
+          60,
+          60
+        ],
+        [
+          940,
+          60
+        ],
+        [
+          940,
+          528.97
+        ],
+        [
+          60,
+          480.67
+        ]
+      ]
+    },
+    {
+      "id": "panel-02",
+      "order": 2,
+      "row": 2,
+      "position": "全幅",
+      "role": "基本",
+      "polygon": [
+        [
+          60,
+          511.03
+        ],
+        [
+          940,
+          559.33
+        ],
+        [
+          940,
+          988.97
+        ],
+        [
+          60,
+          940.67
+        ]
+      ]
+    },
+    {
+      "id": "panel-03",
+      "order": 3,
+      "row": 3,
+      "position": "全幅",
+      "role": "基本",
+      "polygon": [
+        [
+          60,
+          971.03
+        ],
+        [
+          940,
+          1019.33
+        ],
+        [
+          940,
+          1440.0
+        ],
+        [
+          60,
+          1440.0
+        ]
+      ]
+    }
+  ],
+  "modifiers": [],
+  "baseTemplateId": null,
+  "coordinateSystem": {
+    "width": 1000,
+    "height": 1500,
+    "origin": "左上",
+    "unit": "SVGユーザー単位",
+    "pngScale": 2
+  },
+  "assets": {
+    "svg": "svg/P3-horizontal-down-right.svg",
+    "guideSvg": "guides/P3-horizontal-down-right.svg",
+    "transparentPng": "png/P3-horizontal-down-right.png",
+    "previewPng": "previews/P3-horizontal-down-right.png",
+    "json": "json/P3-horizontal-down-right.json"
+  }
+}

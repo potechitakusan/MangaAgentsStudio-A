@@ -1,0 +1,100 @@
+{
+  "id": "P2-top-square",
+  "name": "２コマ・上正方形下横長",
+  "summary": "上が正方形、下が横長の２コマ。人物や重要な対象を正方形でしっかり見せ、下に状況や台詞を置く。",
+  "panelCount": 2,
+  "family": "1-1",
+  "rows": [
+    1,
+    1
+  ],
+  "rowHeightRatios": [
+    0.6487,
+    0.3513
+  ],
+  "splitPositionsFromLeft": [
+    0.5,
+    0.5
+  ],
+  "widthPattern": "等幅",
+  "shortWidePanel": false,
+  "verticalTilt": 0,
+  "horizontalTilt": 0,
+  "diagonal": false,
+  "frequency": "通常",
+  "usage": [
+    "人物の強調",
+    "状況と対比"
+  ],
+  "extra": false,
+  "restrictionGroup": null,
+  "readingDirection": "段ごとに右から左、上から下",
+  "panels": [
+    {
+      "id": "panel-01",
+      "order": 1,
+      "row": 1,
+      "position": "全幅",
+      "role": "基本",
+      "polygon": [
+        [
+          60,
+          60
+        ],
+        [
+          940,
+          60
+        ],
+        [
+          940,
+          940.026
+        ],
+        [
+          60,
+          940.026
+        ]
+      ]
+    },
+    {
+      "id": "panel-02",
+      "order": 2,
+      "row": 2,
+      "position": "全幅",
+      "role": "基本",
+      "polygon": [
+        [
+          60,
+          970.386
+        ],
+        [
+          940,
+          970.386
+        ],
+        [
+          940,
+          1440.0
+        ],
+        [
+          60,
+          1440.0
+        ]
+      ]
+    }
+  ],
+  "modifiers": [],
+  "baseTemplateId": null,
+  "coordinateSystem": {
+    "width": 1000,
+    "height": 1500,
+    "origin": "左上",
+    "unit": "SVGユーザー単位",
+    "pngScale": 2
+  },
+  "assets": {
+    "svg": "svg/P2-top-square.svg",
+    "guideSvg": "guides/P2-top-square.svg",
+    "transparentPng": "png/P2-top-square.png",
+    "previewPng": "previews/P2-top-square.png",
+    "json": "json/P2-top-square.json"
+  }
+}

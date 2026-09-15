@@ -1,0 +1,204 @@
+{
+  "id": "FX-breakout-right",
+  "name": "演出・右の人物ぶち抜き",
+  "summary": "５コマの基本枠を残し、右に人物が段をまたいで立つ領域を確保。建屋横の全身像などに使う。",
+  "panelCount": 5,
+  "family": "2-1-2",
+  "rows": [
+    2,
+    1,
+    2
+  ],
+  "rowHeightRatios": [
+    0.3333333333333333,
+    0.3333333333333333,
+    0.3333333333333333
+  ],
+  "splitPositionsFromLeft": [
+    0.43,
+    0.5,
+    0.57
+  ],
+  "widthPattern": "最初の２コマ段は右広め・次は左広め",
+  "shortWidePanel": false,
+  "verticalTilt": 0,
+  "horizontalTilt": 0,
+  "diagonal": false,
+  "frequency": "例外",
+  "usage": [
+    "キャラクター登場",
+    "扉前の全身像"
+  ],
+  "extra": true,
+  "restrictionGroup": null,
+  "readingDirection": "段ごとに右から左、上から下",
+  "panels": [
+    {
+      "id": "panel-01",
+      "order": 1,
+      "row": 1,
+      "position": "右",
+      "role": "基本",
+      "polygon": [
+        [
+          448.08,
+          60
+        ],
+        [
+          940,
+          60
+        ],
+        [
+          940,
+          504.82
+        ],
+        [
+          448.08,
+          504.82
+        ]
+      ]
+    },
+    {
+      "id": "panel-02",
+      "order": 2,
+      "row": 1,
+      "position": "左",
+      "role": "基本",
+      "polygon": [
+        [
+          60,
+          60
+        ],
+        [
+          428.72,
+          60
+        ],
+        [
+          428.72,
+          504.82
+        ],
+        [
+          60,
+          504.82
+        ]
+      ]
+    },
+    {
+      "id": "panel-03",
+      "order": 3,
+      "row": 2,
+      "position": "全幅",
+      "role": "基本",
+      "polygon": [
+        [
+          60,
+          535.18
+        ],
+        [
+          940,
+          535.18
+        ],
+        [
+          940,
+          964.82
+        ],
+        [
+          60,
+          964.82
+        ]
+      ]
+    },
+    {
+      "id": "panel-04",
+      "order": 4,
+      "row": 3,
+      "position": "右",
+      "role": "基本",
+      "polygon": [
+        [
+          571.28,
+          995.18
+        ],
+        [
+          940,
+          995.18
+        ],
+        [
+          940,
+          1440.0
+        ],
+        [
+          571.28,
+          1440.0
+        ]
+      ]
+    },
+    {
+      "id": "panel-05",
+      "order": 5,
+      "row": 3,
+      "position": "左",
+      "role": "基本",
+      "polygon": [
+        [
+          60,
+          995.18
+        ],
+        [
+          551.92,
+          995.18
+        ],
+        [
+          551.92,
+          1440.0
+        ],
+        [
+          60,
+          1440.0
+        ]
+      ]
+    }
+  ],
+  "modifiers": [
+    {
+      "type": "character-breakout",
+      "side": "right",
+      "sourcePanelOrder": 1,
+      "role": "人物用の重ね描き領域。独立した時系列コマではない。",
+      "region": [
+        [
+          676.0,
+          129.0
+        ],
+        [
+          887.2,
+          129.0
+        ],
+        [
+          887.2,
+          1384.8
+        ],
+        [
+          649.6,
+          1384.8
+        ]
+      ],
+      "frameMask": "人物の輪郭に合わせて後工程でコマ枠を消す。ガイド領域全体を白抜きにしない。"
+    }
+  ],
+  "baseTemplateId": "P5-212-rl-normal-straight",
+  "coordinateSystem": {
+    "width": 1000,
+    "height": 1500,
+    "origin": "左上",
+    "unit": "SVGユーザー単位",
+    "pngScale": 2
+  },
+  "assets": {
+    "svg": "svg/FX-breakout-right.svg",
+    "guideSvg": "guides/FX-breakout-right.svg",
+    "transparentPng": "png/FX-breakout-right.png",
+    "previewPng": "previews/FX-breakout-right.png",
+    "json": "json/FX-breakout-right.json"
+  }
+}

@@ -8,7 +8,9 @@
 
 README、作業ルール、共通知識、スキル、作品雛形、配布・動画補助スクリプト、テスト、`examples/` の公開用作例と説明を公開します。作例として指定したもの以外の入力原文、検討履歴、過去の版、素材、漫画・動画サンプル、ローカル環境情報、検証生成物は対象外です。
 
-`examples/` では通常の文書・コード形式に加えてPNGを公開できます。PNGの許可はこのフォルダに限り、新規作品プロジェクトには作例をコピーしません。PNGは公開前にExif・テキスト・生成来歴・色プロファイル・解像度情報などの付加情報を除去します。公開検査では画像本体の `IHDR`・`PLTE`・`IDAT`・`IEND` と透明度の `tRNS` のみを許可し、その他のチャンクや末尾の余分なデータがあればエラーにします。画像本体は再圧縮せず保持し、寸法・画素データの一致を確認します。
+`examples/` では通常の文書・コード形式に加えてPNGを公開できます。新規作品プロジェクトには作例をコピーしません。コマ枠素材は `templates/manga-project/templates/panel-templates/` の `index.html`、`svg/`・`guides/` 直下のSVG、`png/`・`previews/` 直下のPNGだけを追加で許可し、作品へ配布します。別の場所の画像やHTMLを一括で許可しません。
+
+公開するPNGはExif・テキスト・生成来歴・色プロファイル・解像度情報などの付加情報を除去します。公開検査では画像本体の `IHDR`・`PLTE`・`IDAT`・`IEND` と透明度の `tRNS` のみを許可し、その他のチャンクや末尾の余分なデータがあればエラーにします。画像本体は再圧縮せず保持し、寸法・画素データの一致を確認します。SVG・HTML・JSONも、作品名・セリフ・個人情報・ローカルパスなどを含まない汎用素材であることを確認します。
 
 `backup/` と `.work/` はGitのコミット対象から除外します。ローカル作業用の `docs/PLAN.md` と `docs/PROGRESS.md` も公開しません。作品に配る同名の雛形は公開対象です。ユーザーが例外制作のために作る `特別な理由でこのフォルダの中で漫画を作ります.txt` はGit・新規作品への配布に含めません。例外制作時の素材・原稿も `.work/` などの非公開領域へ置きます。
 
@@ -20,11 +22,14 @@ README、作業ルール、共通知識、スキル、作品雛形、配布・�
 
 ```powershell
 python .\scripts\public_release.py check
+python .\scripts\check_panel_templates.py
 .\tests\Test-Scaffold.ps1
 python -m unittest discover -s tests -p 'test_*.py'
 ```
 
 公開検査は公開対象だけを読み、作業用の絶対パス、固定フォルダ名、ローカルリンク、許可しない形式や秘密情報らしい内容を確認します。外部URLは作業パスとして扱いません。動画編集テストはffmpeg・ffprobeがある場合に実行します。
+
+コマ枠素材を変更したときだけ、キットで `python scripts/build_panel_templates.py`、`node scripts/render_panel_templates.cjs --all` の順に再生成します。後者にはNode.js・Playwrightと対応ブラウザーが必要です。生成処理は作品設定JSONを上書きしません。通常の作品制作では同梱素材を使います。
 
 ## Gitの差分を確認してコミットする
 

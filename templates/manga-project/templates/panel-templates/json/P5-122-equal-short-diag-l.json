@@ -1,0 +1,178 @@
+{
+  "id": "P5-122-equal-short-diag-l",
+  "name": "５コマ・上段横長・２コマ段は等幅・横長低め・斜線Ｂ",
+  "summary": "上段横長。２コマ段は等幅。横長低め。２本の縦区切りを互いに逆へ傾斜。使用頻度は低く。",
+  "panelCount": 5,
+  "family": "1-2-2",
+  "rows": [
+    1,
+    2,
+    2
+  ],
+  "rowHeightRatios": [
+    0.24,
+    0.38,
+    0.38
+  ],
+  "splitPositionsFromLeft": [
+    0.5,
+    0.5,
+    0.5
+  ],
+  "widthPattern": "２コマ段は等幅",
+  "shortWidePanel": true,
+  "verticalTilt": -0.064,
+  "horizontalTilt": 0,
+  "diagonal": true,
+  "frequency": "少なめ",
+  "usage": [
+    "緊張",
+    "急展開"
+  ],
+  "extra": false,
+  "restrictionGroup": null,
+  "readingDirection": "段ごとに右から左、上から下",
+  "panels": [
+    {
+      "id": "panel-01",
+      "order": 1,
+      "row": 1,
+      "position": "全幅",
+      "role": "基本",
+      "polygon": [
+        [
+          60,
+          60
+        ],
+        [
+          940,
+          60
+        ],
+        [
+          940,
+          376.02
+        ],
+        [
+          60,
+          376.02
+        ]
+      ]
+    },
+    {
+      "id": "panel-02",
+      "order": 2,
+      "row": 2,
+      "position": "右",
+      "role": "基本",
+      "polygon": [
+        [
+          537.84,
+          406.38
+        ],
+        [
+          940,
+          406.38
+        ],
+        [
+          940,
+          900.42
+        ],
+        [
+          481.52,
+          900.42
+        ]
+      ]
+    },
+    {
+      "id": "panel-03",
+      "order": 3,
+      "row": 2,
+      "position": "左",
+      "role": "基本",
+      "polygon": [
+        [
+          60,
+          406.38
+        ],
+        [
+          518.48,
+          406.38
+        ],
+        [
+          462.16,
+          900.42
+        ],
+        [
+          60,
+          900.42
+        ]
+      ]
+    },
+    {
+      "id": "panel-04",
+      "order": 4,
+      "row": 3,
+      "position": "右",
+      "role": "基本",
+      "polygon": [
+        [
+          481.52,
+          930.78
+        ],
+        [
+          940,
+          930.78
+        ],
+        [
+          940,
+          1440.0
+        ],
+        [
+          537.84,
+          1440.0
+        ]
+      ]
+    },
+    {
+      "id": "panel-05",
+      "order": 5,
+      "row": 3,
+      "position": "左",
+      "role": "基本",
+      "polygon": [
+        [
+          60,
+          930.78
+        ],
+        [
+          462.16,
+          930.78
+        ],
+        [
+          518.48,
+          1440.0
+        ],
+        [
+          60,
+          1440.0
+        ]
+      ]
+    }
+  ],
+  "modifiers": [],
+  "baseTemplateId": null,
+  "coordinateSystem": {
+    "width": 1000,
+    "height": 1500,
+    "origin": "左上",
+    "unit": "SVGユーザー単位",
+    "pngScale": 2
+  },
+  "assets": {
+    "svg": "svg/P5-122-equal-short-diag-l.svg",
+    "guideSvg": "guides/P5-122-equal-short-diag-l.svg",
+    "transparentPng": "png/P5-122-equal-short-diag-l.png",
+    "previewPng": "previews/P5-122-equal-short-diag-l.png",
+    "json": "json/P5-122-equal-short-diag-l.json"
+  }
+}

@@ -1,0 +1,204 @@
+{
+  "id": "P6-222-shift-1",
+  "name": "６コマ・縦区切りずらし・１",
+  "summary": "３段それぞれ２コマ。段ごとに幅を変え、縦区切りが一直線にならない。",
+  "panelCount": 6,
+  "family": "2-2-2",
+  "rows": [
+    2,
+    2,
+    2
+  ],
+  "rowHeightRatios": [
+    0.3333333333333333,
+    0.3333333333333333,
+    0.3333333333333333
+  ],
+  "splitPositionsFromLeft": [
+    0.43,
+    0.55,
+    0.47
+  ],
+  "widthPattern": "段ごとに異なる",
+  "shortWidePanel": false,
+  "verticalTilt": 0,
+  "horizontalTilt": 0,
+  "diagonal": false,
+  "frequency": "少なめ",
+  "usage": [
+    "手順",
+    "会話の連続",
+    "細かい動き"
+  ],
+  "extra": false,
+  "restrictionGroup": null,
+  "readingDirection": "段ごとに右から左、上から下",
+  "panels": [
+    {
+      "id": "panel-01",
+      "order": 1,
+      "row": 1,
+      "position": "右",
+      "role": "基本",
+      "polygon": [
+        [
+          448.08,
+          60
+        ],
+        [
+          940,
+          60
+        ],
+        [
+          940,
+          504.82
+        ],
+        [
+          448.08,
+          504.82
+        ]
+      ]
+    },
+    {
+      "id": "panel-02",
+      "order": 2,
+      "row": 1,
+      "position": "左",
+      "role": "基本",
+      "polygon": [
+        [
+          60,
+          60
+        ],
+        [
+          428.72,
+          60
+        ],
+        [
+          428.72,
+          504.82
+        ],
+        [
+          60,
+          504.82
+        ]
+      ]
+    },
+    {
+      "id": "panel-03",
+      "order": 3,
+      "row": 2,
+      "position": "右",
+      "role": "基本",
+      "polygon": [
+        [
+          553.68,
+          535.18
+        ],
+        [
+          940,
+          535.18
+        ],
+        [
+          940,
+          964.82
+        ],
+        [
+          553.68,
+          964.82
+        ]
+      ]
+    },
+    {
+      "id": "panel-04",
+      "order": 4,
+      "row": 2,
+      "position": "左",
+      "role": "基本",
+      "polygon": [
+        [
+          60,
+          535.18
+        ],
+        [
+          534.32,
+          535.18
+        ],
+        [
+          534.32,
+          964.82
+        ],
+        [
+          60,
+          964.82
+        ]
+      ]
+    },
+    {
+      "id": "panel-05",
+      "order": 5,
+      "row": 3,
+      "position": "右",
+      "role": "基本",
+      "polygon": [
+        [
+          483.28,
+          995.18
+        ],
+        [
+          940,
+          995.18
+        ],
+        [
+          940,
+          1440.0
+        ],
+        [
+          483.28,
+          1440.0
+        ]
+      ]
+    },
+    {
+      "id": "panel-06",
+      "order": 6,
+      "row": 3,
+      "position": "左",
+      "role": "基本",
+      "polygon": [
+        [
+          60,
+          995.18
+        ],
+        [
+          463.92,
+          995.18
+        ],
+        [
+          463.92,
+          1440.0
+        ],
+        [
+          60,
+          1440.0
+        ]
+      ]
+    }
+  ],
+  "modifiers": [],
+  "baseTemplateId": null,
+  "coordinateSystem": {
+    "width": 1000,
+    "height": 1500,
+    "origin": "左上",
+    "unit": "SVGユーザー単位",
+    "pngScale": 2
+  },
+  "assets": {
+    "svg": "svg/P6-222-shift-1.svg",
+    "guideSvg": "guides/P6-222-shift-1.svg",
+    "transparentPng": "png/P6-222-shift-1.png",
+    "previewPng": "previews/P6-222-shift-1.png",
+    "json": "json/P6-222-shift-1.json"
+  }
+}

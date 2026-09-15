@@ -8,9 +8,12 @@
 | --- | --- | --- |
 | `docs/knowledge/` | 出典付きの知識・制作手順 | 同じ相対パスへコピー |
 | `skills/` | 役割別スキルの原本 | `.agents/skills/` へコピー |
-| `templates/manga-project/` | 作品設定・記録の雛形 | 作品ルートへコピー |
+| `templates/manga-project/` | 作品設定・記録の雛形、コマ割りテンプレート素材 | 作品ルートへコピー |
+| `templates/manga-project/OPTION.md` | 制作開始時に変更できる９項目の初期設定 | 作品ルートへコピー。適用手順は `docs/knowledge/project-options.md` |
 | `scripts/New-MangaProject.ps1` | 新規作品の作成 | しない |
 | `scripts/Resolve-ReviewProfile.ps1` | レビュー重点の解決 | `scripts/` へコピー |
+| `scripts/validate_panel_plan.py` | コマ割り計画のルール検証 | `scripts/` へコピー |
+| `scripts/build_panel_templates.py`・`scripts/render_panel_templates.cjs`・`scripts/check_panel_templates.py` | コマ枠素材の生成・検査（キット保守用） | しない |
 | `scripts/video/` | 任意の動画生成・編集の補助 | 同じ相対パスへコピー |
 | `tests/` | 配布と動画編集の検証 | しない |
 | `examples/` | Gitで公開する作例PNGと説明 | しない |

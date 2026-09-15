@@ -1,0 +1,153 @@
+{
+  "id": "P4-211",
+  "name": "４コマ・２コマ・１コマ・１コマ",
+  "summary": "３段の１段目を２コマに分割、２段目と３段目は横長コマ。",
+  "panelCount": 4,
+  "family": "2-1-1",
+  "rows": [
+    2,
+    1,
+    1
+  ],
+  "rowHeightRatios": [
+    0.3333333333333333,
+    0.3333333333333333,
+    0.3333333333333333
+  ],
+  "splitPositionsFromLeft": [
+    0.5,
+    0.5,
+    0.5
+  ],
+  "widthPattern": "等幅",
+  "shortWidePanel": false,
+  "verticalTilt": 0,
+  "horizontalTilt": 0,
+  "diagonal": false,
+  "frequency": "通常",
+  "usage": [
+    "会話",
+    "状況と反応"
+  ],
+  "extra": false,
+  "restrictionGroup": null,
+  "readingDirection": "段ごとに右から左、上から下",
+  "panels": [
+    {
+      "id": "panel-01",
+      "order": 1,
+      "row": 1,
+      "position": "右",
+      "role": "基本",
+      "polygon": [
+        [
+          509.68,
+          60
+        ],
+        [
+          940,
+          60
+        ],
+        [
+          940,
+          504.82
+        ],
+        [
+          509.68,
+          504.82
+        ]
+      ]
+    },
+    {
+      "id": "panel-02",
+      "order": 2,
+      "row": 1,
+      "position": "左",
+      "role": "基本",
+      "polygon": [
+        [
+          60,
+          60
+        ],
+        [
+          490.32,
+          60
+        ],
+        [
+          490.32,
+          504.82
+        ],
+        [
+          60,
+          504.82
+        ]
+      ]
+    },
+    {
+      "id": "panel-03",
+      "order": 3,
+      "row": 2,
+      "position": "全幅",
+      "role": "基本",
+      "polygon": [
+        [
+          60,
+          535.18
+        ],
+        [
+          940,
+          535.18
+        ],
+        [
+          940,
+          964.82
+        ],
+        [
+          60,
+          964.82
+        ]
+      ]
+    },
+    {
+      "id": "panel-04",
+      "order": 4,
+      "row": 3,
+      "position": "全幅",
+      "role": "基本",
+      "polygon": [
+        [
+          60,
+          995.18
+        ],
+        [
+          940,
+          995.18
+        ],
+        [
+          940,
+          1440.0
+        ],
+        [
+          60,
+          1440.0
+        ]
+      ]
+    }
+  ],
+  "modifiers": [],
+  "baseTemplateId": null,
+  "coordinateSystem": {
+    "width": 1000,
+    "height": 1500,
+    "origin": "左上",
+    "unit": "SVGユーザー単位",
+    "pngScale": 2
+  },
+  "assets": {
+    "svg": "svg/P4-211.svg",
+    "guideSvg": "guides/P4-211.svg",
+    "transparentPng": "png/P4-211.png",
+    "previewPng": "previews/P4-211.png",
+    "json": "json/P4-211.json"
+  }
+}

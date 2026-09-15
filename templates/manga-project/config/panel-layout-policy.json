@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "scope": "日本語右開きのページ漫画向け初期設定。割合・制限は作品とユーザー指定に合わせて変更する。",
+  "hardRules": {
+    "horizontalThree": {
+      "enabled": true,
+      "restrictionGroup": "horizontal-three",
+      "includeDiagonalVariants": true,
+      "minimumInterveningPages": 4,
+      "rollingWindowPages": 20,
+      "maximumInWindow": 3,
+      "example": "p1で使用したら、p2〜5の４ページを挟み、次はp6以降。p1〜20だけでなくp2〜21など全ての20ページ窓で確認する。"
+    },
+    "mostCommonPanelCount": 5,
+    "dominanceMinimumPages": 20,
+    "dominanceScope": "20ページ以上の計画で、５コマを他の各コマ数より多くする。"
+  },
+  "recommended": {
+    "standard20PageMix": {
+      "5": 12,
+      "4": 3,
+      "3": 3,
+      "6": 2
+    },
+    "standardPercent": {
+      "5": 60,
+      "4": 15,
+      "3": 15,
+      "6": 10
+    },
+    "horizontalThreeTargetPer20": 2,
+    "diagonalFiveMaximumPer20": 1,
+    "avoidAdjacentIdenticalTemplate": true,
+    "exceptionNote": "大ゴマ・見開き・２コマ・時間経過の追加コマは演出に応じて調整し、実際のコマ数で集計する。割合の厳密な一致は求めない。"
+  },
+  "selectionWorkflow": [
+    "ページの感情の変化と見せ場を決める。",
+    "採用割合に沿ってコマ数を選び、横長位置・用途で候補を絞る。全種類から等確率で選ばない。",
+    "前後のページと異なる輪郭を選び、番号順に出来事とセリフを割り当てる。",
+    "採用案JSONを検証してから、コマ別に作画と文字配置を設計する。",
+    "既存の横長作画を機械的に切り抜いて、新しいコマ割りに合わせた扱いにはしない。"
+  ]
+}

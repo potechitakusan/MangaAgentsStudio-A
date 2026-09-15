@@ -3,6 +3,7 @@ import hashlib
 from pathlib import Path
 import shutil
 import struct
+import subprocess
 import sys
 import unittest
 import uuid
@@ -94,6 +95,37 @@ class PublicReleaseTests(unittest.TestCase):
             with self.subTest(length=len(bad)):
                 path.write_bytes(bad)
                 self.assertTrue(any('PNGの検査に失敗' in error for error in check(self.root)['errors']))
+
+    def test_git_candidates_cover_public_files(self):
+        # 実際のGit追加候補と検査対象を照合し、素材の配布漏れを検出する。
+        result = subprocess.run(['git', 'ls-files', '--cached', '--others', '--exclude-standard', '-z'],
+                                cwd=ROOT, check=True, capture_output=True)
+        candidates = set(result.stdout.decode('utf-8').split('\0')) - {''}
+        expected = {p.relative_to(ROOT).as_posix() for p in public_files(ROOT)}
+        self.assertEqual(expected, candidates)
+
+    def test_panel_media_permission_is_limited_to_designated_locations(self):
+        for name in ('scripts/panel-templates-private.png', 'docs/knowledge/panel-templates/private.png',
+                     'templates/manga-project/private.svg', 'templates/manga-project/private.html',
+                     'scripts/private.cjs'):
+            with self.subTest(name=name):
+                path = self.root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text('非公開のダミー情報', encoding='utf-8')
+                try:
+                    with self.assertRaises(ValueError):
+                        public_files(self.root)
+                finally:
+                    path.unlink()
+
+    def test_panel_png_metadata_is_checked(self):
+        path = self.root / 'templates/manga-project/templates/panel-templates/png/fixture.png'
+        path.write_bytes(example_png(png_chunk(b'tEXt', b'private metadata')))
+        self.assertTrue(any('メタ情報' in error for error in check(self.root)['errors']))
+
+    def test_feedback_starts_with_only_a_blank_template(self):
+        folder = self.root / 'templates/manga-project/docs/feedback'
+        self.assertEqual({p.name for p in folder.iterdir()}, {'TEMPLATE.md'})
 
 
 if __name__ == '__main__':

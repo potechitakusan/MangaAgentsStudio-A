@@ -1,0 +1,72 @@
+{
+  "id": "P1-splash",
+  "name": "１コマ・全面",
+  "summary": "大きな一枚絵。見開きでは対になるページと構成を詰める。",
+  "panelCount": 1,
+  "family": "1",
+  "rows": [
+    1
+  ],
+  "rowHeightRatios": [
+    1.0
+  ],
+  "splitPositionsFromLeft": [
+    0.5
+  ],
+  "widthPattern": "等幅",
+  "shortWidePanel": false,
+  "verticalTilt": 0,
+  "horizontalTilt": 0,
+  "diagonal": false,
+  "frequency": "例外",
+  "usage": [
+    "大見せ場",
+    "見開き"
+  ],
+  "extra": true,
+  "restrictionGroup": null,
+  "readingDirection": "段ごとに右から左、上から下",
+  "panels": [
+    {
+      "id": "panel-01",
+      "order": 1,
+      "row": 1,
+      "position": "全幅",
+      "role": "基本",
+      "polygon": [
+        [
+          60,
+          60
+        ],
+        [
+          940,
+          60
+        ],
+        [
+          940,
+          1440.0
+        ],
+        [
+          60,
+          1440.0
+        ]
+      ]
+    }
+  ],
+  "modifiers": [],
+  "baseTemplateId": null,
+  "coordinateSystem": {
+    "width": 1000,
+    "height": 1500,
+    "origin": "左上",
+    "unit": "SVGユーザー単位",
+    "pngScale": 2
+  },
+  "assets": {
+    "svg": "svg/P1-splash.svg",
+    "guideSvg": "guides/P1-splash.svg",
+    "transparentPng": "png/P1-splash.png",
+    "previewPng": "previews/P1-splash.png",
+    "json": "json/P1-splash.json"
+  }
+}

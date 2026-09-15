@@ -1,4 +1,4 @@
-# 公開用の文書・コードと examples/ のPNGを許可する。形式は scripts/public_release.py に合わせる。
+# 公開用の文書・コード、作例PNG、指定のコマ枠素材を許可する。
 *
 !*/
 !*.md
@@ -17,6 +17,7 @@
 !/distribution-version.txt
 !/docs/
 !/scripts/
+!/scripts/render_panel_templates.cjs
 !/skills/
 !/templates/
 !/tests/
@@ -25,6 +26,11 @@
 /templates/*
 !/templates/manga-project/
 !/templates/manga-project/.gitignore
+!/templates/manga-project/templates/panel-templates/index.html
+!/templates/manga-project/templates/panel-templates/svg/*.svg
+!/templates/manga-project/templates/panel-templates/guides/*.svg
+!/templates/manga-project/templates/panel-templates/png/*.png
+!/templates/manga-project/templates/panel-templates/previews/*.png
 /docs/*
 !/docs/README.md
 !/docs/architecture.md

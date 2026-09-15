@@ -1,0 +1,85 @@
+{
+  "status": "割合と制限を示す例。本文への採用決定ではない。",
+  "pages": [
+    {
+      "page": 1,
+      "templateId": "P3-horizontal-straight"
+    },
+    {
+      "page": 2,
+      "templateId": "P5-212-equal-normal-straight"
+    },
+    {
+      "page": 3,
+      "templateId": "P5-212-equal-short-straight"
+    },
+    {
+      "page": 4,
+      "templateId": "P4-22-stagger"
+    },
+    {
+      "page": 5,
+      "templateId": "P5-212-rl-normal-straight"
+    },
+    {
+      "page": 6,
+      "templateId": "P5-212-rl-short-straight"
+    },
+    {
+      "page": 7,
+      "templateId": "P6-222-shift-1"
+    },
+    {
+      "page": 8,
+      "templateId": "P5-212-lr-normal-straight"
+    },
+    {
+      "page": 9,
+      "templateId": "P4-211"
+    },
+    {
+      "page": 10,
+      "templateId": "P5-212-lr-short-straight"
+    },
+    {
+      "page": 11,
+      "templateId": "P3-horizontal-up-right"
+    },
+    {
+      "page": 12,
+      "templateId": "P5-122-equal-normal-straight"
+    },
+    {
+      "page": 13,
+      "templateId": "P5-122-equal-short-straight"
+    },
+    {
+      "page": 14,
+      "templateId": "P4-22-stagger"
+    },
+    {
+      "page": 15,
+      "templateId": "P5-122-rl-normal-straight"
+    },
+    {
+      "page": 16,
+      "templateId": "P5-122-rl-short-straight"
+    },
+    {
+      "page": 17,
+      "templateId": "P6-222-shift-2"
+    },
+    {
+      "page": 18,
+      "templateId": "P5-122-lr-normal-straight"
+    },
+    {
+      "page": 19,
+      "templateId": "P3-21-straight"
+    },
+    {
+      "page": 20,
+      "templateId": "P5-122-lr-short-straight"
+    }
+  ]
+}

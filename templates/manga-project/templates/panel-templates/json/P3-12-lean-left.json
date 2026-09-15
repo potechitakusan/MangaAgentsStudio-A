@@ -1,0 +1,126 @@
+{
+  "id": "P3-12-lean-left",
+  "name": "３コマ・１コマ・２コマ・左傾斜",
+  "summary": "１コマ・２コマ。ページの主コマで人物を見せる。縦区切りの下端を左へ傾ける。",
+  "panelCount": 3,
+  "family": "1-2",
+  "rows": [
+    1,
+    2
+  ],
+  "rowHeightRatios": [
+    0.5,
+    0.5
+  ],
+  "splitPositionsFromLeft": [
+    0.5,
+    0.5
+  ],
+  "widthPattern": "等幅",
+  "shortWidePanel": false,
+  "verticalTilt": -0.07,
+  "horizontalTilt": 0,
+  "diagonal": true,
+  "frequency": "少なめ",
+  "usage": [
+    "導入",
+    "決め",
+    "緊張"
+  ],
+  "extra": false,
+  "restrictionGroup": null,
+  "readingDirection": "段ごとに右から左、上から下",
+  "panels": [
+    {
+      "id": "panel-01",
+      "order": 1,
+      "row": 1,
+      "position": "全幅",
+      "role": "基本",
+      "polygon": [
+        [
+          60,
+          60
+        ],
+        [
+          940,
+          60
+        ],
+        [
+          940,
+          734.82
+        ],
+        [
+          60,
+          734.82
+        ]
+      ]
+    },
+    {
+      "id": "panel-02",
+      "order": 2,
+      "row": 2,
+      "position": "右",
+      "role": "基本",
+      "polygon": [
+        [
+          540.48,
+          765.18
+        ],
+        [
+          940,
+          765.18
+        ],
+        [
+          940,
+          1440.0
+        ],
+        [
+          478.88,
+          1440.0
+        ]
+      ]
+    },
+    {
+      "id": "panel-03",
+      "order": 3,
+      "row": 2,
+      "position": "左",
+      "role": "基本",
+      "polygon": [
+        [
+          60,
+          765.18
+        ],
+        [
+          521.12,
+          765.18
+        ],
+        [
+          459.52,
+          1440.0
+        ],
+        [
+          60,
+          1440.0
+        ]
+      ]
+    }
+  ],
+  "modifiers": [],
+  "baseTemplateId": null,
+  "coordinateSystem": {
+    "width": 1000,
+    "height": 1500,
+    "origin": "左上",
+    "unit": "SVGユーザー単位",
+    "pngScale": 2
+  },
+  "assets": {
+    "svg": "svg/P3-12-lean-left.svg",
+    "guideSvg": "guides/P3-12-lean-left.svg",
+    "transparentPng": "png/P3-12-lean-left.png",
+    "previewPng": "previews/P3-12-lean-left.png",
+    "json": "json/P3-12-lean-left.json"
+  }
+}

@@ -1,0 +1,235 @@
+{
+  "id": "FX-time-shrink",
+  "name": "演出・白コマが小さくなる",
+  "summary": "５コマの中央の横長枠を、右から左へ小さくなる３つの白コマへ置換。時間経過や息を呑む間に用いる。",
+  "panelCount": 7,
+  "family": "time-passage",
+  "rows": [
+    2,
+    3,
+    2
+  ],
+  "rowHeightRatios": [
+    0.38,
+    0.24,
+    0.38
+  ],
+  "splitPositionsFromLeft": [
+    0.5,
+    0.5,
+    0.5
+  ],
+  "widthPattern": "２コマ段は等幅",
+  "shortWidePanel": true,
+  "verticalTilt": 0,
+  "horizontalTilt": 0,
+  "diagonal": false,
+  "frequency": "例外",
+  "usage": [
+    "時間経過",
+    "息を呑む間"
+  ],
+  "extra": true,
+  "restrictionGroup": null,
+  "readingDirection": "段ごとに右から左、上から下",
+  "panels": [
+    {
+      "id": "panel-01",
+      "order": 1,
+      "row": 1,
+      "position": "右",
+      "role": "基本",
+      "polygon": [
+        [
+          509.68,
+          60
+        ],
+        [
+          940,
+          60
+        ],
+        [
+          940,
+          569.22
+        ],
+        [
+          509.68,
+          569.22
+        ]
+      ]
+    },
+    {
+      "id": "panel-02",
+      "order": 2,
+      "row": 1,
+      "position": "左",
+      "role": "基本",
+      "polygon": [
+        [
+          60,
+          60
+        ],
+        [
+          490.32,
+          60
+        ],
+        [
+          490.32,
+          569.22
+        ],
+        [
+          60,
+          569.22
+        ]
+      ]
+    },
+    {
+      "id": "panel-03",
+      "order": 3,
+      "row": 2,
+      "position": "時間経過",
+      "role": "演出白コマ",
+      "polygon": [
+        [
+          588.0,
+          622.143
+        ],
+        [
+          940,
+          622.143
+        ],
+        [
+          940,
+          877.857
+        ],
+        [
+          588.0,
+          877.857
+        ]
+      ]
+    },
+    {
+      "id": "panel-04",
+      "order": 4,
+      "row": 2,
+      "position": "時間経過",
+      "role": "演出白コマ",
+      "polygon": [
+        [
+          339.84,
+          643.202
+        ],
+        [
+          568.64,
+          643.202
+        ],
+        [
+          568.64,
+          856.798
+        ],
+        [
+          339.84,
+          856.798
+        ]
+      ]
+    },
+    {
+      "id": "panel-05",
+      "order": 5,
+      "row": 2,
+      "position": "時間経過",
+      "role": "演出白コマ",
+      "polygon": [
+        [
+          179.68,
+          658.244
+        ],
+        [
+          320.48,
+          658.244
+        ],
+        [
+          320.48,
+          841.756
+        ],
+        [
+          179.68,
+          841.756
+        ]
+      ]
+    },
+    {
+      "id": "panel-06",
+      "order": 6,
+      "row": 3,
+      "position": "右",
+      "role": "基本",
+      "polygon": [
+        [
+          509.68,
+          930.78
+        ],
+        [
+          940,
+          930.78
+        ],
+        [
+          940,
+          1440.0
+        ],
+        [
+          509.68,
+          1440.0
+        ]
+      ]
+    },
+    {
+      "id": "panel-07",
+      "order": 7,
+      "row": 3,
+      "position": "左",
+      "role": "基本",
+      "polygon": [
+        [
+          60,
+          930.78
+        ],
+        [
+          490.32,
+          930.78
+        ],
+        [
+          490.32,
+          1440.0
+        ],
+        [
+          60,
+          1440.0
+        ]
+      ]
+    }
+  ],
+  "modifiers": [
+    {
+      "type": "time-passage",
+      "replacesPanelOrder": 3,
+      "direction": "shrink",
+      "note": "独立コマとして描くため、適用後は７コマ。実際の経過時間は前後の絵で確定する。"
+    }
+  ],
+  "baseTemplateId": "P5-212-equal-short-straight",
+  "coordinateSystem": {
+    "width": 1000,
+    "height": 1500,
+    "origin": "左上",
+    "unit": "SVGユーザー単位",
+    "pngScale": 2
+  },
+  "assets": {
+    "svg": "svg/FX-time-shrink.svg",
+    "guideSvg": "guides/FX-time-shrink.svg",
+    "transparentPng": "png/FX-time-shrink.png",
+    "previewPng": "previews/FX-time-shrink.png",
+    "json": "json/FX-time-shrink.json"
+  }
+}

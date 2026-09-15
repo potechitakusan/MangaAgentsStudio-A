@@ -36,8 +36,22 @@ Check ((Split-Path $projectRoot -Parent) -eq $testRoot) 'Project is a direct chi
 Check (@(Get-ChildItem -LiteralPath (Join-Path $projectRoot '.agents\skills') -Directory).Count -eq 7) 'Seven discoverable skills are included'
 Check ((Test-Path -LiteralPath (Join-Path $projectRoot 'docs\knowledge\story-structure.md')) -and
        (Test-Path -LiteralPath (Join-Path $projectRoot 'docs\knowledge\japanese-manga-readability.md'))) 'Knowledge is included'
+Check ((Test-Path -LiteralPath (Join-Path $projectRoot 'templates\panel-templates\catalog.json')) -and
+       (Test-Path -LiteralPath (Join-Path $projectRoot 'config\panel-layout-policy.json')) -and
+       (Test-Path -LiteralPath (Join-Path $projectRoot 'scripts\validate_panel_plan.py')) -and
+       (Test-Path -LiteralPath (Join-Path $projectRoot 'docs\knowledge\panel-layout-policy.md')) -and
+       (Test-Path -LiteralPath (Join-Path $projectRoot 'templates\panel-templates\index.html'))) 'コマ割り一覧・設定・検証スクリプトが同梱される'
+$panelCatalog = Get-Content -Encoding UTF8 -Raw -LiteralPath (Join-Path $projectRoot 'templates\panel-templates\catalog.json') | ConvertFrom-Json
+$missingPanelAssets = @($panelCatalog.templates | ForEach-Object {
+    $_.assets.PSObject.Properties | ForEach-Object {
+        if (-not (Test-Path -LiteralPath (Join-Path $projectRoot ('templates\panel-templates\' + $_.Value)) -PathType Leaf)) { $_.Value }
+    }
+})
+Check ($panelCatalog.templateCount -eq 79 -and $missingPanelAssets.Count -eq 0) '全79種類のSVG・PNG・個別JSONが配布先で実在する'
 Check ((Get-FileHash -LiteralPath (Join-Path $projectRoot 'docs\toolkit-license.txt')).Hash -eq
        (Get-FileHash -LiteralPath (Join-Path $root 'LICENSE')).Hash) '同梱キットのライセンスが原本と一致する'
+Check ((Test-Path -LiteralPath (Join-Path $projectRoot 'OPTION.md') -PathType Leaf) -and
+       (Test-Path -LiteralPath (Join-Path $projectRoot 'docs\knowledge\project-options.md') -PathType Leaf)) '制作オプションと欠落時にも参照できる適用手順が同梱される'
 Check ($project.distributionVersion -eq (Get-Content -LiteralPath (Join-Path $root 'distribution-version.txt') -Raw).Trim()) '作品の配布版が原本の版と一致する'
 Check (@(Get-ChildItem -LiteralPath (Join-Path $projectRoot '.secrets') -Force).Count -eq 0) 'Secret directory starts empty'
 $snapshot = Get-Content -LiteralPath (Join-Path $projectRoot 'docs\distribution-snapshot.json') -Raw -Encoding UTF8 | ConvertFrom-Json

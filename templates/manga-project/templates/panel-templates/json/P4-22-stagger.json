@@ -1,0 +1,150 @@
+{
+  "id": "P4-22-stagger",
+  "name": "４コマ・上下２コマ・互い違い",
+  "summary": "上段は左広、下段は右広。段をまたぐ縦区切りをずらす。",
+  "panelCount": 4,
+  "family": "2-2",
+  "rows": [
+    2,
+    2
+  ],
+  "rowHeightRatios": [
+    0.5,
+    0.5
+  ],
+  "splitPositionsFromLeft": [
+    0.57,
+    0.43
+  ],
+  "widthPattern": "上段は左広め・下段は右広め",
+  "shortWidePanel": false,
+  "verticalTilt": 0,
+  "horizontalTilt": 0,
+  "diagonal": false,
+  "frequency": "通常",
+  "usage": [
+    "会話",
+    "行動と反応"
+  ],
+  "extra": false,
+  "restrictionGroup": null,
+  "readingDirection": "段ごとに右から左、上から下",
+  "panels": [
+    {
+      "id": "panel-01",
+      "order": 1,
+      "row": 1,
+      "position": "右",
+      "role": "基本",
+      "polygon": [
+        [
+          571.28,
+          60
+        ],
+        [
+          940,
+          60
+        ],
+        [
+          940,
+          734.82
+        ],
+        [
+          571.28,
+          734.82
+        ]
+      ]
+    },
+    {
+      "id": "panel-02",
+      "order": 2,
+      "row": 1,
+      "position": "左",
+      "role": "基本",
+      "polygon": [
+        [
+          60,
+          60
+        ],
+        [
+          551.92,
+          60
+        ],
+        [
+          551.92,
+          734.82
+        ],
+        [
+          60,
+          734.82
+        ]
+      ]
+    },
+    {
+      "id": "panel-03",
+      "order": 3,
+      "row": 2,
+      "position": "右",
+      "role": "基本",
+      "polygon": [
+        [
+          448.08,
+          765.18
+        ],
+        [
+          940,
+          765.18
+        ],
+        [
+          940,
+          1440.0
+        ],
+        [
+          448.08,
+          1440.0
+        ]
+      ]
+    },
+    {
+      "id": "panel-04",
+      "order": 4,
+      "row": 2,
+      "position": "左",
+      "role": "基本",
+      "polygon": [
+        [
+          60,
+          765.18
+        ],
+        [
+          428.72,
+          765.18
+        ],
+        [
+          428.72,
+          1440.0
+        ],
+        [
+          60,
+          1440.0
+        ]
+      ]
+    }
+  ],
+  "modifiers": [],
+  "baseTemplateId": null,
+  "coordinateSystem": {
+    "width": 1000,
+    "height": 1500,
+    "origin": "左上",
+    "unit": "SVGユーザー単位",
+    "pngScale": 2
+  },
+  "assets": {
+    "svg": "svg/P4-22-stagger.svg",
+    "guideSvg": "guides/P4-22-stagger.svg",
+    "transparentPng": "png/P4-22-stagger.png",
+    "previewPng": "previews/P4-22-stagger.png",
+    "json": "json/P4-22-stagger.json"
+  }
+}
