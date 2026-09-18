@@ -6,7 +6,7 @@
 
 ## 公開対象
 
-汎用知識は `docs/knowledge/manga/` とknowledge直下の既存文書に統合し、通常のknowledgeとして公開・配布します。`docs/knowledge/supervision/` は、`docs/knowledge/supervision/distribution.json` に列挙したギャグの監修文書とマニフェストだけを対象にします。
+汎用知識は `docs/knowledge/manga/` とknowledge直下の既存文書に統合し、通常のknowledgeとして公開・配布します。`docs/knowledge/supervision/` は、`docs/knowledge/supervision/distribution.json` に列挙した監修文書・出典台帳とマニフェストだけを対象にします。調査の図版・草案履歴・検証課題は `.work/` に残し、同梱しません。
 
 README、作業ルール、共通知識、スキル、作品雛形、配布・動画補助スクリプト、テスト、`examples/` の公開用作例と説明を公開します。作例として指定したもの以外の入力原文、検討履歴、過去の版、素材、漫画・動画サンプル、ローカル環境情報、検証生成物は対象外です。
 

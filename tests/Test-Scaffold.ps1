@@ -41,9 +41,9 @@ Check ((Test-Path -LiteralPath (Join-Path $projectRoot 'docs\knowledge\manga\03-
        (Test-Path -LiteralPath (Join-Path $projectRoot 'docs\knowledge\supervision\distribution.json'))) '制作知識はdocs/knowledge配下に配布される'
 Check (@($knowledgeManifest.files | Where-Object {
     -not (Test-Path -LiteralPath (Join-Path $projectRoot $_) -PathType Leaf)
-}).Count -eq 0) '同梱のギャグ監修文書が作品だけで参照できる'
+}).Count -eq 0) '同梱の監修文書と出典が作品だけで参照できる'
 Check ((Get-ChildItem -LiteralPath (Join-Path $projectRoot 'docs/knowledge/supervision') -Recurse -File).Count -eq ($knowledgeManifest.files.Count + 1)) '配布される監修ファイルはマニフェスト掲載分と一致する'
-Check ((@(Get-ChildItem -LiteralPath (Join-Path $projectRoot 'docs/knowledge/supervision') -Directory).Name -join ',') -eq 'gag') '配布する専用監修はギャグのみ'
+Check ((@(Get-ChildItem -LiteralPath (Join-Path $projectRoot 'docs/knowledge/supervision') -Directory | Sort-Object Name).Name -join ',') -eq 'allure,awkwardness,bargaining,conflict,endearment,gag,grief,horror,payoff,reconciliation,revelation,romance,stature,trust,tsukkomi,urgency') 'ギャグと追加15テーマだけが配布される'
 Check ((Test-Path -LiteralPath (Join-Path $projectRoot 'docs\knowledge\story-structure.md')) -and
        (Test-Path -LiteralPath (Join-Path $projectRoot 'docs\knowledge\japanese-manga-readability.md'))) 'Knowledge is included'
 Check ((Test-Path -LiteralPath (Join-Path $projectRoot 'templates\panel-templates\catalog.json')) -and
@@ -121,7 +121,23 @@ Copy-Item -LiteralPath (Join-Path $root 'docs\knowledge') -Destination (Join-Pat
 Copy-Item -LiteralPath (Join-Path $root 'distribution-version.txt') -Destination (Join-Path $fixture 'distribution-version.txt')
 Copy-Item -LiteralPath (Join-Path $root 'LICENSE') -Destination (Join-Path $fixture 'LICENSE')
 foreach ($relative in @('docs/knowledge/supervision/unlisted.md',
-                         'docs/knowledge/supervision/gag/unlisted.md')) {
+                         'docs/knowledge/supervision/gag/unlisted.md',
+                         'docs/knowledge/supervision/tsukkomi/unlisted.md',
+                         'docs/knowledge/supervision/allure/unlisted.md',
+                         'docs/knowledge/supervision/stature/unlisted.md',
+                         'docs/knowledge/supervision/horror/unlisted.md',
+                         'docs/knowledge/supervision/conflict/unlisted.md',
+                         'docs/knowledge/supervision/grief/unlisted.md',
+                         'docs/knowledge/supervision/romance/unlisted.md',
+                         'docs/knowledge/supervision/trust/unlisted.md',
+                         'docs/knowledge/supervision/awkwardness/unlisted.md',
+                         'docs/knowledge/supervision/urgency/unlisted.md',
+                         'docs/knowledge/supervision/revelation/unlisted.md',
+                         'docs/knowledge/supervision/payoff/unlisted.md',
+                         'docs/knowledge/supervision/endearment/unlisted.md',
+                         'docs/knowledge/supervision/bargaining/unlisted.md',
+                         'docs/knowledge/supervision/reconciliation/unlisted.md',
+                         'docs/knowledge/supervision/unreleased-theme/README.md')) {
     $destination = Join-Path $fixture $relative
     $null = [IO.Directory]::CreateDirectory((Split-Path $destination -Parent))
     [IO.File]::WriteAllText($destination, 'マニフェスト未掲載ファイル')
@@ -130,11 +146,27 @@ $fixtureResult = & (Join-Path $fixture 'scripts\New-MangaProject.ps1') -ProjectN
 $fixtureProject = (Resolve-Path -LiteralPath $fixtureResult.Path).ProviderPath
 Check (@(Get-ChildItem -LiteralPath (Join-Path $fixtureProject 'docs/knowledge/supervision') -Recurse -File | Where-Object {
     $_.Name -eq 'unlisted.md'
-}).Count -eq 0) 'マニフェスト未掲載ファイルは作品へ配布されない'
+}).Count -eq 0 -and -not (Test-Path -LiteralPath (Join-Path $fixtureProject 'docs/knowledge/supervision/unreleased-theme'))) 'マニフェスト未掲載ファイルと未対応テーマは作品へ配布されない'
 # 未許可パスは、マニフェストに追加しても作成前に拒否する。
 $fixtureManifest = Join-Path $fixture 'docs\knowledge\supervision\distribution.json'
 foreach ($unlistedPath in @('docs/knowledge/supervision/unlisted.md',
-                           'docs/knowledge/supervision/gag/unlisted.md')) {
+                           'docs/knowledge/supervision/gag/unlisted.md',
+                           'docs/knowledge/supervision/tsukkomi/unlisted.md',
+                           'docs/knowledge/supervision/allure/unlisted.md',
+                           'docs/knowledge/supervision/stature/unlisted.md',
+                           'docs/knowledge/supervision/horror/unlisted.md',
+                           'docs/knowledge/supervision/conflict/unlisted.md',
+                           'docs/knowledge/supervision/grief/unlisted.md',
+                           'docs/knowledge/supervision/romance/unlisted.md',
+                           'docs/knowledge/supervision/trust/unlisted.md',
+                           'docs/knowledge/supervision/awkwardness/unlisted.md',
+                           'docs/knowledge/supervision/urgency/unlisted.md',
+                           'docs/knowledge/supervision/revelation/unlisted.md',
+                           'docs/knowledge/supervision/payoff/unlisted.md',
+                           'docs/knowledge/supervision/endearment/unlisted.md',
+                           'docs/knowledge/supervision/bargaining/unlisted.md',
+                           'docs/knowledge/supervision/reconciliation/unlisted.md',
+                           'docs/knowledge/supervision/unreleased-theme/README.md')) {
     $badKnowledge = [ordered]@{ schemaVersion = 1; files = @($knowledgeManifest.files) + @($unlistedPath) }
     Write-Json $badKnowledge $fixtureManifest
     Must-Fail { & (Join-Path $fixture 'scripts\New-MangaProject.ps1') -ProjectName 'RejectedEntries' -DestinationParent $testRoot } "未許可パスのマニフェスト追加を拒否する: $unlistedPath"

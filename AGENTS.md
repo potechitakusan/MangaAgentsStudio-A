@@ -8,7 +8,7 @@
 - 原則、人間がCLIP STUDIO PAINTで仕上げて外部公開する。CBZ作成と動画試作は明示依頼がある場合だけ行う。
 - 説明、ノウハウ、記入項目、引き継ぎ、レイヤー名は日本語にする。製品名、出典URL、パス、機械用識別子、ライセンス原文は維持する。
 - 文書・設定・保存記録の作業パスは相対パスにする。開き直し先をユーザーへ案内するメッセージには、実在を確認した絶対パスを表示する。リポジトリのフォルダ名を固定しない。外部URL、ツール内部のパス解決、ユーザーへの一時的な表示と保存記録を区別する。
-- 制作の共通知識・運用は `docs/knowledge/`。人物・情報・演技は `docs/knowledge/manga/`、読みやすさと共通レビューはknowledge直下の該当文書へ統合し、用途が同じ内容は該当文書へ集約する。参照先と利用Skillの対応は `docs/knowledge/review-workflow.md`。監修知識は `docs/knowledge/supervision/gag/` で、版0.3.1の専用監修はギャグのみ。スキル定義は `skills/`、作品雛形は `templates/manga-project/`。監修知識の配布対象は `docs/knowledge/supervision/distribution.json` で限定する。構成と配布は `docs/architecture.md` を参照する。
+- 制作の共通知識・運用は `docs/knowledge/`。人物・情報・演技は `docs/knowledge/manga/`、読みやすさと共通レビューはknowledge直下の該当文書へ統合し、用途が同じ内容は該当文書へ集約する。参照先と利用Skillの対応は `docs/knowledge/review-workflow.md`。監修知識は `docs/knowledge/supervision/`。版0.3.2は既存のギャグと、場面監修15テーマの試行版を収録する。必要なテーマだけ読み、資料の主張・制作提案・未検証の効果を区別する。スキル定義は `skills/`、作品雛形は `templates/manga-project/`。監修知識の配布対象は `docs/knowledge/supervision/distribution.json` で限定する。構成と配布は `docs/architecture.md` を参照する。
 - 再開時はローカルの `docs/PROGRESS.md` と `docs/PLAN.md` を読む。なければ必要時に作成し、節目に現在地と次の行動を更新する。これらの作業記録、`backup/`、`.work/`、素材・生成物は公開対象外。
 - 出典URL・取得日・適用範囲を残し、確認事実、制作提案、未検証事項を区別する。取得日が不明な既存資料は2026-09-12を補完日と明記する。
 - 作品側のフィードバックは記録を依頼された場合だけ残す。記録するかの確認、毎回の候補づくり、依頼のない還元は行わない。通常の進捗・修正・検証記録は必要な範囲で残す。

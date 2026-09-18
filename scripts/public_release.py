@@ -26,8 +26,9 @@ URL = re.compile(r'https?://[^\s<>`\])]+')
 SECRET = re.compile(r'(?:gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|sk-[A-Za-z0-9_-]{30,}|-----BEGIN (?:RSA |OPENSSH |EC )?PRIVATE KEY-----)')
 KNOWLEDGE_MANIFEST = 'docs/knowledge/supervision/distribution.json'
 KNOWLEDGE_PATH = re.compile(
-    r'(?:docs/knowledge/supervision/(?:README|routing)\.md'
-    r'|docs/knowledge/supervision/gag/(?:README|mechanisms|design-and-review|know-how)\.md)'
+    r'(?:docs/knowledge/supervision/(?:README|routing|sources)\.md'
+    r'|docs/knowledge/supervision/gag/(?:README|mechanisms|design-and-review|know-how)\.md'
+    r'|docs/knowledge/supervision/(?:tsukkomi|allure|stature|horror|conflict|grief|romance|trust|awkwardness|urgency|revelation|payoff|endearment|bargaining|reconciliation)/README\.md)'
 )
 
 
