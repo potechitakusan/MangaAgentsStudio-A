@@ -33,7 +33,17 @@ Check ($creationText.Contains($projectRoot) -and $creationText.Contains('この�
 $project = Get-Content -LiteralPath (Join-Path $projectRoot 'project.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 Check ($project.name -ceq $japaneseName) 'Japanese project name survives JSON round trip'
 Check ((Split-Path $projectRoot -Parent) -eq $testRoot) 'Project is a direct child of the selected parent'
-Check (@(Get-ChildItem -LiteralPath (Join-Path $projectRoot '.agents\skills') -Directory).Count -eq 7) 'Seven discoverable skills are included'
+Check (@(Get-ChildItem -LiteralPath (Join-Path $projectRoot '.agents\skills') -Directory).Count -eq 8) '監修を含む8つのスキルが同梱される'
+Check ((Test-Path -LiteralPath (Join-Path $projectRoot '.agents\skills\manga-supervision\SKILL.md')) -and
+       (Test-Path -LiteralPath (Join-Path $projectRoot 'docs\reviews\SUPERVISION.md'))) '監修スキルと場面単位の相談・レビュー記入欄を使える'
+$knowledgeManifest = Get-Content -LiteralPath (Join-Path $root 'docs\knowledge\supervision\distribution.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+Check ((Test-Path -LiteralPath (Join-Path $projectRoot 'docs\knowledge\manga\03-beat-pacing-timing.md')) -and
+       (Test-Path -LiteralPath (Join-Path $projectRoot 'docs\knowledge\supervision\distribution.json'))) '制作知識はdocs/knowledge配下に配布される'
+Check (@($knowledgeManifest.files | Where-Object {
+    -not (Test-Path -LiteralPath (Join-Path $projectRoot $_) -PathType Leaf)
+}).Count -eq 0) '同梱のギャグ監修文書が作品だけで参照できる'
+Check ((Get-ChildItem -LiteralPath (Join-Path $projectRoot 'docs/knowledge/supervision') -Recurse -File).Count -eq ($knowledgeManifest.files.Count + 1)) '配布される監修ファイルはマニフェスト掲載分と一致する'
+Check ((@(Get-ChildItem -LiteralPath (Join-Path $projectRoot 'docs/knowledge/supervision') -Directory).Name -join ',') -eq 'gag') '配布する専用監修はギャグのみ'
 Check ((Test-Path -LiteralPath (Join-Path $projectRoot 'docs\knowledge\story-structure.md')) -and
        (Test-Path -LiteralPath (Join-Path $projectRoot 'docs\knowledge\japanese-manga-readability.md'))) 'Knowledge is included'
 Check ((Test-Path -LiteralPath (Join-Path $projectRoot 'templates\panel-templates\catalog.json')) -and
@@ -110,6 +120,27 @@ $null = [IO.Directory]::CreateDirectory((Join-Path $fixture 'docs'))
 Copy-Item -LiteralPath (Join-Path $root 'docs\knowledge') -Destination (Join-Path $fixture 'docs\knowledge') -Recurse
 Copy-Item -LiteralPath (Join-Path $root 'distribution-version.txt') -Destination (Join-Path $fixture 'distribution-version.txt')
 Copy-Item -LiteralPath (Join-Path $root 'LICENSE') -Destination (Join-Path $fixture 'LICENSE')
+foreach ($relative in @('docs/knowledge/supervision/unlisted.md',
+                         'docs/knowledge/supervision/gag/unlisted.md')) {
+    $destination = Join-Path $fixture $relative
+    $null = [IO.Directory]::CreateDirectory((Split-Path $destination -Parent))
+    [IO.File]::WriteAllText($destination, 'マニフェスト未掲載ファイル')
+}
+$fixtureResult = & (Join-Path $fixture 'scripts\New-MangaProject.ps1') -ProjectName 'WithUnlistedFiles' -DestinationParent $testRoot
+$fixtureProject = (Resolve-Path -LiteralPath $fixtureResult.Path).ProviderPath
+Check (@(Get-ChildItem -LiteralPath (Join-Path $fixtureProject 'docs/knowledge/supervision') -Recurse -File | Where-Object {
+    $_.Name -eq 'unlisted.md'
+}).Count -eq 0) 'マニフェスト未掲載ファイルは作品へ配布されない'
+# 未許可パスは、マニフェストに追加しても作成前に拒否する。
+$fixtureManifest = Join-Path $fixture 'docs\knowledge\supervision\distribution.json'
+foreach ($unlistedPath in @('docs/knowledge/supervision/unlisted.md',
+                           'docs/knowledge/supervision/gag/unlisted.md')) {
+    $badKnowledge = [ordered]@{ schemaVersion = 1; files = @($knowledgeManifest.files) + @($unlistedPath) }
+    Write-Json $badKnowledge $fixtureManifest
+    Must-Fail { & (Join-Path $fixture 'scripts\New-MangaProject.ps1') -ProjectName 'RejectedEntries' -DestinationParent $testRoot } "未許可パスのマニフェスト追加を拒否する: $unlistedPath"
+}
+Check (-not (Test-Path -LiteralPath (Join-Path $testRoot 'RejectedEntries'))) '不正な知識配布では作品フォルダを作らない'
+Write-Json $knowledgeManifest $fixtureManifest
 [IO.File]::WriteAllText((Join-Path $fixture 'templates\manga-project\.env'), '# Empty accidental private config')
 Must-Fail { & (Join-Path $fixture 'scripts\New-MangaProject.ps1') -ProjectName 'RejectedSecrets' -DestinationParent $testRoot } 'Accidental private configuration in template is rejected'
 Check (-not (Test-Path -LiteralPath (Join-Path $testRoot 'RejectedSecrets'))) 'Invalid package leaves no target directory'

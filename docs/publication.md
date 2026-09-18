@@ -6,6 +6,8 @@
 
 ## 公開対象
 
+汎用知識は `docs/knowledge/manga/` とknowledge直下の既存文書に統合し、通常のknowledgeとして公開・配布します。`docs/knowledge/supervision/` は、`docs/knowledge/supervision/distribution.json` に列挙したギャグの監修文書とマニフェストだけを対象にします。
+
 README、作業ルール、共通知識、スキル、作品雛形、配布・動画補助スクリプト、テスト、`examples/` の公開用作例と説明を公開します。作例として指定したもの以外の入力原文、検討履歴、過去の版、素材、漫画・動画サンプル、ローカル環境情報、検証生成物は対象外です。
 
 `examples/` では通常の文書・コード形式に加えてPNGを公開できます。新規作品プロジェクトには作例をコピーしません。コマ枠素材は `templates/manga-project/templates/panel-templates/` の `index.html`、`svg/`・`guides/` 直下のSVG、`png/`・`previews/` 直下のPNGだけを追加で許可し、作品へ配布します。別の場所の画像やHTMLを一括で許可しません。
@@ -24,10 +26,12 @@ README、作業ルール、共通知識、スキル、作品雛形、配布・�
 python .\scripts\public_release.py check
 python .\scripts\check_panel_templates.py
 .\tests\Test-Scaffold.ps1
-python -m unittest discover -s tests -p 'test_*.py'
+python -X utf8 -m unittest discover -s tests -p 'test_*.py'
 ```
 
 公開検査は公開対象だけを読み、作業用の絶対パス、固定フォルダ名、ローカルリンク、許可しない形式や秘密情報らしい内容を確認します。外部URLは作業パスとして扱いません。動画編集テストはffmpeg・ffprobeがある場合に実行します。
+
+Windowsでも日本語を含む検証記録を読めるよう、Pythonの全体テストは `-X utf8` を付けて実行します。
 
 コマ枠素材を変更したときだけ、キットで `python scripts/build_panel_templates.py`、`node scripts/render_panel_templates.cjs --all` の順に再生成します。後者にはNode.js・Playwrightと対応ブラウザーが必要です。生成処理は作品設定JSONを上書きしません。通常の作品制作では同梱素材を使います。
 

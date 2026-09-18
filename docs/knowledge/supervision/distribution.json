@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "files": [
+    "docs/knowledge/supervision/README.md",
+    "docs/knowledge/supervision/routing.md",
+    "docs/knowledge/supervision/gag/README.md",
+    "docs/knowledge/supervision/gag/know-how.md",
+    "docs/knowledge/supervision/gag/mechanisms.md",
+    "docs/knowledge/supervision/gag/design-and-review.md"
+  ]
+}

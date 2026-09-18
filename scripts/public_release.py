@@ -24,6 +24,11 @@ OLD_FOLDER_NAME = 'Proto' + 'type'
 ABSOLUTE_PATH = re.compile(r'(?<![\w])(?:[A-Za-z]:[\\/]|\\\\[\w.-]+\\[\w.$ -]+|/(?:Users|home|mnt|tmp|opt|var)/)')
 URL = re.compile(r'https?://[^\s<>`\])]+')
 SECRET = re.compile(r'(?:gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|sk-[A-Za-z0-9_-]{30,}|-----BEGIN (?:RSA |OPENSSH |EC )?PRIVATE KEY-----)')
+KNOWLEDGE_MANIFEST = 'docs/knowledge/supervision/distribution.json'
+KNOWLEDGE_PATH = re.compile(
+    r'(?:docs/knowledge/supervision/(?:README|routing)\.md'
+    r'|docs/knowledge/supervision/gag/(?:README|mechanisms|design-and-review|know-how)\.md)'
+)
 
 
 def public_files(root=ROOT):
@@ -36,10 +41,27 @@ def public_files(root=ROOT):
                 break
             if current.is_symlink() or (getattr(current.stat(), 'st_file_attributes', 0) & 0x400):
                 raise ValueError(f'公開範囲にリンクがあります: {path.relative_to(root)}')
-    for relative in (*ROOT_FILES, *(f'docs/{name}' for name in DOC_FILES)):
+    for relative in (*ROOT_FILES, *(f'docs/{name}' for name in DOC_FILES), KNOWLEDGE_MANIFEST):
         path = root / relative
         if not path.is_file() or path.is_symlink():
             raise ValueError(f'公開ファイルがないか、リンクになっています: {relative}')
+        reject_link(path)
+        files.append(path)
+    manifest = json.loads((root / KNOWLEDGE_MANIFEST).read_text(encoding='utf-8-sig'))
+    if (not isinstance(manifest, dict) or type(manifest.get('schemaVersion')) is not int
+            or manifest['schemaVersion'] != 1 or not isinstance(manifest.get('files'), list)
+            or not manifest['files']):
+        raise ValueError('知識の配布マニフェストが不正です。')
+    seen = set()
+    for relative in manifest['files']:
+        if not isinstance(relative, str) or not KNOWLEDGE_PATH.fullmatch(relative):
+            raise ValueError(f'知識の配布に許可されていないパスです: {relative}')
+        if relative.casefold() in seen:
+            raise ValueError(f'知識の配布パスが重複しています: {relative}')
+        seen.add(relative.casefold())
+        path = root / relative
+        if not path.is_file():
+            raise ValueError(f'配布する知識がありません: {relative}')
         reject_link(path)
         files.append(path)
     for relative in PUBLIC_TREES:
@@ -53,6 +75,9 @@ def public_files(root=ROOT):
                 if directory.is_symlink() or (getattr(directory.stat(), 'st_file_attributes', 0) & 0x400):
                     raise ValueError(f'公開範囲にリンクがあります: {directory.relative_to(root)}')
             directories[:] = [name for name in directories if name != '__pycache__']
+            # 監修は明示リストから列挙するため、一括走査から除外する。
+            if relative == 'docs/knowledge' and Path(current) == base:
+                directories[:] = [name for name in directories if name != 'supervision']
             for name in filenames:
                 path = Path(current) / name
                 if path.suffix in ('.pyc', '.pyo'):

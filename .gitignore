@@ -92,3 +92,15 @@ __pycache__/
 credentials.json
 secrets.json
 *.local.json
+
+# ギャグ監修はdistribution.jsonと同時に更新する。
+/docs/knowledge/supervision/*
+!/docs/knowledge/supervision/distribution.json
+!/docs/knowledge/supervision/README.md
+!/docs/knowledge/supervision/routing.md
+!/docs/knowledge/supervision/gag/
+/docs/knowledge/supervision/gag/*
+!/docs/knowledge/supervision/gag/README.md
+!/docs/knowledge/supervision/gag/know-how.md
+!/docs/knowledge/supervision/gag/mechanisms.md
+!/docs/knowledge/supervision/gag/design-and-review.md

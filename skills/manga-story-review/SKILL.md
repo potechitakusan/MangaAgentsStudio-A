@@ -13,4 +13,4 @@ description: 漫画のあらすじや1話、シーンの欲求・対立・因果
 
 結果は対象箇所、観察、読者への影響の仮説、重大度、改善案、失う効果を含める。依頼が相談なら提案と選択理由を示す。レビューでは問題なしや判断不能も正直に記録する。最終的な採否はメインエージェントが統合して `docs/reviews/` に残し、再利用できる結果のフィードバックは、ユーザーが記録を依頼した場合だけ `docs/feedback/` に残す。依頼がなければ記録するかの確認も行わない。
 
-物語と人物は `docs/knowledge/manga/05-story-character.md`、連載・群像・ギャグは `docs/knowledge/manga/06-series-comedy.md` の必要箇所を参照する。映画の幕や比率を漫画のページ数に固定換算しない。
+物語・人物・伏線回収・終幕は `docs/knowledge/manga/05-story-character.md`、演技と言葉の関係は `docs/knowledge/manga/04-scene-dialogue-props.md`、連載・群像・ギャグは `docs/knowledge/manga/06-series-comedy.md` の必要箇所を参照する。映画の幕や比率を漫画のページ数に固定換算しない。笑いを狙う場面の表現案は `manga-supervision` に相談し、物語の中心効果との両立をメインが判断する。

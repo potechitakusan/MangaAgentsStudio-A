@@ -13,4 +13,4 @@ description: 字コンテやネームの没入感、無言コマ、感情の間�
 
 結果は対象箇所、観察、読者への影響の仮説、重大度、改善案、失う効果を含める。依頼が相談なら提案と選択理由を示す。レビューでは問題なしや判断不能も正直に記録する。最終的な採否はメインエージェントが統合して `docs/reviews/` に残し、再利用できる結果のフィードバックは、ユーザーが記録を依頼した場合だけ `docs/feedback/` に残す。依頼がなければ記録するかの確認も行わない。
 
-変化の単位・緩急・情報の提示順は `docs/knowledge/manga/03-beat-pacing-timing.md`、比較例は `docs/knowledge/manga/09-worked-example.md` を必要時に参照する。通読ではエージェントの点検と人間の初読を区別する。
+人物の認識と行為、情報負荷、前振りと欲求への応答、無言・反復の機能は `docs/knowledge/manga/03-beat-pacing-timing.md`、身振りと言葉は `docs/knowledge/manga/04-scene-dialogue-props.md`、比較例は `docs/knowledge/manga/09-worked-example.md` を必要時に参照する。静かな調子や大きな誇張そのものを一律に推奨せず、今回の狙いが伝わるかで判断する。通読ではエージェントの点検と人間の初読を区別する。

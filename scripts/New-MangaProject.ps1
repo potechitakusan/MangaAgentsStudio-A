@@ -36,12 +36,12 @@ function Assert-NoLinks([string]$Path) {
         if ($current -is [IO.FileInfo]) { $current = $current.Directory } else { $current = $current.Parent }
     }
 }
-function Get-PackageFiles([string]$Root) {
+function Get-PackageFiles([string]$Root, [string[]]$SkipDirectories = @()) {
     # Inspect each directory before descending, so a junction is never followed.
     foreach ($item in (Get-ChildItem -LiteralPath $Root -Force)) {
         if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { throw "Linked package content: $($item.FullName)" }
         if ($item.PSIsContainer) {
-            if ($item.Name -ne '__pycache__') { Get-PackageFiles $item.FullName }
+            if ($item.Name -ne '__pycache__' -and $item.Name -notin $SkipDirectories) { Get-PackageFiles $item.FullName }
         } else { $item }
     }
 }
@@ -58,7 +58,9 @@ foreach ($mapping in $mappings) {
     $sourceRoot = Join-Path $sourceRootPath $mapping.Source
     if (-not (Test-Path -LiteralPath $sourceRoot -PathType Container)) { throw "Missing source directory: $sourceRoot" }
     Assert-NoLinks $sourceRoot
-    $files = @(Get-PackageFiles $sourceRoot)
+    # supervisionは後で明示リストから配布するため、一括コピーから除外する。
+    $skipDirectories = if ($mapping.Source -eq 'docs\knowledge') { @('supervision') } else { @() }
+    $files = @(Get-PackageFiles $sourceRoot -SkipDirectories $skipDirectories)
     if ($files.Count -eq 0) { throw "Empty package directory: $sourceRoot" }
     foreach ($file in $files) {
         $relative = $file.FullName.Substring($sourceRoot.Length).TrimStart('\')
@@ -74,6 +76,27 @@ foreach ($mapping in $mappings) {
         $package.Add([pscustomobject]@{ Source = $file.FullName; Destination = $destination })
     }
 }
+# 監修知識を明示リストから配布する。
+$knowledgeManifestRelative = 'docs/knowledge/supervision/distribution.json'
+$knowledgeManifestPath = Join-Path $sourceRootPath $knowledgeManifestRelative
+Assert-NoLinks $knowledgeManifestPath
+$knowledgeManifest = Get-Content -LiteralPath $knowledgeManifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+if ($knowledgeManifest.schemaVersion -isnot [int] -or $knowledgeManifest.schemaVersion -ne 1 -or
+    $knowledgeManifest.files -isnot [array] -or $knowledgeManifest.files.Count -eq 0) {
+    throw '知識の配布マニフェストが不正です。'
+}
+$knowledgePattern = '\A(?:docs/knowledge/supervision/(?:README|routing)\.md|docs/knowledge/supervision/gag/(?:README|mechanisms|design-and-review|know-how)\.md)\z'
+$knowledgeSeen = @{}
+foreach ($relative in $knowledgeManifest.files) {
+    if ($relative -isnot [string] -or $relative -cnotmatch $knowledgePattern) { throw "知識の配布に許可されていないパスです: $relative" }
+    if ($knowledgeSeen.ContainsKey($relative)) { throw "知識の配布パスが重複しています: $relative" }
+    $knowledgeSeen[$relative] = $true
+    $source = Join-Path $sourceRootPath $relative
+    if (-not (Test-Path -LiteralPath $source -PathType Leaf)) { throw "配布する知識がありません: $relative" }
+    Assert-NoLinks $source
+    $package.Add([pscustomobject]@{ Source = $source; Destination = $relative.Replace('/', '\') })
+}
+$package.Add([pscustomobject]@{ Source = $knowledgeManifestPath; Destination = $knowledgeManifestRelative.Replace('/', '\') })
 $resolver = Join-Path $PSScriptRoot 'Resolve-ReviewProfile.ps1'
 $null = & $resolver -ConfigPath (Join-Path $sourceRootPath 'templates\manga-project\config\review-profiles.json')
 $package.Add([pscustomobject]@{ Source = $resolver; Destination = 'scripts\Resolve-ReviewProfile.ps1' })

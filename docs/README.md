@@ -10,6 +10,9 @@
 | 作品フォルダを作る | [構成と配布](architecture.md) |
 | 作成先でCodexを開き直す | [アプリ・VS Codeの最新手順の調べ方と案内](knowledge/codex-operation.md#作品フォルダでcodexを開き直す) |
 | レビューの重点を決める | [レビュー運用](knowledge/review-workflow.md) |
+| 共通知識と利用Skillを選ぶ | [人物・情報・読みやすさ・終幕](knowledge/review-workflow.md#common-knowledge) |
+| ギャグの場面を監修する | [ギャグのノウハウ](knowledge/supervision/gag/README.md)、[監修スキル](../skills/manga-supervision/SKILL.md) |
+| 収録内容と配布方法を確認する | [構成と配布](architecture.md) |
 | 作画の環境と一貫性を考える | [AIによる画像制作](knowledge/ai-production.md) |
 | PNG確認からPSDへ進む | [PSD引き渡し](knowledge/psd-handoff.md) |
 | 任意の動画試作を行う | [動画試作](knowledge/video-previsualization.md)、[動画補助処理](knowledge/video-tools.md) |
