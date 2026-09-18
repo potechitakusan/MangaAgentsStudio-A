@@ -4,7 +4,7 @@
 
 - 共通知識の入口: [制作運用](docs/knowledge/review-workflow.md)
 - 共通知識と利用Skillの対応: [汎用ノウハウ](docs/knowledge/review-workflow.md#common-knowledge)
-- ギャグの表現相談と画像レビュー: [監修（ギャグのみ）](docs/knowledge/supervision/README.md)、[監修記録](docs/reviews/SUPERVISION.md)
+- 場面の笑い・魅力・感情・関係・展開の表現相談と画像レビュー: [場面ごとの監修](docs/knowledge/supervision/README.md)、[監修記録](docs/reviews/SUPERVISION.md)
 - 記録依頼がある場合のフィードバック: [フィードバック手順](docs/knowledge/feedback-workflow.md)
 - 環境設定: [セットアップ](docs/SETUP.md)
 - 設定確認: `.\scripts\Resolve-ReviewProfile.ps1 -Preset 'daily'`

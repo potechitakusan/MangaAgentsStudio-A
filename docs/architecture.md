@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | `docs/knowledge/manga/` | 漫画の工程・技法。人物・情報・演技・回収の汎用知識も該当項目へ統合 | 同じ相対パスへコピー |
 | `docs/knowledge/` 直下 | 読みやすさ等の観点別詳細、共通レビュー、PSD・設定・操作などの運用手順 | 同じ相対パスへコピー |
-| `docs/knowledge/supervision/` | ギャグの監修知識・利用手順 | 明示リストの文書とマニフェストを同梱 |
+| `docs/knowledge/supervision/` | 場面ごとの監修知識・出典・利用手順 | 明示リストの文書とマニフェストを同梱 |
 | `skills/` | 役割別スキルの原本 | `.agents/skills/` へコピー |
 | `templates/manga-project/` | 作品設定・記録の雛形、コマ割りテンプレート素材 | 作品ルートへコピー |
 | `templates/manga-project/OPTION.md` | 制作開始時に変更できる９項目の初期設定 | 作品ルートへコピー。適用手順は `docs/knowledge/project-options.md` |
@@ -26,7 +26,7 @@
 
 ## 新規作品を作る
 
-`manga-supervision` は版0.3.1ではギャグのみを監修し、字コンテの相談と画像レビューに使います。手順はスキル、知識は `docs/knowledge/supervision/gag/` に置きます。メインエージェントが採否を統合し、独立したエージェントの常時起動は要求しません。
+`manga-supervision` は版0.3.2では既存のギャグと、追加15テーマの試行版を扱い、字コンテの相談と画像レビューに使います。手順はスキル、知識は `docs/knowledge/supervision/` のテーマ別文書、追加15テーマの出典は同フォルダの `sources.md` に置きます。メインエージェントが採否を統合し、独立したエージェントの常時起動は要求しません。
 
 汎用知識は用途の同じ既存文書へ統合し、通常のknowledgeとして配布します。[共通知識と利用Skillの対応](knowledge/review-workflow.md#common-knowledge)を入口に、用途とレビュー観点に沿って分類・統合します。監修知識だけは `docs/knowledge/supervision/distribution.json` の明示リストで制御し、通常のコピーから `supervision/` を除いて一度だけ組み込みます。監修文書を追加・変更する場合はリスト、許可するパス、`.gitignore` をそろえ、配布・公開テストを実行します。
 
@@ -51,6 +51,6 @@
 
 初回公開版は `0.1.0`。以降は `distribution-version.txt` を更新して配布します。既存作品は自動同期せず、必要な場合に作品側の変更と比較します。
 
-`0.3.1` では汎用知識を `docs/knowledge/manga/` とknowledge直下の既存文書へ、ギャグ監修を `docs/knowledge/supervision/gag/` へ配置し、参照するスキルも統合先へそろえています。以前に作成した作品は、その作品内の配置とスキルの組み合わせで引き続き利用できます。既存作品を移行するときは、知識だけでなく参照するスキル・文書・配布記録も合わせて確認します。
+`0.3.1` では汎用知識を `docs/knowledge/manga/` とknowledge直下の既存文書へ、ギャグ監修を `docs/knowledge/supervision/gag/` へ配置しました。`0.3.2` では 場面監修15テーマと出典台帳を同梱します。テーマの一覧は `docs/knowledge/supervision/README.md`、許可するファイルは `distribution.json` にまとめます。以前に作成した作品は、その作品内の配置とスキルの組み合わせで引き続き利用できます。既存作品を移行するときは、知識だけでなく参照するスキル・文書・配布記録も合わせて確認します。
 
 作品側のフィードバック記録は、残してほしいと依頼された場合だけ行います。記録するかの質問や、毎回の還元候補づくりは行いません。通常の進捗・制作判断・納品検証は必要な範囲で継続します。[フィードバック手順](knowledge/feedback-workflow.md)を参照してください。

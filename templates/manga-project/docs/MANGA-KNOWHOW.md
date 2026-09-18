@@ -8,7 +8,7 @@
 
 ## 使う場面から選ぶ
 
-版0.3.1に収録する [汎用ノウハウ](knowledge/review-workflow.md#common-knowledge) は下の文書から選び、人物・因果・情報・読順・終幕に使う。[ギャグ監修](knowledge/supervision/gag/README.md) は笑いを狙う場面の字コンテ相談とPNGプレビューの改善に使い、`manga-supervision` で必要な本文を選ぶ。
+版0.3.2に収録する [汎用ノウハウ](knowledge/review-workflow.md#common-knowledge) は下の文書から選び、人物・因果・情報・読順・終幕に使う。[場面ごとの監修](knowledge/supervision/README.md) は既存のギャグと追加15テーマの字コンテ相談とPNGプレビューの改善に使い、`manga-supervision` で必要な本文を選ぶ。追加15テーマは試行版で、一般的な読者効果は未検証。作品ごとの画像・試読で確かめる。
 
 | 困っていること・工程 | 読むノウハウ | 記入・確認先 |
 | --- | --- | --- |

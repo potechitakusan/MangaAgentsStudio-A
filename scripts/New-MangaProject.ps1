@@ -85,7 +85,7 @@ if ($knowledgeManifest.schemaVersion -isnot [int] -or $knowledgeManifest.schemaV
     $knowledgeManifest.files -isnot [array] -or $knowledgeManifest.files.Count -eq 0) {
     throw '知識の配布マニフェストが不正です。'
 }
-$knowledgePattern = '\A(?:docs/knowledge/supervision/(?:README|routing)\.md|docs/knowledge/supervision/gag/(?:README|mechanisms|design-and-review|know-how)\.md)\z'
+$knowledgePattern = '\A(?:docs/knowledge/supervision/(?:README|routing|sources)\.md|docs/knowledge/supervision/gag/(?:README|mechanisms|design-and-review|know-how)\.md|docs/knowledge/supervision/(?:tsukkomi|allure|stature|horror|conflict|grief|romance|trust|awkwardness|urgency|revelation|payoff|endearment|bargaining|reconciliation)/README\.md)\z'
 $knowledgeSeen = @{}
 foreach ($relative in $knowledgeManifest.files) {
     if ($relative -isnot [string] -or $relative -cnotmatch $knowledgePattern) { throw "知識の配布に許可されていないパスです: $relative" }
