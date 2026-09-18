@@ -1,6 +1,8 @@
 """直接コミットする公開対象への私的データ混入と検査の非破壊性を検証する。"""
 import hashlib
+import json
 from pathlib import Path
+import re
 import shutil
 import struct
 import subprocess
@@ -36,6 +38,8 @@ class PublicReleaseTests(unittest.TestCase):
     def test_private_files_are_excluded_and_examples_are_included(self):
         private_names = ('backup/private.txt', '.work/private.txt', 'output/example.mp4', 'input/request.txt',
                          'docs/PLAN.md', 'docs/PROGRESS.md', 'matelial/private.png',
+                         'docs/knowledge/supervision/unlisted.md',
+                         'docs/knowledge/supervision/gag/unlisted.md',
                          '特別な理由でこのフォルダの中で漫画を作ります.txt')
         for name in private_names:
             path = self.root / name
@@ -97,12 +101,48 @@ class PublicReleaseTests(unittest.TestCase):
                 self.assertTrue(any('PNGの検査に失敗' in error for error in check(self.root)['errors']))
 
     def test_git_candidates_cover_public_files(self):
-        # 実際のGit追加候補と検査対象を照合し、素材の配布漏れを検出する。
+        # 配布元に.gitがない場合も、隔離した検証用リポジトリで追加候補を照合する。
+        subprocess.run(['git', 'init', '--quiet'], cwd=self.root, check=True, capture_output=True)
+        # 除外設定の単一階層パターンからテスト用フォルダを生成する。
+        ignore_patterns = (self.root / '.gitignore').read_text(encoding='utf-8')
+        ignored_directories = re.findall(r'^([\w.-]+/)\s*$', ignore_patterns, re.MULTILINE)
+        self.assertTrue(ignored_directories)
+        private_names = [name + 'temp.md' for name in ignored_directories] + [
+            'docs/PLAN.md', 'docs/PROGRESS.md',
+            'docs/knowledge/supervision/unlisted.md',
+            'docs/knowledge/supervision/gag/unlisted.md',
+        ]
+        for name in private_names:
+            path = self.root / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text('除外検査用のテストデータ', encoding='utf-8')
         result = subprocess.run(['git', 'ls-files', '--cached', '--others', '--exclude-standard', '-z'],
-                                cwd=ROOT, check=True, capture_output=True)
+                                cwd=self.root, check=True, capture_output=True)
         candidates = set(result.stdout.decode('utf-8').split('\0')) - {''}
-        expected = {p.relative_to(ROOT).as_posix() for p in public_files(ROOT)}
+        expected = {p.relative_to(self.root).as_posix() for p in public_files(self.root)}
         self.assertEqual(expected, candidates)
+
+    def test_knowledge_manifest_rejects_unlisted_paths_and_duplicates(self):
+        path = self.root / 'docs/knowledge/supervision/distribution.json'
+        manifest = json.loads(path.read_text(encoding='utf-8'))
+        for extra in ('docs/knowledge/supervision/unlisted.md',
+                      'docs/knowledge/supervision/gag/unlisted.md',
+                      'docs/knowledge/unlisted.md',
+                      '../unlisted.md', manifest['files'][0]):
+            with self.subTest(extra=extra):
+                changed = dict(manifest, files=manifest['files'] + [extra])
+                path.write_text(json.dumps(changed), encoding='utf-8')
+                with self.assertRaises(ValueError):
+                    public_files(self.root)
+
+    def test_distributed_knowledge_link_is_checked(self):
+        path = self.root / 'templates/manga-project/README.md'
+        with path.open('a', encoding='utf-8') as stream:
+            stream.write('\n[汎用](docs/knowledge/manga/03-beat-pacing-timing.md#reader-anticipation)\n')
+        self.assertFalse(check(self.root)['errors'])
+        with path.open('a', encoding='utf-8') as stream:
+            stream.write('\n[リンクテスト](docs/knowledge/supervision/unlisted.md)\n')
+        self.assertTrue(any('リンク' in error for error in check(self.root)['errors']))
 
     def test_panel_media_permission_is_limited_to_designated_locations(self):
         for name in ('scripts/panel-templates-private.png', 'docs/knowledge/panel-templates/private.png',
