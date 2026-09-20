@@ -14,11 +14,14 @@ import zlib
 ROOT = Path(__file__).resolve().parents[1]
 ROOT_FILES = ('.gitignore', '.gitattributes', 'README.md', 'AGENTS.md', 'LICENSE', 'distribution-version.txt')
 DOC_FILES = ('README.md', 'architecture.md', 'SOURCES.md', 'RIGHTS.md', 'publication.md')
-PUBLIC_TREES = ('docs/knowledge', 'skills', 'templates/manga-project', 'scripts', 'tests', 'examples')
+PUBLIC_TREES = ('docs/knowledge', 'skills', 'templates/manga-project', 'resources', 'scripts', 'tests', 'examples')
 EXTENSIONS = {'.md', '.py', '.ps1', '.json'}
 PANEL_ROOT = 'templates/manga-project/templates/panel-templates'
+NOVELAI_RESOURCE_ROOT = 'resources/novelai-style-samples'
+TEMPLATE_REQUIREMENTS = 'templates/manga-project/scripts/requirements-composition.txt'
 PNG_SIGNATURE = b'\x89PNG\r\n\x1a\n'
 PNG_IMAGE_CHUNKS = {b'IHDR', b'PLTE', b'IDAT', b'IEND', b'tRNS'}
+WEBP_IMAGE_CHUNKS = {b'VP8 ', b'VP8L', b'VP8X', b'ALPH', b'ANIM', b'ANMF'}
 SPECIAL_FILES = {'.gitignore', '.env.example'}
 OLD_FOLDER_NAME = 'Proto' + 'type'
 ABSOLUTE_PATH = re.compile(r'(?<![\w])(?:[A-Za-z]:[\\/]|\\\\[\w.-]+\\[\w.$ -]+|/(?:Users|home|mnt|tmp|opt|var)/)')
@@ -92,8 +95,17 @@ def public_files(root=ROOT):
                     or (path.parent.relative_to(root).as_posix() in (f'{PANEL_ROOT}/svg', f'{PANEL_ROOT}/guides') and path.suffix == '.svg')
                     or (path.parent.relative_to(root).as_posix() in (f'{PANEL_ROOT}/png', f'{PANEL_ROOT}/previews') and path.suffix == '.png')
                 )
+                novelai_resource = (
+                    relative_path == f'{NOVELAI_RESOURCE_ROOT}/index.html'
+                    or (path.parent.relative_to(root).as_posix() == f'{NOVELAI_RESOURCE_ROOT}/previews' and path.suffix == '.webp')
+                )
+                onomatopoeia_asset = (
+                    relative_path == 'templates/manga-project/templates/onomatopoeia/index.html'
+                    or (path.parent.relative_to(root).as_posix() == 'templates/manga-project/templates/onomatopoeia/images' and path.suffix == '.webp')
+                )
                 panel_renderer = relative_path == 'scripts/render_panel_templates.cjs'
-                if path.suffix not in EXTENSIONS and name not in SPECIAL_FILES and not example_png and not panel_asset and not panel_renderer:
+                template_requirements = relative_path == TEMPLATE_REQUIREMENTS
+                if path.suffix not in EXTENSIONS and name not in SPECIAL_FILES and not example_png and not panel_asset and not novelai_resource and not onomatopoeia_asset and not panel_renderer and not template_requirements:
                     raise ValueError(f'公開範囲に想定外のファイルがあります: {relative_path}')
                 if (name.startswith('.env') and name != '.env.example') or '.secrets' in path.parts:
                     raise ValueError(f'公開範囲に秘密設定があります: {relative_path}')
@@ -130,6 +142,28 @@ def png_chunks(data):
                 raise ValueError('PNGに画像データがありません。')
             return chunks
     raise ValueError('PNGにIENDがありません。')
+
+
+def webp_chunks(data):
+    """WebPのRIFF区切りを検査し、チャンクを取り出す。"""
+    if len(data) < 12 or data[:4] != b'RIFF' or data[8:12] != b'WEBP':
+        raise ValueError('WebPのRIFF署名が不正です。')
+    if struct.unpack_from('<I', data, 4)[0] != len(data) - 8:
+        raise ValueError('WebPのRIFFサイズが不正です。')
+    chunks, offset = [], 12
+    while offset < len(data):
+        if offset + 8 > len(data):
+            raise ValueError('WebPチャンクが途中で切れています。')
+        length = struct.unpack_from('<I', data, offset + 4)[0]
+        end = offset + 8 + length + (length & 1)
+        if end > len(data):
+            raise ValueError('WebPチャンクの長さが不正です。')
+        kind = data[offset:offset + 4]
+        chunks.append((kind, data[offset:end]))
+        offset = end
+    if not any(kind in {b'VP8 ', b'VP8L', b'ANMF'} for kind, _ in chunks):
+        raise ValueError('WebPに画像データがありません。')
+    return chunks
 
 
 def anchors(body):
@@ -182,6 +216,13 @@ def check(root=ROOT):
                     errors.append(f'PNGに公開前に除去するメタ情報があります: {relative}')
             except ValueError as error:
                 errors.append(f'PNGの検査に失敗しました: {relative}: {error}')
+            continue
+        if path.suffix == '.webp':
+            try:
+                if any(kind not in WEBP_IMAGE_CHUNKS for kind, _ in webp_chunks(path.read_bytes())):
+                    errors.append(f'WebPに公開前に除去するメタ情報があります: {relative}')
+            except ValueError as error:
+                errors.append(f'WebPの検査に失敗しました: {relative}: {error}')
             continue
         body = path.read_text(encoding='utf-8-sig')
         without_urls = URL.sub('', body)

@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "透過オノマトペ素材カタログ",
+  "type": "object",
+  "required": ["schema_version", "license", "styles", "entries"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "license": {"const": "CC0-1.0"},
+    "attribution_required": {"const": false},
+    "styles": {"type": "array", "minItems": 3},
+    "entries": {
+      "type": "array", "items": {
+        "type": "object",
+        "required": ["id", "kind", "text", "reading", "style_id", "tags", "meaning_ja", "intensity", "grapheme_count", "repeat", "license", "image"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^(block|burst|drybrush)-[a-z0-9-]+$"},
+          "kind": {"enum": ["word", "repeat"]},
+          "text": {"type": "string", "minLength": 1},
+          "reading": {"type": "string"},
+          "style_id": {"enum": ["block", "burst", "drybrush"]},
+          "tags": {"type": "array", "items": {"type": "string"}},
+          "meaning_ja": {"type": "string"},
+          "intensity": {"type": "integer", "minimum": 1, "maximum": 5},
+          "grapheme_count": {"type": "integer", "minimum": 1},
+          "repeat": {"oneOf": [
+            {"type": "null"},
+            {"type": "object", "required": ["unit", "count", "method"], "properties": {"unit": {"type": "string", "minLength": 1, "maxLength": 1}, "count": {"enum": [4,5,6,7]}, "method": {"type": "string"}}}
+          ]},
+          "license": {"const": "CC0-1.0"},
+          "attribution_required": {"const": false},
+          "image": {
+            "type": "object", "required": ["path", "format", "width", "height", "bytes", "sha256", "alpha", "lossless_encoding"],
+            "properties": {
+              "path": {"type": "string", "pattern": "^images/[^/]+\\.(png|webp)$"},
+              "format": {"enum": ["png", "webp"]},
+              "width": {"type": "integer", "minimum": 1},
+              "height": {"type": "integer", "minimum": 1, "maximum": 256},
+              "bytes": {"type": "integer", "minimum": 1},
+              "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "alpha": {"const": true},
+              "lossless_encoding": {"const": true}
+            }
+          }
+        }
+      }
+    }
+  }
+}

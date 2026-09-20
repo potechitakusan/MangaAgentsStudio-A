@@ -11,6 +11,7 @@
 | `docs/knowledge/supervision/` | 場面ごとの監修知識・出典・利用手順 | 明示リストの文書とマニフェストを同梱 |
 | `skills/` | 役割別スキルの原本 | `.agents/skills/` へコピー |
 | `templates/manga-project/` | 作品設定・記録の雛形、コマ割りテンプレート素材 | 作品ルートへコピー |
+| `resources/novelai-style-samples/` | NovelAI画風候補のキット専用閲覧見本 | キットにのみ同梱。新規作品へコピーしない |
 | `templates/manga-project/OPTION.md` | Web制作を基本とする、用途・好みで選べる初期設定 | 作品ルートへコピー。適用手順は `docs/knowledge/project-options.md` |
 | `templates/manga-project/PRINT-OPTION.md` | 印刷を選んだ場合だけ使う設定・仕様・検証記録 | 作品ルートへコピー。既定は使用しない |
 | `templates/manga-project/config/page-layout.json` | 生成希望・枠配置・最終PNGの寸法、余白・線幅の換算基準と固定指定 | 同じ相対パスへコピー。版2は生成実寸に合わせる。版1の固定寸法も配置処理で読める |

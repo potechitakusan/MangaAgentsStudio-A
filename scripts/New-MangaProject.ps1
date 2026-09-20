@@ -48,7 +48,7 @@ function Get-PackageFiles([string]$Root, [string[]]$SkipDirectories = @()) {
 Assert-NoLinks $parentPath
 Assert-NoLinks $sourceRootPath
 $mappings = @(
-    @{ Source = 'templates\manga-project'; Target = ''; Extensions = @('.md', '.json'); Special = @('.gitignore', '.env.example') },
+    @{ Source = 'templates\manga-project'; Target = ''; Extensions = @('.md', '.json', '.py'); Special = @('.gitignore', '.env.example', 'requirements-composition.txt') },
     @{ Source = 'docs\knowledge'; Target = 'docs\knowledge'; Extensions = @('.md'); Special = @() },
     @{ Source = 'skills'; Target = '.agents\skills'; Extensions = @('.md'); Special = @() },
     @{ Source = 'scripts\video'; Target = 'scripts\video'; Extensions = @('.py'); Special = @() }
@@ -71,7 +71,11 @@ foreach ($mapping in $mappings) {
             $relative -eq 'templates\panel-templates\index.html' -or
             $relative -match '^templates\\panel-templates\\(svg|guides)\\[^\\]+\.svg$' -or
             $relative -match '^templates\\panel-templates\\(png|previews)\\[^\\]+\.png$')
-        if ($file.Extension -notin $mapping.Extensions -and $file.Name -notin $mapping.Special -and -not $panelAsset) { throw "Unexpected package file type: $relative" }
+        $onomatopoeiaAsset = $mapping.Source -eq 'templates\manga-project' -and
+            ($relative -eq 'templates\onomatopoeia\index.html' -or
+             $relative -match '^templates\\onomatopoeia\\images\\[^\\]+\.webp$')
+        if ($file.Extension -notin $mapping.Extensions -and $file.Name -notin $mapping.Special -and
+            -not $panelAsset -and -not $onomatopoeiaAsset) { throw "Unexpected package file type: $relative" }
         $destination = if ($mapping.Target) { Join-Path $mapping.Target $relative } else { $relative }
         $package.Add([pscustomobject]@{ Source = $file.FullName; Destination = $destination })
     }
