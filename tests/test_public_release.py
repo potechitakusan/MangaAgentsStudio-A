@@ -77,6 +77,26 @@ class PublicReleaseTests(unittest.TestCase):
         self.assertFalse(check(self.root)['errors'])
         self.assertEqual(snapshot(), before)
 
+    def test_personal_process_data_cannot_be_distributed(self):
+        template = self.root / 'templates/manga-project'
+        registry = template / 'config/process-requirements.json'
+        original = registry.read_bytes()
+        registry.write_text(json.dumps({'schemaVersion': 1, 'requirements': [{'instruction': '個人の指示'}]}), encoding='utf-8')
+        with self.assertRaises(ValueError):
+            public_files(self.root)
+        registry.write_bytes(original)
+        for relative, body in (('.work/process-checker/state.json', '{}'), ('.codex/hooks.json', '{}')):
+            path = template / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(body, encoding='utf-8')
+            with self.assertRaises(ValueError):
+                public_files(self.root)
+            path.unlink()
+        with (template / 'AGENTS.md').open('a', encoding='utf-8') as stream:
+            stream.write('\n<!-- process-checker:strong:start -->\n個人の指示\n<!-- process-checker:strong:end -->\n')
+        with self.assertRaises(ValueError):
+            public_files(self.root)
+
     def test_absolute_working_path_is_rejected_but_urls_are_allowed(self):
         path = self.root / 'docs/knowledge/fixture.md'
         path.write_text('参考: https://example.org/docs\n', encoding='utf-8')

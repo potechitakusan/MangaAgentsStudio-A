@@ -109,6 +109,19 @@ def public_files(root=ROOT):
                     raise ValueError(f'公開範囲に想定外のファイルがあります: {relative_path}')
                 if (name.startswith('.env') and name != '.env.example') or '.secrets' in path.parts:
                     raise ValueError(f'公開範囲に秘密設定があります: {relative_path}')
+                if relative == 'templates/manga-project':
+                    template_parts = path.relative_to(base).parts
+                    if any(part in ('.work', '.codex') for part in template_parts):
+                        raise ValueError(f'雛形へ個人の工程記録・Hooks設定を含めないでください: {relative_path}')
+                    if relative_path == 'templates/manga-project/config/process-requirements.json':
+                        process_data = json.loads(path.read_text(encoding='utf-8-sig'))
+                        if (not isinstance(process_data, dict)
+                                or type(process_data.get('schemaVersion')) is not int
+                                or process_data != {'schemaVersion': 1, 'requirements': []}):
+                            raise ValueError('配布原本のプロセス必須事項は空にしてください。')
+                    if relative_path == 'templates/manga-project/AGENTS.md':
+                        if '<!-- process-checker:strong:start -->' in path.read_text(encoding='utf-8-sig'):
+                            raise ValueError('雛形へ個人の強い指示を含めないでください。')
                 files.append(path)
     return sorted(set(files))
 

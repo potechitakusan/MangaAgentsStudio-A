@@ -5,7 +5,8 @@ param(
     [ValidateLength(1, 64)]
     [ValidatePattern('^[\p{L}\p{N}][\p{L}\p{N} _-]*$')]
     [string]$ProjectName,
-    [string]$DestinationParent
+    [string]$DestinationParent,
+    [string]$ProcessRequirementsFrom
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -47,6 +48,34 @@ function Get-PackageFiles([string]$Root, [string[]]$SkipDirectories = @()) {
 }
 Assert-NoLinks $parentPath
 Assert-NoLinks $sourceRootPath
+# 個人の必須事項を配布原本へ混入させない。引継ぎは明示された作品だけから行う。
+$processTemplatePath = Join-Path $sourceRootPath 'templates\manga-project\config\process-requirements.json'
+Assert-NoLinks $processTemplatePath
+$processTemplate = Get-Content -LiteralPath $processTemplatePath -Raw -Encoding UTF8 | ConvertFrom-Json
+if ($processTemplate.schemaVersion -isnot [int] -or $processTemplate.schemaVersion -ne 1 -or $processTemplate.requirements -isnot [array] -or
+    $processTemplate.requirements.Count -ne 0 -or @($processTemplate.PSObject.Properties).Count -ne 2) {
+    throw '配布原本のプロセス必須事項は空にしてください。個人の指示は作品側に保存します。'
+}
+$processAgentsPath = Join-Path $sourceRootPath 'templates\manga-project\AGENTS.md'
+Assert-NoLinks $processAgentsPath
+if ((Get-Content -LiteralPath $processAgentsPath -Raw -Encoding UTF8).Contains('<!-- process-checker:strong:start -->')) {
+    throw '雛形のAGENTS.mdへ個人の強い指示を含めないでください。'
+}
+$processSourceRootPath = $null
+$processSourceRelativePath = $null
+$processPython = $null
+if ($ProcessRequirementsFrom) {
+    $processSourceRootPath = (Get-Item -LiteralPath $ProcessRequirementsFrom -Force).FullName
+    Assert-NoLinks $processSourceRootPath
+    if (-not (Test-Path -LiteralPath (Join-Path $processSourceRootPath 'project.json') -PathType Leaf)) {
+        throw '引継ぎ元には作品のproject.jsonが必要です。'
+    }
+    $processSourceRelativePath = Get-RelativePath $target $processSourceRootPath
+    $processPython = Get-Command python -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+    if (-not $processPython) { throw '指示の引継ぎにはPython 3.10以上が必要です。通常の空プロジェクト作成では不要です。' }
+    $null = & $processPython.Source -X utf8 (Join-Path $PSScriptRoot 'process_checker.py') validate-source --from-project $processSourceRootPath
+    if ($LASTEXITCODE -ne 0) { throw '引継ぎ元の必須事項を確認できませんでした。新規作品はまだ作成していません。' }
+}
 $mappings = @(
     @{ Source = 'templates\manga-project'; Target = ''; Extensions = @('.md', '.json', '.py'); Special = @('.gitignore', '.env.example', 'requirements-composition.txt') },
     @{ Source = 'docs\knowledge'; Target = 'docs\knowledge'; Extensions = @('.md'); Special = @() },
@@ -64,7 +93,7 @@ foreach ($mapping in $mappings) {
     if ($files.Count -eq 0) { throw "Empty package directory: $sourceRoot" }
     foreach ($file in $files) {
         $relative = $file.FullName.Substring($sourceRoot.Length).TrimStart('\')
-        if ($relative -match '(^|[\\/])(\.secrets|\.git)([\\/]|$)' -or
+        if ($relative -match '(^|[\\/])(\.secrets|\.git|\.work|\.codex)([\\/]|$)' -or
             ($file.Name -like '.env*' -and $file.Name -ne '.env.example') -or
             $file.Name -match '(?i)(secret|credential|api[-_]?key|token)') { throw "Secret-like package filename: $relative" }
         $panelAsset = $mapping.Source -eq 'templates\manga-project' -and (
@@ -108,12 +137,14 @@ $validator = Join-Path $PSScriptRoot 'validate_panel_plan.py'
 $package.Add([pscustomobject]@{ Source = $validator; Destination = 'scripts\validate_panel_plan.py' })
 $package.Add([pscustomobject]@{ Source = (Join-Path $PSScriptRoot 'prepare_page_layout.py'); Destination = 'scripts\prepare_page_layout.py' })
 $package.Add([pscustomobject]@{ Source = (Join-Path $PSScriptRoot 'Initialize-OptionalSkills.ps1'); Destination = 'scripts\Initialize-OptionalSkills.ps1' })
+$package.Add([pscustomobject]@{ Source = (Join-Path $PSScriptRoot 'process_checker.py'); Destination = 'scripts\process_checker.py' })
 $package.Add([pscustomobject]@{ Source = (Join-Path $sourceRootPath 'LICENSE'); Destination = 'docs\toolkit-license.txt' })
 if (@($package | Group-Object Destination | Where-Object Count -gt 1).Count -gt 0) { throw 'Duplicate destination in package.' }
 $version = (Get-Content -LiteralPath (Join-Path $sourceRootPath 'distribution-version.txt') -Raw -Encoding UTF8).Trim()
 $snapshot = @($package | Sort-Object Destination | ForEach-Object {
     [ordered]@{ path = $_.Destination.Replace('\', '/'); sha256 = (Get-FileHash -LiteralPath $_.Source -Algorithm SHA256).Hash.ToLowerInvariant() }
 })
+$sourceKitRelativePath = Get-RelativePath $target $sourceRootPath
 $displayTarget = Get-RelativePath (Get-Location).ProviderPath $target
 if (-not $PSCmdlet.ShouldProcess($displayTarget, "配布版 $version から漫画プロジェクトを作成（$($package.Count) ファイル）")) { return }
 
@@ -126,13 +157,40 @@ try {
         $null = [IO.Directory]::CreateDirectory((Split-Path $destination -Parent))
         Copy-Item -LiteralPath $entry.Source -Destination $destination -ErrorAction Stop
     }
+    # 空の配布原本はGit管理し、個人の指示が入る作品側だけで除外する。
+    $processIgnorePath = Join-Path $target '.gitignore'
+    $processIgnore = [IO.File]::ReadAllText($processIgnorePath).TrimEnd() + "`n/config/process-requirements.json`n"
+    [IO.File]::WriteAllText($processIgnorePath, $processIgnore, [Text.UTF8Encoding]::new($false))
+    foreach ($entry in $snapshot) {
+        if ($entry.path -eq '.gitignore') {
+            $entry.sha256 = (Get-FileHash -LiteralPath $processIgnorePath -Algorithm SHA256).Hash.ToLowerInvariant()
+        }
+    }
     foreach ($directory in @('input', 'assets\characters', 'assets\references', 'workflows', 'output', '.secrets')) {
         $null = [IO.Directory]::CreateDirectory((Join-Path $target $directory))
     }
     $createdAt = [DateTimeOffset]::Now.ToString('o')
     $utf8 = [Text.UTF8Encoding]::new($false)
-    $project = [ordered]@{ schemaVersion = 1; name = $ProjectName; createdAt = $createdAt; distributionVersion = $version }
+    $project = [ordered]@{
+        schemaVersion = 1
+        name = $ProjectName
+        createdAt = $createdAt
+        distributionVersion = $version
+        sourceKitRelativePath = $sourceKitRelativePath
+    }
+    if ($processSourceRelativePath) { $project.processRequirementsSourceRelativePath = $processSourceRelativePath }
     [IO.File]::WriteAllText((Join-Path $target 'project.json'), ($project | ConvertTo-Json -Depth 10), $utf8)
+    if ($processSourceRootPath) {
+        $null = & $processPython.Source -X utf8 (Join-Path $target 'scripts\process_checker.py') --project $target import --from-project $processSourceRootPath
+        if ($LASTEXITCODE -ne 0) { throw '作品の作成途中で必須事項の引継ぎに失敗しました。完了扱いにせず、途中出力を確認してください。' }
+        # 引継ぎで変わった実ファイルを記録し、空の雛形のハッシュで検証済み扱いにしない。
+        foreach ($entry in $snapshot) {
+            if ($entry.path -in @('config/process-requirements.json', 'AGENTS.md')) {
+                $entry.sha256 = (Get-FileHash -LiteralPath (Join-Path $target $entry.path) -Algorithm SHA256).Hash.ToLowerInvariant()
+            }
+        }
+        Write-Host '明示した作品の引継ぎ対象指示をコピーしました。実施済み記録・Hooks設定・信頼情報は引き継いでいません。'
+    }
     $manifest = [ordered]@{ version = $version; createdAt = $createdAt; files = $snapshot }
     [IO.File]::WriteAllText((Join-Path $target 'docs\distribution-snapshot.json'), ($manifest | ConvertTo-Json -Depth 10), $utf8)
     Write-Host "漫画プロジェクトを作成しました。作成先の絶対パス: $target"
