@@ -20,9 +20,9 @@
 
 汎用知識は `docs/knowledge/manga/` とknowledge直下の既存文書に統合し、通常のknowledgeとして公開・配布します。`docs/knowledge/supervision/` は、`docs/knowledge/supervision/distribution.json` に列挙した監修文書・出典台帳とマニフェストだけを対象にします。調査の図版・草案履歴・検証課題は `.work/` に残し、同梱しません。
 
-README、作業ルール、共通知識、スキル、作品雛形、配布・動画補助スクリプト、テスト、`examples/` の公開用作例と説明を公開します。作例として指定したもの以外の入力原文、検討履歴、過去の版、素材、漫画・動画サンプル、ローカル環境情報、検証生成物は対象外です。
+README、作業ルール、共通知識、スキル、作品雛形、配布・動画補助スクリプト、テスト、`examples/` の公開用作例と説明を公開します。キット専用の `resources/novelai-style-samples/` は、匿名化した閲覧見本として公開対象に含めます。作例として指定したもの以外の入力原文、検討履歴、過去の版、素材、漫画・動画サンプル、ローカル環境情報、検証生成物は対象外です。
 
-`examples/` では通常の文書・コード形式に加えてPNGを公開できます。新規作品プロジェクトには作例をコピーしません。コマ枠素材は `templates/manga-project/templates/panel-templates/` の `index.html`、`svg/`・`guides/` 直下のSVG、`png/`・`previews/` 直下のPNGだけを追加で許可し、作品へ配布します。別の場所の画像やHTMLを一括で許可しません。
+`examples/` では通常の文書・コード形式に加えてPNGを公開できます。新規作品プロジェクトには作例をコピーしません。コマ枠素材は `templates/manga-project/templates/panel-templates/` の `index.html`、`svg/`・`guides/` 直下のSVG、`png/`・`previews/` 直下のPNGだけを追加で許可し、作品へ配布します。`resources/novelai-style-samples/` は `index.html` と `previews/` 直下のWebPだけを追加で許可し、新規作品へ配布しません。別の場所の画像やHTMLを一括で許可しません。
 
 公開するPNGはExif・テキスト・生成来歴・色プロファイル・解像度情報などの付加情報を除去します。公開検査では画像本体の `IHDR`・`PLTE`・`IDAT`・`IEND` と透明度の `tRNS` のみを許可し、その他のチャンクや末尾の余分なデータがあればエラーにします。画像本体は再圧縮せず保持し、寸法・画素データの一致を確認します。SVG・HTML・JSONも、作品名・セリフ・個人情報・ローカルパスなどを含まない汎用素材であることを確認します。
 

@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "adopted_on": "2026-09-20",
+  "workflow": "separate_images_then_composition",
+  "layout_owner": "Codex",
+  "novelai_task": "illustration_assets_only",
+  "camera": {
+    "preferred": ["from above", "from below", "from behind"],
+    "optional": ["dutch angle", "cinematic angle"],
+    "side_view_requires_intent": true,
+    "side_view_examples_ja": ["新人物と背景を同時に紹介する", "静止した動きで緊張感を示す"]
+  },
+  "composition": {"roomy_source": true, "allow_rotation": true, "allow_cropped_view": true, "preserve_full_source": true, "allow_character_breakout": true},
+  "opus": {
+    "checked_on": "2026-09-20",
+    "max_pixels_candidate": 1048576,
+    "max_steps_candidate": 28,
+    "n_samples": 1,
+    "require_zero_cost_and_remaining_allowance": true,
+    "stop_if_cost_unknown": true,
+    "upscale_or_outpaint_cost_must_be_checked_separately": true,
+    "page_pixels_independent_of_generation": true
+  },
+  "imagegen": {"purpose": "localized_fix_of_otherwise_accepted_image", "complex_sfx_edit_allowed": true},
+  "sfx": {"catalog": "templates/onomatopoeia/catalog.json", "template_monochrome_alpha_only": true, "prefer_existing": true, "generate_missing_transparent_asset": true, "color_derivatives_outside_template": true},
+  "dialogue": {"default_direction": "vertical", "vertical_alignment": "top"},
+  "psd": {"full_source_layers": true, "panel_masks": true, "original_before_imagegen_also_kept": true, "preview_and_approval_required": true, "smart_objects": false},
+  "implementation_note_ja": "運用設定。MCPへ自動注入するコードではない。キット側の制作開始手順で読み込み、費用・残枠を実際に確認してから送信する。"
+}

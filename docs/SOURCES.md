@@ -10,6 +10,16 @@
 
 | 出典 | 取得・確認日 |
 | --- | --- |
+| [NovelAI・契約条件](https://docs.novelai.net/en/subscription/) | 2026-09-20 |
+| [NovelAI・FAQ（使用枠）](https://docs.novelai.net/en/faq/) | 2026-09-20 |
+| [NovelAI・StepsとGuidance](https://docs.novelai.net/en/image/stepsguidance/) | 2026-09-20 |
+| [NovelAI・拡大](https://docs.novelai.net/en/image/upscale/) | 2026-09-20 |
+| [NovelAI・部分描画](https://docs.novelai.net/en/image/inpaint/) | 2026-09-20 |
+| [NovelAI・画風指定](https://docs.novelai.net/en/image/tutorial-artstyles/) | 2026-09-20 |
+| [NovelAI・数値強調](https://docs.novelai.net/en/image/strengthening-weakening/) | 2026-09-20 |
+| [psd-tools・レイヤー](https://psd-tools.readthedocs.io/en/stable/reference/psd_tools.api.layers.html) | 2026-09-20 |
+| [psd-tools・マスク](https://psd-tools.readthedocs.io/en/stable/reference/psd_tools.api.mask.html) | 2026-09-20 |
+| [CC0 1.0・概要](https://creativecommons.org/publicdomain/zero/1.0/deed.ja) | 2026-09-20 |
 | [S05: 水声社](https://comet-bc.stores.jp/items/684ba794f65f8000010119fc) | 2026-09-12 |
 | [Rethinking skills and prompts for GPT-6 Astra](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra) | 2026-09-12 |
 | [ComfyUI img2img](https://docs.comfy.org/tutorials/basic/image-to-image) | 2026-09-12 |

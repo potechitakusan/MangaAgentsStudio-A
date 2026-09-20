@@ -1,0 +1,218 @@
+{
+  "schema_version": 1,
+  "default_ids": [
+    "style-01",
+    "style-09",
+    "style-11",
+    "style-12",
+    "style-15",
+    "style-17",
+    "style-21",
+    "style-22",
+    "style-23",
+    "style-24",
+    "style-25"
+  ],
+  "samples": [
+    {
+      "id": "style-01-street",
+      "style": "style-01",
+      "title": "黒ベタ＋ハッチング / 街中",
+      "image": "previews/style-01-street.webp",
+      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
+      "prompt": "Monochrome black-and-white manga, gritty adventure art, variable-width dip-pen lines, large pure black ink masses, harsh white rim light, deep chiaroscuro, dense crosshatching, angular faces, realistic anatomy, white paper highlights.",
+      "negative": "color, flat cel shading, airbrush",
+      "seed": null,
+      "repeat": null
+    },
+    {
+      "id": "style-01-school",
+      "style": "style-01",
+      "title": "黒ベタ＋ハッチング / 学校",
+      "image": "previews/style-01-school.webp",
+      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
+      "prompt": "Monochrome black-and-white manga, gritty adventure art, variable-width dip-pen lines, large pure black ink masses, harsh white rim light, deep chiaroscuro, dense crosshatching, angular faces, realistic anatomy, white paper highlights.",
+      "negative": "color, flat cel shading, airbrush",
+      "seed": null,
+      "repeat": null
+    },
+    {
+      "id": "style-09-street",
+      "style": "style-09",
+      "title": "淡彩水彩＋ペン線 / 街中",
+      "image": "previews/style-09-street.webp",
+      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
+      "prompt": "Traditional watercolor illustration with delicate ink outlines, transparent pale watercolor washes, soft color bleeding at shadow edges, bright white paper reserves, subtle cold-press paper grain, fresh restrained pastel palette.",
+      "negative": "thick opaque paint, flat cel shading, glossy 3d",
+      "seed": null,
+      "repeat": null
+    },
+    {
+      "id": "style-09-school",
+      "style": "style-09",
+      "title": "淡彩水彩＋ペン線 / 学校",
+      "image": "previews/style-09-school.webp",
+      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
+      "prompt": "Traditional watercolor illustration with delicate ink outlines, transparent pale watercolor washes, soft color bleeding at shadow edges, bright white paper reserves, subtle cold-press paper grain, fresh restrained pastel palette.",
+      "negative": "thick opaque paint, flat cel shading, glossy 3d",
+      "seed": null,
+      "repeat": null
+    },
+    {
+      "id": "style-11-street",
+      "style": "style-11",
+      "title": "不透明ガッシュ / 街中",
+      "image": "previews/style-11-street.webp",
+      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
+      "prompt": "Gouache illustration, opaque matte color planes, chalky painted highlights, subtle dry-brush texture, hand-painted edges, warm and cool muted color contrast, simplified strong shapes, lightly outlined expressive faces.",
+      "negative": "glossy, transparent watercolor, airbrush",
+      "seed": null,
+      "repeat": null
+    },
+    {
+      "id": "style-11-school",
+      "style": "style-11",
+      "title": "不透明ガッシュ / 学校",
+      "image": "previews/style-11-school.webp",
+      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
+      "prompt": "Gouache illustration, opaque matte color planes, chalky painted highlights, subtle dry-brush texture, hand-painted edges, warm and cool muted color contrast, simplified strong shapes, lightly outlined expressive faces.",
+      "negative": "glossy, transparent watercolor, airbrush",
+      "seed": null,
+      "repeat": null
+    },
+    {
+      "id": "style-12-street",
+      "style": "style-12",
+      "title": "アクリル厚塗り / 街中",
+      "image": "previews/style-12-street.webp",
+      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
+      "prompt": "Acrylic painting, bold opaque brushstrokes, visible paint ridges, layered saturated colors, decisive angular strokes defining clothes and architecture, crisp focal faces, matte textured painted surfaces.",
+      "negative": "flat cel shading, vector, thin ink outline",
+      "seed": null,
+      "repeat": null
+    },
+    {
+      "id": "style-12-school",
+      "style": "style-12",
+      "title": "アクリル厚塗り / 学校",
+      "image": "previews/style-12-school.webp",
+      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
+      "prompt": "Acrylic painting, bold opaque brushstrokes, visible paint ridges, layered saturated colors, decisive angular strokes defining clothes and architecture, crisp focal faces, matte textured painted surfaces.",
+      "negative": "flat cel shading, vector, thin ink outline",
+      "seed": null,
+      "repeat": null
+    },
+    {
+      "id": "style-15-street",
+      "style": "style-15",
+      "title": "色鉛筆 / 街中",
+      "image": "previews/style-15-street.webp",
+      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
+      "prompt": "Colored pencil illustration, visible fine colored hatching, layered translucent pencil colors, textured ivory paper, delicate dark pencil contours, detailed expressive faces, softly shaded dimensional clothes.",
+      "negative": "glossy, flat digital fills, thick paint",
+      "seed": null,
+      "repeat": null
+    },
+    {
+      "id": "style-15-school",
+      "style": "style-15",
+      "title": "色鉛筆 / 学校",
+      "image": "previews/style-15-school.webp",
+      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
+      "prompt": "Colored pencil illustration, visible fine colored hatching, layered translucent pencil colors, textured ivory paper, delicate dark pencil contours, detailed expressive faces, softly shaded dimensional clothes.",
+      "negative": "glossy, flat digital fills, thick paint",
+      "seed": null,
+      "repeat": null
+    },
+    {
+      "id": "style-17-street",
+      "style": "style-17",
+      "title": "線画＋塗り込み / 街中",
+      "image": "previews/style-17-street.webp",
+      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
+      "prompt": "Detailed painted anime illustration, expressive fine lineart blended with painterly shading, soft reflected light, layered warm and cool shadows, textured but controlled brushwork, sharp facial features and focal edges.",
+      "negative": "flat vector, heavy halftone, photorealistic skin",
+      "seed": null,
+      "repeat": null
+    },
+    {
+      "id": "style-17-school",
+      "style": "style-17",
+      "title": "線画＋塗り込み / 学校",
+      "image": "previews/style-17-school.webp",
+      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
+      "prompt": "Detailed painted anime illustration, expressive fine lineart blended with painterly shading, soft reflected light, layered warm and cool shadows, textured but controlled brushwork, sharp facial features and focal edges.",
+      "negative": "flat vector, heavy halftone, photorealistic skin",
+      "seed": null,
+      "repeat": null
+    },
+    {
+      "id": "style-21-two-girls",
+      "style": "style-21",
+      "title": "year 2025強調 / 女性2人・画風単体テスト",
+      "image": "previews/style-21-two-girls.webp",
+      "description": "追加指定の女性2人・同じseedの画風単体テスト。旧見本と人物・背景の条件は異なります。",
+      "prompt": "2girls, multiple girls, 1.3::year 2025::",
+      "negative": "nsfw, nudity, sexualized pose, explicit, text, watermark, signature, logo",
+      "seed": 91001,
+      "repeat": null
+    },
+    {
+      "id": "style-22-two-girls",
+      "style": "style-22",
+      "title": "デフォルメ・白い瞳孔・パステル / 女性2人・画風単体テスト",
+      "image": "previews/style-22-two-girls.webp",
+      "description": "追加指定の女性2人・同じseedの画風単体テスト。旧見本と人物・背景の条件は異なります。",
+      "prompt": "2girls, multiple girls, deformed, white pupils, colored lineart, painterly, soft style, pastel colors, year 2025",
+      "negative": "nsfw, nudity, sexualized pose, explicit, text, watermark, signature, logo",
+      "seed": 91001,
+      "repeat": null
+    },
+    {
+      "id": "style-23-two-girls",
+      "style": "style-23",
+      "title": "細く鋭い線のお絵描き / 女性2人・画風単体テスト",
+      "image": "previews/style-23-two-girls.webp",
+      "description": "追加指定の女性2人・同じseedの画風単体テスト。旧見本と人物・背景の条件は異なります。",
+      "prompt": "2girls, multiple girls, 1.3::oekaki::, The entire image is drawn in an oekaki art style with thin, sharp lines.",
+      "negative": "nsfw, nudity, sexualized pose, explicit, text, watermark, signature, logo",
+      "seed": 91001,
+      "repeat": null
+    },
+    {
+      "id": "style-24-two-girls",
+      "style": "style-24",
+      "title": "かわいいカラー漫画 / 女性2人・画風単体テスト",
+      "image": "previews/style-24-two-girls.webp",
+      "description": "追加指定の女性2人・同じseedの画風単体テスト。旧見本と人物・背景の条件は異なります。",
+      "prompt": "2girls, multiple girls, cute manga style, pastel colors, anime coloring, delicate lineart, thin lines, colored outlines, rounded faces, large expressive eyes, small noses, small mouths, slightly oversized heads, simplified proportions, light cel shading, subtle highlights, bright gentle colors",
+      "negative": "nsfw, nudity, sexualized pose, explicit, text, watermark, signature, logo",
+      "seed": 91001,
+      "repeat": null
+    },
+    {
+      "id": "style-25-two-girls",
+      "style": "style-25",
+      "title": "かわいいモノクロ漫画 / 女性2人・画風単体テスト",
+      "image": "previews/style-25-two-girls.webp",
+      "description": "追加指定の女性2人・同じseedの画風単体テスト。旧見本と人物・背景の条件は異なります。",
+      "prompt": "2girls, multiple girls, monochrome, greyscale, cute manga style, delicate lineart, thin lines, rounded faces, large expressive eyes, small noses, small mouths, slightly oversized heads, simplified proportions, light screentones, minimal solid blacks, light shading",
+      "negative": "nsfw, nudity, sexualized pose, explicit, text, watermark, signature, logo",
+      "seed": 91001,
+      "repeat": null
+    }
+  ],
+  "model": "nai-diffusion-5-full",
+  "generation_settings": {
+    "width": 1344,
+    "height": 704,
+    "steps": 24,
+    "scale": 5.5,
+    "sampler": "k_euler_ancestral",
+    "n_samples": 1,
+    "quality": false,
+    "uc_preset": 0,
+    "cfg_rescale": 0,
+    "auto_smea": false
+  }
+}
