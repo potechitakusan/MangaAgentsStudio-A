@@ -3,5 +3,7 @@
 .env.*
 !.env.example
 .work/
+.agents/skills/humanizer-jp/
+.agents/skills/japanese-natural-writing/
 __pycache__/
 *.log

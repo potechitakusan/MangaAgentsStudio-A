@@ -16,6 +16,10 @@
 | 物語とキャラを決めたい | [物語・人物・テーマ](knowledge/manga/05-story-character.md) | [場面設計](story/SCENE-TEMPLATE.md) |
 | 描く瞬間をコマへ分けたい | [字コンテからネームへ](knowledge/manga/01-conversion.md) | [漫画の字コンテ](story/TEXT-STORYBOARD.md) |
 | コマ割りを決めて単調さを防ぎたい | [コマ割り運用方針](knowledge/panel-layout-policy.md) | [コマ割り方針](production/PANEL-LAYOUT-POLICY.md) |
+| Web用のページ寸法・余白・補助線を決めたい | [ページの寸法・基本枠](knowledge/page-layout.md) | [オプション](../OPTION.md)、`config/page-layout.json` |
+| 台詞の文字設定・任意の推敲を使いたい | [読みやすさ](knowledge/japanese-manga-readability.md#optional-polish) | [セリフ原文と文字設定](production/DIALOGUE.md) |
+| 任意の推敲スキルを導入したい | [初回導入・GitとGeminiの確認](knowledge/optional-skills.md) | [オプション](../OPTION.md) |
+| 印刷用も用意したい | [印刷オプション](../PRINT-OPTION.md) | 同ファイルへ仕様・検証を記録 |
 | 構図・反応・小物を選びたい | [主対象・画角・視点](knowledge/manga/02-visual-direction.md) | [場面設計](story/SCENE-TEMPLATE.md) |
 | 無言・テンポ・めくりを調整したい | [変化・緩急・提示順](knowledge/manga/03-beat-pacing-timing.md) | [情報と反復の管理表](story/INFORMATION-SHEET.md) |
 | 会話を絵で見せたい | [場面・台詞・小道具](knowledge/manga/04-scene-dialogue-props.md) | [漫画の字コンテ](story/TEXT-STORYBOARD.md) |

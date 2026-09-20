@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 2,
+  "generationCanvas": null,
+  "canvas": null,
+  "exportCanvas": null,
+  "referenceCanvas": { "width": 2000, "height": 3000 },
+  "basicFrame": { "left": 120, "top": 120, "right": 120, "bottom": 120 },
+  "textSafeArea": { "left": 160, "top": 160, "right": 160, "bottom": 160 },
+  "frameStroke": 10,
+  "fixedPixels": {},
+  "showGuide": false
+}

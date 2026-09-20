@@ -164,7 +164,7 @@ def distributed_target(root, target):
         relative = target.relative_to(root).as_posix()
     except ValueError:
         return target
-    if relative.startswith(('docs/story/', 'docs/production/', 'docs/reviews/', 'docs/experiments/', 'docs/feedback/', 'templates/panel-templates/', 'config/')):
+    if relative in ('OPTION.md', 'PRINT-OPTION.md') or relative.startswith(('docs/story/', 'docs/production/', 'docs/reviews/', 'docs/experiments/', 'docs/feedback/', 'templates/panel-templates/', 'config/')):
         return template / relative
     return target
 
