@@ -17,6 +17,7 @@
 - 知識はdocs/MANGA-KNOWHOW.md、引き継ぎと検証はdocs/production/PSD-HANDOFF.mdを参照。
 
 ## 次に行うこと
+- `config/process-requirements.json` と、登録事項があれば `.work/process-checker/state.json` を読む。未解決の指示・対象ページ・版・次の対応を再開時に引き継ぐ。過去の実施済みは原稿変更後の確認を意味しない。
 - OPTION.mdの実効設定を反映し、docs/story/BRIEF.mdに今回の制作目的と制約を記してdocs/PLAN.mdを具体化。
 
 ## 制作オプション
@@ -25,6 +26,7 @@
 - 確認済みのOPTION.md：未確認（開始時に有無・SHA-256・日付を記録）。
 - PRINT-OPTION.md：未確認。印刷用出力は既定で使用しない。詳細は有効化した場合だけ参照。
 - ページ設定：未確認（採用値とconfig/page-layout.jsonの有無・SHA-256を記録）。
+- コマ割り・生成方式：未採用。既定はテンプレートを原則使用し、演出上必要なページは理由を記録して独自配置可。imagegenは番号付きレイアウト画像を渡すページ一括生成が基本。制作開始後のページ別採用・参照画像・生成後の照合はdocs/production/PANEL-LAYOUT-POLICY.mdへ記録する。
 - 日本語推敲スキル：既定は使用しない。初回作業時に初期化し、選択・導入状態・Gitがない場合の回答を記録。Gemini版は導入前の明示回答・許可範囲と `.work/optional-skills/` の記録を参照し、環境の有無を許可とみなさない。
 - 保留する変更：なし。開始後は変更前後の値とユーザーの回答を記録し、回答前に採用値を上書きしない。
 - 手順：[制作オプション](knowledge/project-options.md)。

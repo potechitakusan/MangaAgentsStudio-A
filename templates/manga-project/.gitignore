@@ -3,6 +3,8 @@
 .env.*
 !.env.example
 .work/
+# 個人の必須事項ファイルの除外は新規作成スクリプトが作品側へ追記する。
+/.codex/hooks.json
 .agents/skills/humanizer-jp/
 .agents/skills/japanese-natural-writing/
 __pycache__/

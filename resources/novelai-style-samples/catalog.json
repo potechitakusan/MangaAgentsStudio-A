@@ -2,16 +2,15 @@
   "schema_version": 1,
   "default_ids": [
     "style-01",
+    "style-02",
+    "style-03",
+    "style-04",
+    "style-05",
+    "style-06",
+    "style-07",
+    "style-08",
     "style-09",
-    "style-11",
-    "style-12",
-    "style-15",
-    "style-17",
-    "style-21",
-    "style-22",
-    "style-23",
-    "style-24",
-    "style-25"
+    "style-10"
   ],
   "samples": [
     {
@@ -37,8 +36,8 @@
       "repeat": null
     },
     {
-      "id": "style-09-street",
-      "style": "style-09",
+      "id": "style-02-street",
+      "style": "style-02",
       "title": "淡彩水彩＋ペン線 / 街中",
       "image": "previews/style-09-street.webp",
       "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
@@ -48,8 +47,8 @@
       "repeat": null
     },
     {
-      "id": "style-09-school",
-      "style": "style-09",
+      "id": "style-02-school",
+      "style": "style-02",
       "title": "淡彩水彩＋ペン線 / 学校",
       "image": "previews/style-09-school.webp",
       "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
@@ -59,8 +58,8 @@
       "repeat": null
     },
     {
-      "id": "style-11-street",
-      "style": "style-11",
+      "id": "style-03-street",
+      "style": "style-03",
       "title": "不透明ガッシュ / 街中",
       "image": "previews/style-11-street.webp",
       "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
@@ -70,8 +69,8 @@
       "repeat": null
     },
     {
-      "id": "style-11-school",
-      "style": "style-11",
+      "id": "style-03-school",
+      "style": "style-03",
       "title": "不透明ガッシュ / 学校",
       "image": "previews/style-11-school.webp",
       "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
@@ -81,8 +80,8 @@
       "repeat": null
     },
     {
-      "id": "style-12-street",
-      "style": "style-12",
+      "id": "style-04-street",
+      "style": "style-04",
       "title": "アクリル厚塗り / 街中",
       "image": "previews/style-12-street.webp",
       "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
@@ -92,8 +91,8 @@
       "repeat": null
     },
     {
-      "id": "style-12-school",
-      "style": "style-12",
+      "id": "style-04-school",
+      "style": "style-04",
       "title": "アクリル厚塗り / 学校",
       "image": "previews/style-12-school.webp",
       "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
@@ -103,8 +102,8 @@
       "repeat": null
     },
     {
-      "id": "style-15-street",
-      "style": "style-15",
+      "id": "style-05-street",
+      "style": "style-05",
       "title": "色鉛筆 / 街中",
       "image": "previews/style-15-street.webp",
       "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
@@ -114,8 +113,8 @@
       "repeat": null
     },
     {
-      "id": "style-15-school",
-      "style": "style-15",
+      "id": "style-05-school",
+      "style": "style-05",
       "title": "色鉛筆 / 学校",
       "image": "previews/style-15-school.webp",
       "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
@@ -125,8 +124,8 @@
       "repeat": null
     },
     {
-      "id": "style-17-street",
-      "style": "style-17",
+      "id": "style-06-street",
+      "style": "style-06",
       "title": "線画＋塗り込み / 街中",
       "image": "previews/style-17-street.webp",
       "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
@@ -136,8 +135,8 @@
       "repeat": null
     },
     {
-      "id": "style-17-school",
-      "style": "style-17",
+      "id": "style-06-school",
+      "style": "style-06",
       "title": "線画＋塗り込み / 学校",
       "image": "previews/style-17-school.webp",
       "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
@@ -147,19 +146,19 @@
       "repeat": null
     },
     {
-      "id": "style-21-two-girls",
-      "style": "style-21",
-      "title": "year 2025強調 / 女性2人・画風単体テスト",
+      "id": "style-07-two-girls",
+      "style": "style-07",
+      "title": "year 2025 / 女性2人・画風単体テスト（旧設定の見本）",
       "image": "previews/style-21-two-girls.webp",
-      "description": "追加指定の女性2人・同じseedの画風単体テスト。旧見本と人物・背景の条件は異なります。",
-      "prompt": "2girls, multiple girls, 1.3::year 2025::",
+      "description": "表示プロンプトは現行の強調なし設定。掲載画像は旧設定の1.3強調で生成した見本で、変更後の画像は未生成。追加指定の女性2人・同じseedの画風単体テストで、旧見本と人物・背景の条件は異なります。",
+      "prompt": "2girls, multiple girls, year 2025",
       "negative": "nsfw, nudity, sexualized pose, explicit, text, watermark, signature, logo",
       "seed": 91001,
       "repeat": null
     },
     {
-      "id": "style-22-two-girls",
-      "style": "style-22",
+      "id": "style-08-two-girls",
+      "style": "style-08",
       "title": "デフォルメ・白い瞳孔・パステル / 女性2人・画風単体テスト",
       "image": "previews/style-22-two-girls.webp",
       "description": "追加指定の女性2人・同じseedの画風単体テスト。旧見本と人物・背景の条件は異なります。",
@@ -169,19 +168,8 @@
       "repeat": null
     },
     {
-      "id": "style-23-two-girls",
-      "style": "style-23",
-      "title": "細く鋭い線のお絵描き / 女性2人・画風単体テスト",
-      "image": "previews/style-23-two-girls.webp",
-      "description": "追加指定の女性2人・同じseedの画風単体テスト。旧見本と人物・背景の条件は異なります。",
-      "prompt": "2girls, multiple girls, 1.3::oekaki::, The entire image is drawn in an oekaki art style with thin, sharp lines.",
-      "negative": "nsfw, nudity, sexualized pose, explicit, text, watermark, signature, logo",
-      "seed": 91001,
-      "repeat": null
-    },
-    {
-      "id": "style-24-two-girls",
-      "style": "style-24",
+      "id": "style-09-two-girls",
+      "style": "style-09",
       "title": "かわいいカラー漫画 / 女性2人・画風単体テスト",
       "image": "previews/style-24-two-girls.webp",
       "description": "追加指定の女性2人・同じseedの画風単体テスト。旧見本と人物・背景の条件は異なります。",
@@ -191,8 +179,8 @@
       "repeat": null
     },
     {
-      "id": "style-25-two-girls",
-      "style": "style-25",
+      "id": "style-10-two-girls",
+      "style": "style-10",
       "title": "かわいいモノクロ漫画 / 女性2人・画風単体テスト",
       "image": "previews/style-25-two-girls.webp",
       "description": "追加指定の女性2人・同じseedの画風単体テスト。旧見本と人物・背景の条件は異なります。",

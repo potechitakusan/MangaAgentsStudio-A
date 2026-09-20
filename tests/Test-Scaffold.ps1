@@ -33,7 +33,13 @@ Check ($creationText.Contains($projectRoot) -and $creationText.Contains('この�
 $project = Get-Content -LiteralPath (Join-Path $projectRoot 'project.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 Check ($project.name -ceq $japaneseName) 'Japanese project name survives JSON round trip'
 Check ((Split-Path $projectRoot -Parent) -eq $testRoot) 'Project is a direct child of the selected parent'
-Check (@(Get-ChildItem -LiteralPath (Join-Path $projectRoot '.agents\skills') -Directory).Count -eq 8) '監修を含む8つのスキルが同梱される'
+Check (@(Get-ChildItem -LiteralPath (Join-Path $projectRoot '.agents\skills') -Directory).Count -eq 9) '監修とプロセスチェッカーを含む9つのスキルが同梱される'
+Check ((Test-Path -LiteralPath (Join-Path $projectRoot '.agents/skills/manga-process-checker/SKILL.md')) -and
+       (Test-Path -LiteralPath (Join-Path $projectRoot 'scripts/process_checker.py')) -and
+       (Test-Path -LiteralPath (Join-Path $projectRoot 'docs/knowledge/process-checker.md'))) 'プロセスチェッカーの手順・管理スクリプト・知識が配布される'
+$processRequirements = Get-Content -LiteralPath (Join-Path $projectRoot 'config/process-requirements.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+Check ($processRequirements.schemaVersion -eq 1 -and $processRequirements.requirements.Count -eq 0 -and
+       -not (Test-Path -LiteralPath (Join-Path $projectRoot '.codex/hooks.json'))) '引継ぎ指定のない新規作品へ個人の指示やHooksを混ぜない'
 Check ((Test-Path -LiteralPath (Join-Path $projectRoot 'scripts/Initialize-OptionalSkills.ps1')) -and
        (Test-Path -LiteralPath (Join-Path $projectRoot 'config/optional-skills.json')) -and
        (Test-Path -LiteralPath (Join-Path $projectRoot 'docs/knowledge/optional-skills.md'))) '推敲スキルの初期化・取得元設定・許可手順が配布される'
@@ -83,13 +89,55 @@ Check ($pageConfig.schemaVersion -eq 2 -and $null -eq $pageConfig.generationCanv
 Check ($project.distributionVersion -eq (Get-Content -LiteralPath (Join-Path $root 'distribution-version.txt') -Raw).Trim()) '作品の配布版が原本の版と一致する'
 Check (@(Get-ChildItem -LiteralPath (Join-Path $projectRoot '.secrets') -Force).Count -eq 0) 'Secret directory starts empty'
 $snapshot = Get-Content -LiteralPath (Join-Path $projectRoot 'docs\distribution-snapshot.json') -Raw -Encoding UTF8 | ConvertFrom-Json
-Check (@($project.PSObject.Properties.Name | Where-Object { $_ -match 'Path' }).Count -eq 0 -and
+Check (@($project.PSObject.Properties | Where-Object { $_.Name -match 'Path' -and [IO.Path]::IsPathRooted([string]$_.Value) }).Count -eq 0 -and
        @($snapshot.files | Where-Object { [IO.Path]::IsPathRooted($_.path) }).Count -eq 0) '作成結果の絶対パスを作品設定や配布記録に保存しない'
+Check (-not [string]::IsNullOrWhiteSpace($project.sourceKitRelativePath) -and
+       ((Resolve-Path -LiteralPath (Join-Path $projectRoot $project.sourceKitRelativePath)).ProviderPath -eq $root)) 'コピー元の相対パスを作品ルートから解決すると実際のキットに戻る'
 $hashesValid = $true
 foreach ($entry in $snapshot.files) {
     if ((Get-FileHash -LiteralPath (Join-Path $projectRoot $entry.path)).Hash -ne $entry.sha256) { $hashesValid = $false }
 }
 Check $hashesValid 'Every distributed file matches its recorded SHA-256'
+Check ((Get-Content -LiteralPath (Join-Path $projectRoot '.gitignore') -Raw -Encoding UTF8).Contains('/config/process-requirements.json')) '作品側では個人の必須事項をGitの追加候補から除外する'
+# 明示した元作品の指示だけを引き継ぐ。実施記録とHooksは元作品へ置いたままにする。
+$processSource = Join-Path $testRoot 'process-source'
+$null = [IO.Directory]::CreateDirectory((Join-Path $processSource 'config'))
+$null = [IO.Directory]::CreateDirectory((Join-Path $processSource '.work/process-checker'))
+$null = [IO.Directory]::CreateDirectory((Join-Path $processSource '.codex'))
+Write-Json ([ordered]@{ schemaVersion = 1; name = '指示の引継ぎ元' }) (Join-Path $processSource 'project.json')
+$inheritedRule = [ordered]@{
+    id = 'proc-review'; level = '強く指示'; instruction = '字コンテ完成後に人物の行動をレビューする'
+    checkpoint = 'script-complete'; scope = 'project'; condition = '字コンテ作成・改稿時'
+    completionCriteria = '対象原稿とレビューがある'; carryForward = $true; enforcement = 'agents+hooks'
+    decision = '相談済み'; decisionNote = 'テスト用の登録内容'
+}
+$localRule = [ordered]@{}
+foreach ($key in $inheritedRule.Keys) { $localRule[$key] = $inheritedRule[$key] }
+$localRule.id = 'proc-local'
+$localRule.carryForward = $false
+Write-Json ([ordered]@{ schemaVersion = 1; requirements = @($inheritedRule, $localRule) }) (Join-Path $processSource 'config/process-requirements.json')
+Write-Json ([ordered]@{ private = '旧作品の実施済み記録' }) (Join-Path $processSource '.work/process-checker/state.json')
+Write-Json ([ordered]@{ private = '旧作品のHooks' }) (Join-Path $processSource '.codex/hooks.json')
+$sourceRequirementsHash = (Get-FileHash -LiteralPath (Join-Path $processSource 'config/process-requirements.json')).Hash
+$null = & $maker -ProjectName 'InheritedPreview' -DestinationParent $testRoot -ProcessRequirementsFrom $processSource -WhatIf
+Check (-not (Test-Path -LiteralPath (Join-Path $testRoot 'InheritedPreview'))) '引継ぎ指定のWhatIfも作品を作らない'
+$inheritedResult = & $maker -ProjectName 'Inherited' -DestinationParent $testRoot -ProcessRequirementsFrom $processSource
+$inheritedRoot = $inheritedResult.AbsolutePath
+$inheritedData = Get-Content -LiteralPath (Join-Path $inheritedRoot 'config/process-requirements.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+Check ($inheritedData.requirements.Count -eq 1 -and $inheritedData.requirements[0].id -eq 'proc-review') '次作品には引継ぎ対象の指示だけが届く'
+Check ((Get-Content -LiteralPath (Join-Path $inheritedRoot 'AGENTS.md') -Raw -Encoding UTF8).Contains('proc-review') -and
+       -not (Test-Path -LiteralPath (Join-Path $inheritedRoot '.work/process-checker/state.json')) -and
+       -not (Test-Path -LiteralPath (Join-Path $inheritedRoot '.codex/hooks.json'))) '強い指示をAGENTSに反映し、実施記録・Hooksを流用しない'
+$inheritedProject = Get-Content -LiteralPath (Join-Path $inheritedRoot 'project.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+Check (-not [IO.Path]::IsPathRooted($inheritedProject.processRequirementsSourceRelativePath) -and
+       (Resolve-Path -LiteralPath (Join-Path $inheritedRoot $inheritedProject.processRequirementsSourceRelativePath)).ProviderPath -eq $processSource) '引継ぎ元は正しい相対パスで記録される'
+$inheritedSnapshot = Get-Content -LiteralPath (Join-Path $inheritedRoot 'docs/distribution-snapshot.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+$inheritedHashesValid = $true
+foreach ($entry in $inheritedSnapshot.files) {
+    if ((Get-FileHash -LiteralPath (Join-Path $inheritedRoot $entry.path)).Hash -ne $entry.sha256) { $inheritedHashesValid = $false }
+}
+Check $inheritedHashesValid '指示を引き継いだAGENTSと正本も作成時のハッシュに一致する'
+Check ((Get-FileHash -LiteralPath (Join-Path $processSource 'config/process-requirements.json')).Hash -eq $sourceRequirementsHash) '引継ぎ元の指示は変更しない'
 $originalHash = (Get-FileHash -LiteralPath (Join-Path $projectRoot 'project.json')).Hash
 Must-Fail { & $maker -ProjectName $japaneseName -DestinationParent $testRoot } 'Existing project is rejected'
 Check ((Get-FileHash -LiteralPath (Join-Path $projectRoot 'project.json')).Hash -eq $originalHash) 'Existing project remains unchanged'

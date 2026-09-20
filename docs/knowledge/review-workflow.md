@@ -46,6 +46,7 @@
 | 注目対象・反応・身体・空間 | [画角・視点](manga/02-visual-direction.md) | `manga-cinema-review` |
 | 絵と台詞の伝達・読み順・表示条件 | [日本語漫画の読みやすさ](japanese-manga-readability.md) | `manga-readability-review` |
 | 指摘・比較・実画像と読者反応の確認 | この文書の[レビュー記録](#レビュー記録)以降 | 各レビュースキルと `manga-supervision` |
+| ユーザーが必須にした工程の登録・実施照合 | [プロセスチェッカー](process-checker.md) | `manga-process-checker` |
 
 `manga/` は漫画の工程・技法の索引、knowledge直下の各文書は読みやすさ等の観点別詳細と運用手順を担う。PSD引き渡し・制作設定・Codex操作・任意の動画試作は、各作業の目的に応じて参照する。場面の効果に応じた表現案と監修は [supervision/](supervision/README.md) から選び、人物・因果・読順の共通判断には上の本文を使う。
 
@@ -62,8 +63,11 @@
 | manga-readability-review | 縦書き、読み順、文字配置 | ネーム・文字入れの相談とレビュー |
 | manga-ai-production | キャラ一貫性、モデル選択、実験 | 参照絵からコマを制作する段階 |
 | manga-terminology-review | 用語と設定の表記ゆれ | レビュー時のみ。初稿執筆には辞書を読ませない |
+| manga-process-checker | 明示登録した必須工程と実施根拠 | 登録相談、登録事項がある作品の再開・工程の節目・引き渡し前 |
 
 レビュー依頼は「scene-003、p4～5、告白直前の緊張を残したい。無言コマの要否と画角を検討。本文は…」のように対象と効果を指定する。制作中に全Skillを毎回呼ぶ必要はない。
+
+作品の `config/process-requirements.json` に登録事項がある場合は、字コンテ完了・各ページ完成等でプロセスチェッカーへ対象・版・根拠を報告する。強い指示は指定した工程へ着手する前にも確認する。空なら詳細な照合は不要。標準文書に推奨されているという理由だけで必須事項を追加しない。
 
 ### 場面監修を使う二つの段階
 

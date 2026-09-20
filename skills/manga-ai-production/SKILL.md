@@ -1,6 +1,6 @@
 ---
 name: manga-ai-production
-description: キャラ参照絵から漫画コマを生成・編集し、PNGプレビューで確認・修正して、指示のあるPSD原稿を人間へ引き渡すときや、表情・ポーズ・見た目の再現実験を行うときに使う。
+description: キャラ参照絵やページ配置から漫画のページ・コマを生成・編集し、PNGプレビューで確認・修正して、指示のあるPSD原稿を人間へ引き渡すときや、表情・ポーズ・見た目の再現実験を行うときに使う。
 ---
 
 # 漫画の画像制作とPSD引き渡し
@@ -8,6 +8,8 @@ description: キャラ参照絵から漫画コマを生成・編集し、PNGプ�
 このSkillは漫画プロジェクト一式に同梱する。以下のパスは作業対象プロジェクトのルート基準。配布元で原本を試す場合は重点設定に `templates/manga-project/config/review-profiles.json` を指定する。
 
 対象シーン・狙い・入力（あらすじ/字コンテ/ネーム/原稿/参照絵）を確認し、`docs/knowledge/review-workflow.md` に従って実効重点を読む。担当する主観点は `characterConsistency`。内容の判断には `docs/knowledge/ai-production.md` の該当箇所を参照する。
+
+ページ作画の生成前は `docs/knowledge/panel-layout-policy.md` を読み、テンプレートの採用ID、または演出上の独自配置とその理由をページ別記録へ残す。原則テンプレートを使用し、ユーザーの必須・不使用指定を優先する。imagegenでは番号付きレイアウト画像と各コマの内容を実際に画像入力・指示へ渡し、ページ全体の一括生成を基本とする。独自配置でも参照画像を用意し、必要時のコマ別生成は理由を記録する。枠・吹き出し・文字を含めた生成を一律禁止せず、生成後に計画・原文と照合して番号等の混入やずれを修正する。キャラ参照絵だけの生成にはページ配置を要求しない。NovelAI等は各環境の制作手順に従う。
 
 NovelAIを使うときは `docs/knowledge/ai-production.md` のOpus節を読む。OpusならAnlas消費なしを既定とし、寸法・Steps・１回の枚数・追加機能とV5の利用上限を確認する。採用寸法は `config/page-layout.json` と生成ツールへ反映し、枠・最終PNGは `docs/knowledge/page-layout.md` に従って生成実寸に合わせる。0 Anlasを確認できない生成を試験送信せず、有料利用は既に明示された指示の範囲でのみ行う。
 
