@@ -34,6 +34,14 @@ $project = Get-Content -LiteralPath (Join-Path $projectRoot 'project.json') -Raw
 Check ($project.name -ceq $japaneseName) 'Japanese project name survives JSON round trip'
 Check ((Split-Path $projectRoot -Parent) -eq $testRoot) 'Project is a direct child of the selected parent'
 Check (@(Get-ChildItem -LiteralPath (Join-Path $projectRoot '.agents\skills') -Directory).Count -eq 8) '監修を含む8つのスキルが同梱される'
+Check ((Test-Path -LiteralPath (Join-Path $projectRoot 'scripts/Initialize-OptionalSkills.ps1')) -and
+       (Test-Path -LiteralPath (Join-Path $projectRoot 'config/optional-skills.json')) -and
+       (Test-Path -LiteralPath (Join-Path $projectRoot 'docs/knowledge/optional-skills.md'))) '推敲スキルの初期化・取得元設定・許可手順が配布される'
+Check (-not (Test-Path -LiteralPath (Join-Path $projectRoot '.agents/skills/humanizer-jp')) -and
+       -not (Test-Path -LiteralPath (Join-Path $projectRoot '.agents/skills/japanese-natural-writing')) -and
+       -not (Test-Path -LiteralPath (Join-Path $projectRoot '.work/optional-skills'))) '第三者スキルと利用許可を新規作品に持ち込まない'
+$optionalState = & (Join-Path $projectRoot 'scripts/Initialize-OptionalSkills.ps1')
+Check ($optionalState.status -eq 'disabled' -and -not (Test-Path -LiteralPath (Join-Path $projectRoot '.work/optional-skills'))) '新規作品の既定動作では任意スキルを取得せず初期化が終わる'
 Check ((Test-Path -LiteralPath (Join-Path $projectRoot '.agents\skills\manga-supervision\SKILL.md')) -and
        (Test-Path -LiteralPath (Join-Path $projectRoot 'docs\reviews\SUPERVISION.md'))) '監修スキルと場面単位の相談・レビュー記入欄を使える'
 $knowledgeManifest = Get-Content -LiteralPath (Join-Path $root 'docs\knowledge\supervision\distribution.json') -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -62,6 +70,16 @@ Check ((Get-FileHash -LiteralPath (Join-Path $projectRoot 'docs\toolkit-license.
        (Get-FileHash -LiteralPath (Join-Path $root 'LICENSE')).Hash) '同梱キットのライセンスが原本と一致する'
 Check ((Test-Path -LiteralPath (Join-Path $projectRoot 'OPTION.md') -PathType Leaf) -and
        (Test-Path -LiteralPath (Join-Path $projectRoot 'docs\knowledge\project-options.md') -PathType Leaf)) '制作オプションと欠落時にも参照できる適用手順が同梱される'
+Check ((Test-Path -LiteralPath (Join-Path $projectRoot 'PRINT-OPTION.md')) -and
+       (Test-Path -LiteralPath (Join-Path $projectRoot 'docs\knowledge\page-layout.md')) -and
+       (Test-Path -LiteralPath (Join-Path $projectRoot 'scripts\prepare_page_layout.py'))) '印刷専用の別紙とWeb用の基本枠手順・処理が配布される'
+$pageConfig = Get-Content -LiteralPath (Join-Path $projectRoot 'config\page-layout.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+Check ($pageConfig.schemaVersion -eq 2 -and $null -eq $pageConfig.generationCanvas -and
+       $null -eq $pageConfig.canvas -and $null -eq $pageConfig.exportCanvas -and
+       $pageConfig.referenceCanvas.width -eq 2000 -and $pageConfig.referenceCanvas.height -eq 3000 -and
+       $pageConfig.basicFrame.left -eq 120 -and $pageConfig.textSafeArea.left -eq 160 -and
+       $pageConfig.frameStroke -eq 10 -and
+       $pageConfig.showGuide -eq $false) '生成・枠配置・最終PNGの自動寸法と、余白・線幅の換算基準が分かれて届く'
 Check ($project.distributionVersion -eq (Get-Content -LiteralPath (Join-Path $root 'distribution-version.txt') -Raw).Trim()) '作品の配布版が原本の版と一致する'
 Check (@(Get-ChildItem -LiteralPath (Join-Path $projectRoot '.secrets') -Force).Count -eq 0) 'Secret directory starts empty'
 $snapshot = Get-Content -LiteralPath (Join-Path $projectRoot 'docs\distribution-snapshot.json') -Raw -Encoding UTF8 | ConvertFrom-Json

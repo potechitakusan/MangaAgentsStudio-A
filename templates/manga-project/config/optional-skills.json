@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-09-19",
+  "providers": {
+    "humanizer-jp": {
+      "method": "git",
+      "repository": "https://github.com/tqkqt0/humanizer-jp.git",
+      "revision": "a8628b765b3de91cc7ea66ac78b5faab0777236f",
+      "requiresGeminiConsent": false,
+      "prefix": "",
+      "files": {
+        "SKILL.md": "77a78cbf22e7c316764942fe58bcdde5ba42e01a2f92c579a17c1fe0563e7ef1",
+        "LICENSE": "e32c0fc5b243269f2f8cb87d8b6e9049ec8e95100891adde2168bff6b7219f0c",
+        "NOTICE": "55d3c84cf06c4d2c49f29c42af651c13afffbc860cceb80a2bb3d76b70f5e713"
+      }
+    },
+    "japanese-natural-writing": {
+      "method": "zip",
+      "url": "https://note.com/api/v2/attachments/download/33c55af0abaece1236195095d1e31bb3",
+      "revision": "265dda02479651accb95e89076f4e916462540b6cf327e42b8da2178b5f9192f",
+      "requiresGeminiConsent": true,
+      "prefix": "japanese-natural-writing/",
+      "files": {
+        "README.md": "b2bdaae3d8be96464b1612043cc21e8e57719bf1070933f4302fc0475aacd9a2",
+        "SKILL.md": "86bf1db5965916cc9e3e345a992f58c67a070568644334b3b70e4d22bae874b3",
+        "agents/openai.yaml": "32e60ef93bce8cc6c2a4272e596bab50616087d64c71da74f8524b8d4dd7aa8b",
+        "examples/job.json": "17593f879a617e3ae4042fa2722cca6fbd5317a63d7eb51f4ed796af52532863",
+        "prompts/gemini-editor.md": "412265a28971d3679a74ab4ba6120c81e05320d0c25525172891b77b1dbfcf1f",
+        "prompts/gemini-repair.md": "b320817ecaa3c8e3ca4897cea29b0d6a23d49e3ecb08d893f0d34092a126326e",
+        "references/01-source-guide.md": "0703e1c937bd50713c258d0b6debf2dd53cbd8d8adc1e55baff8b7e1160d14af",
+        "references/02-core-rules.md": "0b2e8b4d228e5d8ae1380994c3b3792a9398bf937a7f3e936bbedd7fa20dc525",
+        "references/03-genre-profiles.md": "d594ff666cfc86f4ed87f14fa5e70b582025d868d56da2f2cb442c16c670b668",
+        "references/07-execution-contract.md": "4689dd7eeed8953485d6b471d69b8af392696a885767da0a3392a0133c195bca",
+        "references/08-codex-review.md": "07b48df901add9d0a945492e77af42d6ad7ce118d6bac5b308f530f6d8552e15",
+        "references/10-document-editing.md": "08986db4ff365bf1667eff32051b885cef49f5de33d9c567a0234fc52a9472d4"
+      }
+    }
+  }
+}

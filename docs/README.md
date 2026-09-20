@@ -6,9 +6,12 @@
 | --- | --- |
 | できること・最初の使い方 | [リポジトリの説明](../README.md) |
 | 工程と確認の順序 | [漫画制作のプロセス](knowledge/manga/08-workflow-review.md) |
+| 追加設定なしでWeb用PNGを作る・余白を変える | [ページの寸法・基本枠](knowledge/page-layout.md)、[オプション](../templates/manga-project/OPTION.md) |
+| 印刷する場合だけ設定する | [印刷オプション](../templates/manga-project/PRINT-OPTION.md) |
+| 任意の日本語推敲スキルを導入する | [選択・初回導入・Geminiの利用許可](knowledge/optional-skills.md) |
 | 知識と雛形を選ぶ | [ノウハウ一覧](../templates/manga-project/docs/MANGA-KNOWHOW.md) |
 | 作品フォルダを作る | [構成と配布](architecture.md) |
-| 作成先でCodexを開き直す | [アプリ・VS Codeの最新手順の調べ方と案内](knowledge/codex-operation.md#作品フォルダでcodexを開き直す) |
+| 作成先でCodexを開き直す | [作成後の案内と、手順がわからない場合の対応](knowledge/codex-operation.md#作品フォルダでcodexを開き直す) |
 | レビューの重点を決める | [レビュー運用](knowledge/review-workflow.md) |
 | 共通知識と利用Skillを選ぶ | [人物・情報・読みやすさ・終幕](knowledge/review-workflow.md#common-knowledge) |
 | 場面の笑い・魅力・感情・関係・展開を監修する | [監修知識の一覧](knowledge/supervision/README.md)、[監修スキル](../skills/manga-supervision/SKILL.md) |

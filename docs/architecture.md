@@ -11,10 +11,15 @@
 | `docs/knowledge/supervision/` | 場面ごとの監修知識・出典・利用手順 | 明示リストの文書とマニフェストを同梱 |
 | `skills/` | 役割別スキルの原本 | `.agents/skills/` へコピー |
 | `templates/manga-project/` | 作品設定・記録の雛形、コマ割りテンプレート素材 | 作品ルートへコピー |
-| `templates/manga-project/OPTION.md` | 制作開始時に変更できる９項目の初期設定 | 作品ルートへコピー。適用手順は `docs/knowledge/project-options.md` |
+| `templates/manga-project/OPTION.md` | Web制作を基本とする、用途・好みで選べる初期設定 | 作品ルートへコピー。適用手順は `docs/knowledge/project-options.md` |
+| `templates/manga-project/PRINT-OPTION.md` | 印刷を選んだ場合だけ使う設定・仕様・検証記録 | 作品ルートへコピー。既定は使用しない |
+| `templates/manga-project/config/page-layout.json` | 生成希望・枠配置・最終PNGの寸法、余白・線幅の換算基準と固定指定 | 同じ相対パスへコピー。版2は生成実寸に合わせる。版1の固定寸法も配置処理で読める |
+| `templates/manga-project/config/optional-skills.json` | 任意の推敲スキルの取得先・固定版・ファイルハッシュ | 同じ相対パスへコピー。第三者の本文は含めない |
 | `scripts/New-MangaProject.ps1` | 新規作品の作成 | しない |
 | `scripts/Resolve-ReviewProfile.ps1` | レビュー重点の解決 | `scripts/` へコピー |
+| `scripts/Initialize-OptionalSkills.ps1` | 有効にした推敲スキルを作品の最初の作業時に導入。Gemini版は利用許可後のみ | `scripts/` へコピー。作品の作成時には実行しない |
 | `scripts/validate_panel_plan.py` | コマ割り計画のルール検証 | `scripts/` へコピー |
+| `scripts/prepare_page_layout.py` | 生成PNGの実寸または指定寸法に合わせ、枠・余白・線幅を換算。寸法の関係を記録しガイドは別出力 | `scripts/` へコピー。Python標準ライブラリのみ。画像生成・拡縮・最終PNG保存は制作工程で別途行う |
 | `scripts/build_panel_templates.py`・`scripts/render_panel_templates.cjs`・`scripts/check_panel_templates.py` | コマ枠素材の生成・検査（キット保守用） | しない |
 | `scripts/video/` | 任意の動画生成・編集の補助 | 同じ相対パスへコピー |
 | `tests/` | 配布と動画編集の検証 | しない |
@@ -28,7 +33,7 @@
 
 `manga-supervision` は版0.3.2では既存のギャグと、追加15テーマの試行版を扱い、字コンテの相談と画像レビューに使います。手順はスキル、知識は `docs/knowledge/supervision/` のテーマ別文書、追加15テーマの出典は同フォルダの `sources.md` に置きます。メインエージェントが採否を統合し、独立したエージェントの常時起動は要求しません。
 
-汎用知識は用途の同じ既存文書へ統合し、通常のknowledgeとして配布します。[共通知識と利用Skillの対応](knowledge/review-workflow.md#common-knowledge)を入口に、用途とレビュー観点に沿って分類・統合します。監修知識だけは `docs/knowledge/supervision/distribution.json` の明示リストで制御し、通常のコピーから `supervision/` を除いて一度だけ組み込みます。監修文書を追加・変更する場合はリスト、許可するパス、`.gitignore` をそろえ、配布・公開テストを実行します。
+汎用知識は用途の同じ既存文書へ統合し、通常のknowledgeとして配布します。[共通知識と利用Skillの対応](knowledge/review-workflow.md#common-knowledge)を入口に、用途とレビュー観点に沿って分類・統合します。監修知識だけは `docs/knowledge/supervision/distribution.json` の明示リストで制御し、通常のコピーから `supervision/` を除いて一度だけ組み込みます。監修文書を追加・変更する場合はリスト、許可するパス、`.gitignore` をそろえます。配布・公開テストは修正のたびに行わず、ユーザーからCommit前のチェックを依頼されたときに、[公開手順](publication.md)に従って実施対象と範囲を確認してから実行します。
 
 リポジトリのルートから実行します。フォルダ名は固定していません。
 
@@ -41,7 +46,7 @@
 
 既定の作成先は `../作品名/`。`-DestinationParent` を変える場合も通常の制作先はキット外にします。日本語、英数字、空白、ハイフン、アンダースコアを使用できます。名前にパスやWindowsの予約名は使えません。既存フォルダは上書きせず、`-WhatIf` ではファイルを作りません。
 
-成功時は作成先の絶対パスとCodexを開き直す案内を表示します。戻り値の `Path` は呼び出し元からの相対パス、`AbsolutePath` はユーザーへの表示用です。`project.json` と `docs/distribution-snapshot.json` に絶対パスは保存しません。Codexは実際の作成先を確認して返信にも絶対パスを示し、ChatGPTのWindows用・Mac用アプリとVS Codeの両方で開く手順を、案内時点の最新公式情報を調べて説明します。[開き直しの手順](knowledge/codex-operation.md#作品フォルダでcodexを開き直す)を参照してください。
+成功時は作成先の絶対パスとCodexを開き直す案内を表示します。戻り値の `Path` は呼び出し元からの相対パス、`AbsolutePath` はユーザーへの表示用です。`project.json` と `docs/distribution-snapshot.json` に絶対パスは保存しません。Codexは実際の作成先を確認して返信にも絶対パスを示し、「やり方がわからない場合は、ご利用の環境（Windows／Mac、アプリ／VS Code）を教えてください。必要な手順をご案内します」と添えます。作成のたびに操作手順を調べることはせず、手順を求められた場合だけ、利用環境に合う最新公式情報を検索・閲覧し、出典URLと確認日を付けて説明します。[開き直しの案内](knowledge/codex-operation.md#作品フォルダでcodexを開き直す)を参照してください。
 
 作品側で新しいCodexの会話を開いてから制作を始めます。配布元の会話で作成先へ移動しただけでは、プロジェクトの切り替えが完了したとは扱いません。作品へ配る `AGENTS.md` は作品用のルールであり、キット用の例外ファイルを要求しません。
 

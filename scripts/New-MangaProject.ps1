@@ -102,6 +102,8 @@ $null = & $resolver -ConfigPath (Join-Path $sourceRootPath 'templates\manga-proj
 $package.Add([pscustomobject]@{ Source = $resolver; Destination = 'scripts\Resolve-ReviewProfile.ps1' })
 $validator = Join-Path $PSScriptRoot 'validate_panel_plan.py'
 $package.Add([pscustomobject]@{ Source = $validator; Destination = 'scripts\validate_panel_plan.py' })
+$package.Add([pscustomobject]@{ Source = (Join-Path $PSScriptRoot 'prepare_page_layout.py'); Destination = 'scripts\prepare_page_layout.py' })
+$package.Add([pscustomobject]@{ Source = (Join-Path $PSScriptRoot 'Initialize-OptionalSkills.ps1'); Destination = 'scripts\Initialize-OptionalSkills.ps1' })
 $package.Add([pscustomobject]@{ Source = (Join-Path $sourceRootPath 'LICENSE'); Destination = 'docs\toolkit-license.txt' })
 if (@($package | Group-Object Destination | Where-Object Count -gt 1).Count -gt 0) { throw 'Duplicate destination in package.' }
 $version = (Get-Content -LiteralPath (Join-Path $sourceRootPath 'distribution-version.txt') -Raw -Encoding UTF8).Trim()
@@ -131,8 +133,7 @@ try {
     [IO.File]::WriteAllText((Join-Path $target 'docs\distribution-snapshot.json'), ($manifest | ConvertTo-Json -Depth 10), $utf8)
     Write-Host "漫画プロジェクトを作成しました。作成先の絶対パス: $target"
     Write-Host 'このフォルダでCodexを開き直してください。作品フォルダで新しい会話を始めてから漫画を制作します。'
-    Write-Host 'Codexは案内時点の最新公式情報を調べ、ChatGPTのWindows用・Mac用アプリでCodexとして開く手順と、VS Codeで開く手順の両方を、出典URL・確認日付きで説明してください。'
-    Write-Host '手順の確認項目は、作品側の docs/knowledge/codex-operation.md を参照してください。'
+    Write-Host 'やり方がわからない場合は、ご利用の環境（Windows／Mac、アプリ／VS Code）を教えてください。必要な手順をご案内します。'
     [pscustomobject]@{ ProjectName = $ProjectName; Path = $displayTarget; AbsolutePath = $target; Version = $version; CopiedFiles = $package.Count }
 } catch {
     if ($created) { Write-Warning "作成が失敗しました。確認用の途中出力を保持しています: $displayTarget" }
