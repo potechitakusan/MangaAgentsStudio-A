@@ -19,6 +19,7 @@ CodexによるChrome・Edgeの起動・接続・操作と `chrome:control-chrome
 - 場面の笑い・魅力・感情・関係・展開の表現相談と画像レビュー: [場面ごとの監修](docs/knowledge/supervision/README.md)、[監修記録](docs/reviews/SUPERVISION.md)
 - 記録依頼がある場合のフィードバック: [フィードバック手順](docs/knowledge/feedback-workflow.md)
 - 環境設定: [セットアップ](docs/SETUP.md)
+- NovelAIのキー読込・接続確認・１枚生成: [APIの接続手順と依頼プロンプト](docs/knowledge/novelai-api.md)
 - 設定確認: `.\scripts\Resolve-ReviewProfile.ps1 -Preset 'daily'`
 - 同梱キットの利用条件: [MIT License](docs/toolkit-license.txt)。この条件は制作する漫画や持ち込む素材へ自動適用しない。
 

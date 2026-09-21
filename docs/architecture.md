@@ -18,6 +18,8 @@
 | `templates/manga-project/config/optional-skills.json` | 任意の推敲スキルの取得先・固定版・ファイルハッシュ | 同じ相対パスへコピー。第三者の本文は含めない |
 | `templates/manga-project/config/process-requirements.json` | 個人の必須事項の空の雛形 | 空配列だけを配布。明示された作品からの引継ぎは作成時に別処理 |
 | `scripts/process_checker.py` | 必須事項の登録・根拠管理・強い指示のAGENTS反映・任意のHooks | `scripts/` へコピー |
+| `templates/manga-project/scripts/novelai_api.py` | 作品単位のNovelAIキー読込・生成なしの契約照会・明示実行による１枚生成 | 雛形から `scripts/` へコピー。Python標準ライブラリのみ。認証情報は配布しない |
+| `templates/manga-project/config/novelai-request.example.json` | モデルとプロンプト未設定の生成要求例 | 同じ相対パスへコピー。採用後は作品側で要求JSONを作る |
 | `scripts/New-MangaProject.ps1` | 新規作品の作成 | しない |
 | `scripts/Resolve-ReviewProfile.ps1` | レビュー重点の解決 | `scripts/` へコピー |
 | `scripts/Initialize-OptionalSkills.ps1` | 有効にした推敲スキルを作品の最初の作業時に導入。Gemini版は利用許可後のみ | `scripts/` へコピー。作品の作成時には実行しない |
