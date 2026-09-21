@@ -188,4 +188,4 @@ Web用のページ寸法・余白・線幅の調整、任意の日本語推敲�
 - [このフォルダからコミットする前の検証](docs/publication.md)
 - [利用条件と第三者資料](docs/RIGHTS.md)
 
-現在の配布版は `distribution-version.txt` を参照してください。[作例](examples/README.md)には公開用のPNGと制作条件の説明を収録しています。作例は閲覧用で、新規作品プロジェクトにはコピーしません。
+現在の配布版は `distribution-version.txt` を参照してください。[作例](examples/README.md)には公開用のPNG・JPEGと制作条件の説明を収録しています。作例は閲覧用で、新規作品プロジェクトにはコピーしません。

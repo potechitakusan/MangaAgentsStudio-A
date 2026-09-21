@@ -1,4 +1,4 @@
-"""このフォルダから直接コミットする公開対象の文書・コード・PNGを検査する。"""
+"""このフォルダから直接コミットする公開対象の文書・コード・画像を検査する。"""
 from __future__ import annotations
 
 import argparse
@@ -21,6 +21,7 @@ NOVELAI_RESOURCE_ROOT = 'resources/novelai-style-samples'
 TEMPLATE_REQUIREMENTS = 'templates/manga-project/scripts/requirements-composition.txt'
 PNG_SIGNATURE = b'\x89PNG\r\n\x1a\n'
 PNG_IMAGE_CHUNKS = {b'IHDR', b'PLTE', b'IDAT', b'IEND', b'tRNS'}
+JPEG_JFIF_SEGMENT = b'\xff\xe0\x00\x10JFIF\x00\x01\x01\x00\x00\x01\x00\x01\x00\x00'
 WEBP_IMAGE_CHUNKS = {b'VP8 ', b'VP8L', b'VP8X', b'ALPH', b'ANIM', b'ANMF'}
 SPECIAL_FILES = {'.gitignore', '.env.example'}
 OLD_FOLDER_NAME = 'Proto' + 'type'
@@ -89,7 +90,7 @@ def public_files(root=ROOT):
                 relative_path = path.relative_to(root).as_posix()
                 if path.is_symlink() or (getattr(path.stat(), 'st_file_attributes', 0) & 0x400):
                     raise ValueError(f'公開範囲にリンクがあります: {relative_path}')
-                example_png = relative == 'examples' and path.suffix == '.png'
+                example_image = relative == 'examples' and path.suffix in ('.png', '.jpg', '.jpeg')
                 panel_asset = (
                     relative_path == f'{PANEL_ROOT}/index.html'
                     or (path.parent.relative_to(root).as_posix() in (f'{PANEL_ROOT}/svg', f'{PANEL_ROOT}/guides') and path.suffix == '.svg')
@@ -105,7 +106,7 @@ def public_files(root=ROOT):
                 )
                 panel_renderer = relative_path == 'scripts/render_panel_templates.cjs'
                 template_requirements = relative_path == TEMPLATE_REQUIREMENTS
-                if path.suffix not in EXTENSIONS and name not in SPECIAL_FILES and not example_png and not panel_asset and not novelai_resource and not onomatopoeia_asset and not panel_renderer and not template_requirements:
+                if path.suffix not in EXTENSIONS and name not in SPECIAL_FILES and not example_image and not panel_asset and not novelai_resource and not onomatopoeia_asset and not panel_renderer and not template_requirements:
                     raise ValueError(f'公開範囲に想定外のファイルがあります: {relative_path}')
                 if (name.startswith('.env') and name != '.env.example') or '.secrets' in path.parts:
                     raise ValueError(f'公開範囲に秘密設定があります: {relative_path}')
@@ -155,6 +156,54 @@ def png_chunks(data):
                 raise ValueError('PNGに画像データがありません。')
             return chunks
     raise ValueError('PNGにIENDがありません。')
+
+
+def jpeg_segments(data):
+    """JPEGの区切りを読み、圧縮データを含めて再圧縮せず取り出す。"""
+    if not data.startswith(b'\xff\xd8'):
+        raise ValueError('JPEGの署名が不正です。')
+    segments, offset, has_frame, has_scan = [(0xD8, data[:2])], 2, False, False
+    while offset < len(data):
+        start = offset
+        if data[offset] != 0xFF:
+            raise ValueError('JPEGのマーカーが不正です。')
+        while offset < len(data) and data[offset] == 0xFF:
+            offset += 1
+        if offset == len(data):
+            raise ValueError('JPEGのマーカーが途中で切れています。')
+        kind = data[offset]
+        offset += 1
+        if kind == 0xD9:
+            if offset != len(data) or not has_frame or not has_scan:
+                raise ValueError('JPEGの画像データ・終端・末尾データが不正です。')
+            return segments + [(kind, data[start:offset])]
+        if kind in (0x00, 0x01, 0xD8) or 0xD0 <= kind <= 0xD7:
+            raise ValueError('JPEGに想定外のマーカーがあります。')
+        if offset + 2 > len(data):
+            raise ValueError('JPEGセグメントが途中で切れています。')
+        length = struct.unpack_from('>H', data, offset)[0]
+        end = offset + length
+        if length < 2 or end > len(data):
+            raise ValueError('JPEGセグメントの長さが不正です。')
+        segments.append((kind, data[start:end]))
+        offset = end
+        if kind in (0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF):
+            has_frame = True
+        if kind == 0xDA:
+            # FF00と再開マーカーは画像本体。複数スキャン間のメタ情報も読む。
+            marker = re.search(b'\xff+(?=[^\x00\xff\xd0-\xd7])', data[offset:])
+            if marker is None or marker.start() == 0:
+                raise ValueError('JPEGの圧縮データまたは終端がありません。')
+            end = offset + marker.start()
+            segments.append((None, data[offset:end]))
+            offset, has_scan = end, True
+    raise ValueError('JPEGに終端がありません。')
+
+
+def jpeg_metadata_segment(kind, segment):
+    """個別の付加情報を含まない固定のJFIFヘッダーだけを許可する。"""
+    return (kind is not None and (0xE0 <= kind <= 0xEF or kind == 0xFE)
+            and segment != JPEG_JFIF_SEGMENT)
 
 
 def webp_chunks(data):
@@ -229,6 +278,13 @@ def check(root=ROOT):
                     errors.append(f'PNGに公開前に除去するメタ情報があります: {relative}')
             except ValueError as error:
                 errors.append(f'PNGの検査に失敗しました: {relative}: {error}')
+            continue
+        if path.suffix in ('.jpg', '.jpeg'):
+            try:
+                if any(jpeg_metadata_segment(kind, segment) for kind, segment in jpeg_segments(path.read_bytes())):
+                    errors.append(f'JPEGに公開前に除去するメタ情報があります: {relative}')
+            except ValueError as error:
+                errors.append(f'JPEGの検査に失敗しました: {relative}: {error}')
             continue
         if path.suffix == '.webp':
             try:

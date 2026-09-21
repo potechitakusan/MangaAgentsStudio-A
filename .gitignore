@@ -1,4 +1,4 @@
-# 公開用の文書・コード、作例PNG、指定のコマ枠素材を許可する。
+# 公開用の文書・コード、作例PNG・JPEG、指定のコマ枠素材を許可する。
 *
 !*/
 !*.md
@@ -23,6 +23,8 @@
 !/tests/
 !/examples/
 !/examples/**/*.png
+!/examples/**/*.jpg
+!/examples/**/*.jpeg
 !/resources/
 !/resources/novelai-style-samples/
 !/resources/novelai-style-samples/catalog.json

@@ -28,7 +28,7 @@
 | `scripts/build_panel_templates.py`・`scripts/render_panel_templates.cjs`・`scripts/check_panel_templates.py` | コマ枠素材の生成・検査（キット保守用） | しない |
 | `scripts/video/` | 任意の動画生成・編集の補助 | 同じ相対パスへコピー |
 | `tests/` | 配布と動画編集の検証 | しない |
-| `examples/` | Gitで公開する作例PNGと説明 | しない |
+| `examples/` | Gitで公開する作例PNG・JPEGと説明 | しない |
 | `backup/`、`.work/` | 非公開の退避と検証生成物 | 公開・配布とも対象外 |
 | `特別な理由でこのフォルダの中で漫画を作ります.txt` | ユーザーが例外制作時だけ作成 | 公開・配布とも対象外 |
 
