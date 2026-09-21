@@ -12,7 +12,17 @@ input/に作品固有の入力、assets/characters/にキャラ参照、assets/r
 
 動画で映画的演出を試す依頼には、任意機能のmanga-video-previsualization Skillと [動画試作の運用](knowledge/video-previsualization.md) を使う。動作確認済みの動画ワークフローを作品のworkflows/へ用意し、モデルと入力の対応を確認してから実行する。人物参照はassets/characters/、動画・音声はoutput/、条件・所要時間・採否はdocs/experiments/へ保存する。通常の漫画制作の前提作業にはしない。
 
-NovelAIを使用する際は、作品内の.secrets/（スクリプトが作成する空フォルダ）または環境変数に認証情報を用意する。.env.exampleは項目名の例であり、キーの自動読込やAPI接続はまだ実装されていない。実行前に公式仕様と利用可能な枠を確認する。有効なOpus契約なら [Anlasを消費しない生成条件](knowledge/ai-production.md#novelai-opus)を確認し、１回１枚・28ステップ以下（V5は初期値23、V4.5以前は28）を基準にする。生成寸法は使用ツールに合わせる共通の [ページ設定](knowledge/page-layout.md)に従う。採用寸法・モデルと追加機能を含めた0 Anlasの確認、V5の利用上限の残量確認も行う。
+NovelAIは同梱の `scripts/novelai_api.py` でキーの自動読込・契約照会・１枚生成ができる。Python 3.10以上を使用し、追加パッケージは不要。設定と実行例は [NovelAI APIの接続手順](knowledge/novelai-api.md) を参照する。実値は環境変数 `NOVELAI_API_KEY` または作品の `.secrets/novelai.env` に用意し、`.env.example` へは書かない。まず `python -X utf8 scripts/novelai_api.py key-status` で読込元を確認し、`python -X utf8 scripts/novelai_api.py status` で生成なしの契約照会を行う。生成コマンドも `--execute` がなければ送信しない。
+
+ファイルで設定する場合、`.secrets/novelai.env` には**トークンだけでなく、設定名と `=` も含めて**次の１行を書く。
+
+```dotenv
+NOVELAI_API_KEY=実際のトークン
+```
+
+左辺の `NOVELAI_API_KEY` は公開してよい設定名。秘密にするのは右辺のトークンで、「実際のトークン」の部分を自分のPersistent API tokenに置き換える。会話へ実値を貼る必要はない。作品側では「NovelAIを使いたい」「NovelAIの接続を確認して」と伝えれば、必要な案内を行う。ファイルなし・設定行なし・空の値・形式不正はそれぞれ表示し、通信失敗はキー設定の不備と分けて報告する。
+
+実行前に公式仕様と利用可能な枠を確認する。有効なOpus契約なら [Anlasを消費しない生成条件](knowledge/ai-production.md#novelai-opus)を確認し、１回１枚・28ステップ以下（V5は初期値23、V4.5以前は28）を基準にする。生成寸法は使用ツールに合わせる共通の [ページ設定](knowledge/page-layout.md)に従う。採用寸法・モデルと追加機能を含めた0 Anlasの確認、V5の利用上限の残量確認も行う。契約照会の成功だけでは費用・残枠の確認完了と扱わない。接続確認用の [依頼プロンプト](knowledge/novelai-api.md#確認を依頼するプロンプト) も用意している。
 
 新しいCodexセッションで作品ルートを開き、AGENTS.mdとローカルSkillsが認識されていることを確認する。配布したSkillsはこのプロジェクトの共通知識と組み合わせて使う。
 

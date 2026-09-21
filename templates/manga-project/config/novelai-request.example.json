@@ -1,0 +1,13 @@
+{
+  "action": "generate",
+  "input": "",
+  "model": null,
+  "parameters": {
+    "seed": 1,
+    "sampler": "k_euler_ancestral",
+    "scale": 5,
+    "n_samples": 1,
+    "negative_prompt": "text, speech bubble, panel border, watermark",
+    "image_format": "png"
+  }
+}
