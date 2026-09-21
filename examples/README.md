@@ -116,6 +116,12 @@ https://manga.potechi-takusan.workers.dev/sukoshi-samishii/
 
 掲載画像に対する人間からの作画修正指示は行っていません。人物数や衣装の混在、余分な武器、小道具の大きさなどは、Codexが生成画像を確認して再生成や配置の調整を行っています。
 
+psdファイルを以下からダウンロードできます。（セリフが別レイヤー）
+
+https://examples-psd.potechi-takusan.workers.dev/
+
+※NovelAIを利用した場合は、psd作成でデフォルトでセリフが別レイヤーになります。Codexの内蔵ツールで画像生成する場合は、最初にセリフを画像と分けて作るよう指示してください。
+
 ## 06
 
 **すめらぎ探偵団　「小さなしおり事件」**
@@ -154,5 +160,8 @@ https://manga.potechi-takusan.workers.dev/sukoshi-samishii/
 
 ページ中のクッキーの枚数など、NovelAIへのプロンプトでは制御が難しいものはCodexが内蔵ツール（imagegen）にて編集しています。
 
+psdファイルを以下からダウンロードできます。（セリフが別レイヤー）
 
+https://examples-psd.potechi-takusan.workers.dev/
 
+※NovelAIを利用した場合は、psd作成でデフォルトでセリフが別レイヤーになります。Codexの内蔵ツールで画像生成する場合は、最初にセリフを画像と分けて作るよう指示してください。
