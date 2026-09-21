@@ -52,7 +52,8 @@ Assert-NoLinks $sourceRootPath
 $processTemplatePath = Join-Path $sourceRootPath 'templates\manga-project\config\process-requirements.json'
 Assert-NoLinks $processTemplatePath
 $processTemplate = Get-Content -LiteralPath $processTemplatePath -Raw -Encoding UTF8 | ConvertFrom-Json
-if ($processTemplate.schemaVersion -isnot [int] -or $processTemplate.schemaVersion -ne 1 -or $processTemplate.requirements -isnot [array] -or
+if (($processTemplate.schemaVersion -isnot [int] -and $processTemplate.schemaVersion -isnot [long]) -or
+    $processTemplate.schemaVersion -ne 1 -or $processTemplate.requirements -isnot [array] -or
     $processTemplate.requirements.Count -ne 0 -or @($processTemplate.PSObject.Properties).Count -ne 2) {
     throw '配布原本のプロセス必須事項は空にしてください。個人の指示は作品側に保存します。'
 }
@@ -114,7 +115,8 @@ $knowledgeManifestRelative = 'docs/knowledge/supervision/distribution.json'
 $knowledgeManifestPath = Join-Path $sourceRootPath $knowledgeManifestRelative
 Assert-NoLinks $knowledgeManifestPath
 $knowledgeManifest = Get-Content -LiteralPath $knowledgeManifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
-if ($knowledgeManifest.schemaVersion -isnot [int] -or $knowledgeManifest.schemaVersion -ne 1 -or
+if (($knowledgeManifest.schemaVersion -isnot [int] -and $knowledgeManifest.schemaVersion -isnot [long]) -or
+    $knowledgeManifest.schemaVersion -ne 1 -or
     $knowledgeManifest.files -isnot [array] -or $knowledgeManifest.files.Count -eq 0) {
     throw '知識の配布マニフェストが不正です。'
 }
