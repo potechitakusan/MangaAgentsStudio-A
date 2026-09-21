@@ -13,7 +13,7 @@ import zlib
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from scripts.public_release import PNG_IMAGE_CHUNKS, PNG_SIGNATURE, check, png_chunks, public_files
+from scripts.public_release import JPEG_JFIF_SEGMENT, PNG_IMAGE_CHUNKS, PNG_SIGNATURE, check, jpeg_segments, png_chunks, public_files
 
 
 def png_chunk(kind, payload):
@@ -25,6 +25,18 @@ def example_png(extra=b''):
     return (PNG_SIGNATURE + png_chunk(b'IHDR', struct.pack('>IIBBBBB', 1, 1, 8, 3, 0, 0, 0))
             + png_chunk(b'PLTE', b'\xff\x00\x00') + png_chunk(b'tRNS', b'\x80') + extra
             + png_chunk(b'IDAT', zlib.compress(b'\x00\x00')) + png_chunk(b'IEND', b''))
+
+
+def jpeg_segment(kind, payload):
+    return bytes((0xFF, kind)) + struct.pack('>H', len(payload) + 2) + payload
+
+
+def example_jpeg(extra=b''):
+    # 区切り検査用。FF00、再開マーカー、複数スキャンを含める。
+    frame = jpeg_segment(0xC0, b'\x08\x00\x01\x00\x01\x01\x01\x11\x00')
+    scan = jpeg_segment(0xDA, b'\x01\x01\x00\x00\x3f\x00')
+    return (b'\xff\xd8' + JPEG_JFIF_SEGMENT + frame + scan
+            + b'\x12\xff\x00\x34\xff\xd0\x56' + extra + scan + b'\x78\xff\xd9')
 
 
 class PublicReleaseTests(unittest.TestCase):
@@ -135,6 +147,39 @@ class PublicReleaseTests(unittest.TestCase):
             with self.subTest(length=len(bad)):
                 path.write_bytes(bad)
                 self.assertTrue(any('PNGの検査に失敗' in error for error in check(self.root)['errors']))
+
+    def test_example_jpeg_is_included_and_scan_data_is_preserved(self):
+        for suffix in ('.jpg', '.jpeg'):
+            with self.subTest(suffix=suffix):
+                path = self.root / ('examples/fixture' + suffix)
+                path.write_bytes(example_jpeg())
+                self.assertIn(path, public_files(self.root))
+                self.assertFalse(check(self.root)['errors'])
+                self.assertEqual(b''.join(segment for _, segment in jpeg_segments(path.read_bytes())),
+                                 path.read_bytes())
+
+    def test_jpeg_metadata_between_scans_fails_check(self):
+        path = self.root / 'examples/fixture.jpg'
+        for kind in (*range(0xE0, 0xF0), 0xFE):
+            with self.subTest(kind=kind):
+                path.write_bytes(example_jpeg(jpeg_segment(kind, b'private metadata')))
+                self.assertTrue(any('JPEGに公開前に除去するメタ情報' in error
+                                    for error in check(self.root)['errors']))
+
+    def test_invalid_jpeg_prevents_publication(self):
+        path = self.root / 'examples/fixture.jpg'
+        clean = example_jpeg()
+        for bad in (b'not a JPEG', clean[:-1], clean[:-2], clean + b'private data',
+                    b'\xff\xd8\xff\xd9', b'\xff\xd8\xff\xe1\x00\x01',
+                    b'\xff\xd8\xff\xe1\xff\xff'):
+            with self.subTest(data=bad[:20]):
+                path.write_bytes(bad)
+                self.assertTrue(any('JPEGの検査に失敗' in error for error in check(self.root)['errors']))
+
+    def test_jpeg_outside_examples_is_rejected(self):
+        (self.root / 'docs/knowledge/fixture.jpg').write_bytes(example_jpeg())
+        with self.assertRaises(ValueError):
+            public_files(self.root)
 
     def test_git_candidates_cover_public_files(self):
         # 配布元に.gitがない場合も、隔離した検証用リポジトリで追加候補を照合する。
