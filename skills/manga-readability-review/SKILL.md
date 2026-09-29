@@ -13,4 +13,6 @@ description: 日本語漫画のネームや文字入れについて、コマ・�
 
 結果は対象箇所、観察、読者への影響の仮説、重大度、改善案、失う効果を含める。依頼が相談なら提案と選択理由を示す。レビューでは問題なしや判断不能も正直に記録する。最終的な採否はメインエージェントが統合して `docs/reviews/` に残し、再利用できる結果のフィードバックは、ユーザーが記録を依頼した場合だけ `docs/feedback/` に残す。依頼がなければ記録するかの確認も行わない。
 
+`scripts/typeset_manga.py` で別組版した原稿では、`check.json` の指摘（しっぽ、顔や手との重なり、読み順、句読点、文字の大きさ）と、原画入りの確認画像（`build` では版フォルダの `page-NN-display.png`・`page-NN-check-overlay.png`）を実際に見た結果を分けて扱う。imagegenで文字・吹き出し込みで生成した原稿は、完成ページと確定原文を照合し、別組版や `check.json` の作成をレビューの前提にしない。自動点検の通過を読みやすさの合格としない。
+
 漫画の紙面は `docs/knowledge/manga/00-manga-basics.md`、点検記録は `docs/reviews/NAME-REVIEW.md` を使う。PSD引き渡しのレビュー時は `docs/knowledge/psd-handoff.md` に従い、確定原文・合成結果を確認する。原稿を見ていない項目は未確認とする。

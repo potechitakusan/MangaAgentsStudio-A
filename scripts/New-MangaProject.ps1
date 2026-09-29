@@ -6,7 +6,10 @@ param(
     [ValidatePattern('^[\p{L}\p{N}][\p{L}\p{N} _-]*$')]
     [string]$ProjectName,
     [string]$DestinationParent,
-    [string]$ProcessRequirementsFrom
+    [string]$ProcessRequirementsFrom,
+    # 既定はCodex（内蔵の画像生成あり）。Claudeを指定した場合だけ、Claude用の読込ファイルと読み替えを追加する。
+    [ValidateSet('Codex', 'Claude')]
+    [string]$AgentMode = 'Codex'
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -89,7 +92,8 @@ foreach ($mapping in $mappings) {
     if (-not (Test-Path -LiteralPath $sourceRoot -PathType Container)) { throw "Missing source directory: $sourceRoot" }
     Assert-NoLinks $sourceRoot
     # supervisionは後で明示リストから配布するため、一括コピーから除外する。
-    $skipDirectories = if ($mapping.Source -eq 'docs\knowledge') { @('supervision') } else { @() }
+    # agent-modesはモード指定時だけ後で個別に配布する。
+    $skipDirectories = if ($mapping.Source -eq 'docs\knowledge') { @('supervision') } elseif ($mapping.Source -eq 'templates\manga-project') { @('agent-modes') } else { @() }
     $files = @(Get-PackageFiles $sourceRoot -SkipDirectories $skipDirectories)
     if ($files.Count -eq 0) { throw "Empty package directory: $sourceRoot" }
     foreach ($file in $files) {
@@ -141,6 +145,14 @@ $package.Add([pscustomobject]@{ Source = (Join-Path $PSScriptRoot 'prepare_page_
 $package.Add([pscustomobject]@{ Source = (Join-Path $PSScriptRoot 'Initialize-OptionalSkills.ps1'); Destination = 'scripts\Initialize-OptionalSkills.ps1' })
 $package.Add([pscustomobject]@{ Source = (Join-Path $PSScriptRoot 'process_checker.py'); Destination = 'scripts\process_checker.py' })
 $package.Add([pscustomobject]@{ Source = (Join-Path $sourceRootPath 'LICENSE'); Destination = 'docs\toolkit-license.txt' })
+if ($AgentMode -eq 'Claude') {
+    foreach ($name in @('CLAUDE.md', 'AGENT-MODE.md')) {
+        $modeSource = Join-Path $sourceRootPath "templates\manga-project\agent-modes\claude\$name"
+        if (-not (Test-Path -LiteralPath $modeSource -PathType Leaf)) { throw "Claude用モードの雛形がありません: $name" }
+        Assert-NoLinks $modeSource
+        $package.Add([pscustomobject]@{ Source = $modeSource; Destination = $name })
+    }
+}
 if (@($package | Group-Object Destination | Where-Object Count -gt 1).Count -gt 0) { throw 'Duplicate destination in package.' }
 $version = (Get-Content -LiteralPath (Join-Path $sourceRootPath 'distribution-version.txt') -Raw -Encoding UTF8).Trim()
 $snapshot = @($package | Sort-Object Destination | ForEach-Object {
@@ -179,6 +191,7 @@ try {
         createdAt = $createdAt
         distributionVersion = $version
         sourceKitRelativePath = $sourceKitRelativePath
+        agentMode = $AgentMode
     }
     if ($processSourceRelativePath) { $project.processRequirementsSourceRelativePath = $processSourceRelativePath }
     [IO.File]::WriteAllText((Join-Path $target 'project.json'), ($project | ConvertTo-Json -Depth 10), $utf8)
@@ -196,9 +209,14 @@ try {
     $manifest = [ordered]@{ version = $version; createdAt = $createdAt; files = $snapshot }
     [IO.File]::WriteAllText((Join-Path $target 'docs\distribution-snapshot.json'), ($manifest | ConvertTo-Json -Depth 10), $utf8)
     Write-Host "漫画プロジェクトを作成しました。作成先の絶対パス: $target"
-    Write-Host 'このフォルダでCodexを開き直してください。作品フォルダで新しい会話を始めてから漫画を制作します。'
+    if ($AgentMode -eq 'Claude') {
+        Write-Host 'Claude用モードで作成しました（CLAUDE.md と AGENT-MODE.md を追加）。このフォルダでClaudeを開き直してください。作品フォルダで新しい会話を始めてから漫画を制作します。'
+        Write-Host '作画は既定でNovelAIを使います。NovelAIへの通信は、Claude Codeの権限設定で許可が必要になる場合があります。'
+    } else {
+        Write-Host 'このフォルダでCodexを開き直してください。作品フォルダで新しい会話を始めてから漫画を制作します。'
+    }
     Write-Host 'やり方がわからない場合は、ご利用の環境（Windows／Mac、アプリ／VS Code）を教えてください。必要な手順をご案内します。'
-    [pscustomobject]@{ ProjectName = $ProjectName; Path = $displayTarget; AbsolutePath = $target; Version = $version; CopiedFiles = $package.Count }
+    [pscustomobject]@{ ProjectName = $ProjectName; Path = $displayTarget; AbsolutePath = $target; Version = $version; CopiedFiles = $package.Count; AgentMode = $AgentMode }
 } catch {
     if ($created) { Write-Warning "作成が失敗しました。確認用の途中出力を保持しています: $displayTarget" }
     throw

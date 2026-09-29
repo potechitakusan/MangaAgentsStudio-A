@@ -1,6 +1,6 @@
 # 漫画制作キット
 
-Codexと一緒に漫画を企画し、字コンテ・ネーム・作画・PNGでの確認を進めるための知識、9つのスキル、作品テンプレートです。
+Codexと一緒に漫画を企画し、字コンテ・ネーム・作画・PNGでの確認を進めるための知識、10のスキル、作品テンプレートです。
 
 **このフォルダは制作キットの保守・配布用です。漫画は原則ここで描かず、`scripts/New-MangaProject.ps1` でキット外に個別プロジェクトを作成し、そちらでCodexを開き直して制作します。** `templates/manga-project/` は原本なので、直接作品を書き込まないでください。
 
@@ -54,6 +54,12 @@ Windows PowerShell 5.1以上で、リポジトリのルートから実行しま�
 ```powershell
 .\scripts\New-MangaProject.ps1 -ProjectName '作品名' -WhatIf
 .\scripts\New-MangaProject.ps1 -ProjectName '作品名'
+```
+
+このキットはCodex（内蔵の画像生成あり）での利用を主としています。Claude（Claude Code等）で制作する場合だけ、`-AgentMode Claude` を付けて作成してください。作品に `CLAUDE.md` と、Claude用の読み替え（`AGENT-MODE.md`：内蔵の画像生成がないため作画は既定でNovelAIを使う等）が追加されます。指定しなければCodex用の既定の構成で作られます。
+
+```powershell
+.\scripts\New-MangaProject.ps1 -ProjectName '作品名' -AgentMode Claude
 ```
 
 既定の作成先は `../作品名/`。別の親フォルダを使う場合は、キット外に作成される既存の相対パスを `-DestinationParent` で指定します。リポジトリのフォルダ名は自由に変更できます。既存の作品は上書きしません。`-WhatIf` は配置の確認だけで、プロジェクトを作成しません。

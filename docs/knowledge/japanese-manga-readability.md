@@ -98,6 +98,45 @@
 
 単ページ、見開き、スクロールでは同時に見える範囲が違う。画像の一部分だけで、実際のめくりや先読みを確認済みとしない。掲載サイズで必要な文字と細部を読む。画面上のピクセルを印刷寸法の標準値へ換算しない。
 
+<a id="typeset-script"></a>
+
+## 組版スクリプトと自動点検
+
+作品の `scripts/typeset_manga.py` は、フキダシ・縦書きセリフ・画中の文字・コマ枠を透明レイヤーへ組版し、同時に点検する。作画は変更しない。[仕上げの方針](page-layout.md#text-finishing)に従い、imagegen以外では作画後の別組版に使い、imagegenでは文字・吹き出しを後から載せる場合に使う。文字・吹き出し込みの一括生成では、完成ページを目視・原文照合して点検する。2026-09-29追加のキット独自の道具で、読者評価の改善は未検証。
+
+- 縦書き：各列の上詰め、長音・ダッシュ・波線・括弧・三点リーダーの回転、小書き仮名と句読点の位置補正、２字の「!?」と２桁までの数字の縦中横。改行は `\n` で文節と息継ぎに合わせて指定する。未指定で長い列は自動改行し、警告を出す。
+- フキダシ：`speech`（楕円）、`whisper`（破線）、`shout`（トゲ）、`flash`（ウニフラ）、`narration`（四角）、`monologue`（枠なし・白縁取り）。`tail` に話者の口元の座標を書くと、しっぽをそちらへ向け、顔の範囲の手前で止める。
+- 画中の文字：`inserts` に用紙・画面・看板の範囲と文字を書くと、物として描いた差し込みを作る。
+- フォント：作品の `assets/fonts/`、次にOSの日本語フォントの順で探す。フォントは同梱しない。採用したフォント名を [文字設定](../production/DIALOGUE.md) に記録し、配布・商用利用の条件は利用者が確認する。
+
+座標はページ（枠配置寸法）のpx。`layout` に `prepare_page_layout.py` の `layout.json` を指定すると、ページ寸法・コマの形・文字安全範囲・枠線の太さをそこから読む。`panel` はコマの読み順の番号、`order` はコマ内の吹き出しの読み順。
+
+```json
+{
+  "schema_version": 1,
+  "layout": "output/layout/page-001-v1/layout.json",
+  "text": {"size": 28},
+  "keep_out": [{"panel": 1, "box": [700, 280, 860, 440], "label": "ミオの顔"}],
+  "no_keep_out": {"2": "紙ひこうきだけの空景"},
+  "balloons": [
+    {"id": "p1-a", "panel": 1, "order": 1, "speaker": "ミオ", "kind": "speech",
+     "text": "進路って\n言われても…", "center": [820, 180], "tail": [780, 300]}
+  ],
+  "inserts": [{"id": "form", "panel": 3, "box": [100, 780, 360, 950], "style": "paper",
+               "title": "進路希望調査票", "lines": ["２年　日向ミオ"], "rotation": -4}]
+}
+```
+
+```powershell
+python scripts/typeset_manga.py --spec output/typeset/page-001.json --output output/typeset/page-001-v1 --background output/pages/page-001-art.png
+```
+
+出力は `frames.png`・`inserts.png`・`balloons.png`・`text.png`（透明レイヤー）、`preview.png`、掲載想定の幅へ縮小した `preview-display.png`、確認専用の `check-overlay.png`（文字を置かない範囲・コマ番号・吹き出しの順番を表示。掲載に使わない）、`check.json`。`--background` を指定しない場合、この３つの画像は原画を含まない組版のみの見本になる。`novelai_batch.py build` では、原画を合成した完成ページから、版フォルダに `page-NN-display.png`（掲載幅の縮小）と `page-NN-check-overlay.png`（注記入り）を別に作る。`check.json` の `overlays_for_export_composed_psd` は、PSD作成を依頼された場合に `export_composed_psd.py` の `overlays` へ使える。作画に枠が描かれている場合は `--no-frames`。
+
+主な点検：「。」の使用と20字未満の「、」（エラー。つながった枠は同じ `group` で合算）、しっぽのない会話（警告。画面外の声等は `no_tail_reason` に理由を書く）、文字を置かない範囲との重なり（エラー）、吹き出し同士の重なり・しっぽの交差・読み順の逆転・コマや文字安全範囲からのはみ出し・長すぎる列・掲載幅での文字の小ささ・フォントにない字（警告またはエラー）。顔・手・重要な小物の範囲は画像を見て `keep_out` に書く。範囲を書いていないコマも警告になる。
+
+エラーが残る場合は終了コード1になる。警告を残す場合は理由を [ネーム点検表](../reviews/NAME-REVIEW.md) の「組版後の点検」に書く。点検の通過は読みやすさの合格を意味しない。原画入りの確認画像（`build` では `page-NN-display.png`・`page-NN-check-overlay.png`、単体では `--background` 付きの `preview-display.png`）を実際に開き、話者・読み順・顔や手との重なり・画中の文字を目視する。縦書きの「一」は下線や長音と紛れやすいため、掲載サイズで前後の字と読み分けられるかも確かめる。
+
 ## はみ出し・裁ち切り・外連味（制作提案）
 
 **コマはみ出し**は人物等がコマ枠を越えること、**裁ち切り**は画を仕上がり端まで広げることとして区別する。1ページ1コマ、枠なしの絵、見開きもそれぞれ別の操作であり、一括して「大ゴマ」と扱わない。

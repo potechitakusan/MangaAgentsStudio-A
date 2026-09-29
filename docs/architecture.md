@@ -8,9 +8,11 @@
 | --- | --- | --- |
 | `docs/knowledge/manga/` | 漫画の工程・技法。人物・情報・演技・回収の汎用知識も該当項目へ統合 | 同じ相対パスへコピー |
 | `docs/knowledge/` 直下 | 読みやすさ等の観点別詳細、共通レビュー、PSD・設定・操作などの運用手順 | 同じ相対パスへコピー |
+| `docs/knowledge/image-generation/` | モデル・版・実行環境別の画像入力と観察、匿名化した制作根拠の要約 | 同じ相対パスへコピー。作品の原画・ログは含めない |
 | `docs/knowledge/supervision/` | 場面ごとの監修知識・出典・利用手順 | 明示リストの文書とマニフェストを同梱 |
 | `skills/` | 役割別スキルの原本 | `.agents/skills/` へコピー |
 | `templates/manga-project/` | 作品設定・記録の雛形、コマ割りテンプレート素材 | 作品ルートへコピー |
+| `templates/manga-project/docs/knowledge/novelai-composed-production.md` | NovelAIの画風選択・素材生成・組版の運用原本 | 雛形から `docs/knowledge/novelai-composed-production.md` へコピー |
 | `resources/novelai-style-samples/` | NovelAI画風候補のキット専用閲覧見本 | キットにのみ同梱。新規作品へコピーしない |
 | `templates/manga-project/OPTION.md` | Web制作を基本とする、用途・好みで選べる初期設定 | 作品ルートへコピー。適用手順は `docs/knowledge/project-options.md` |
 | `templates/manga-project/PRINT-OPTION.md` | 印刷を選んだ場合だけ使う設定・仕様・検証記録 | 作品ルートへコピー。既定は使用しない |
@@ -19,8 +21,11 @@
 | `templates/manga-project/config/process-requirements.json` | 個人の必須事項の空の雛形 | 空配列だけを配布。明示された作品からの引継ぎは作成時に別処理 |
 | `scripts/process_checker.py` | 必須事項の登録・根拠管理・強い指示のAGENTS反映・任意のHooks | `scripts/` へコピー |
 | `templates/manga-project/scripts/novelai_api.py` | 作品単位のNovelAIキー読込・生成なしの契約照会・明示実行による１枚生成 | 雛形から `scripts/` へコピー。Python標準ライブラリのみ。認証情報は配布しない |
+| `templates/manga-project/scripts/novelai_batch.py` | コマ別の要求JSONのページ単位・全ページの順次生成、候補の採用、キャラ別プロンプト変数（`.env` の `NOVELAI_CHAR_*`）の展開、採用画像・配置・組版からのページPNG・PSDの組み直し。人が再実施できる形で残す | 雛形から `scripts/` へコピー。生成は `novelai_api.py`、組版は `typeset_manga.py`、PSDは `export_composed_psd.py` を使う |
+| `templates/manga-project/scripts/typeset_manga.py` | フキダシ・縦書きセリフ・画中の文字・コマ枠の透明レイヤー組版と、句読点・しっぽ・重なり・読み順等の点検。作画は変更しない | 雛形から `scripts/` へコピー。Pillowを使う。フォントは同梱せず作品の `assets/fonts/` またはOSのフォントを使う |
 | `templates/manga-project/config/novelai-request.example.json` | モデルとプロンプト未設定の生成要求例 | 同じ相対パスへコピー。採用後は作品側で要求JSONを作る |
-| `scripts/New-MangaProject.ps1` | 新規作品の作成 | しない |
+| `scripts/New-MangaProject.ps1` | 新規作品の作成。`-AgentMode`（`Codex` 既定／`Claude`）で作業エージェント別の追加ファイルを切り替える | しない |
+| `templates/manga-project/agent-modes/claude/` | Claude用モードの `CLAUDE.md`（`AGENTS.md` と読み替えの読込）と `AGENT-MODE.md`（Codex前提の箇所の読み替え） | 既定の一括コピーから除外。`-AgentMode Claude` のときだけ作品ルートへコピー |
 | `scripts/Resolve-ReviewProfile.ps1` | レビュー重点の解決 | `scripts/` へコピー |
 | `scripts/Initialize-OptionalSkills.ps1` | 有効にした推敲スキルを作品の最初の作業時に導入。Gemini版は利用許可後のみ | `scripts/` へコピー。作品の作成時には実行しない |
 | `scripts/validate_panel_plan.py` | コマ割り計画のルール検証 | `scripts/` へコピー |
@@ -33,6 +38,14 @@
 | `特別な理由でこのフォルダの中で漫画を作ります.txt` | ユーザーが例外制作時だけ作成 | 公開・配布とも対象外 |
 
 雛形、共通知識、スキルを別々に保守し、作成時に一つの作品へ組み立てます。制作の共通知識とスクリプトは作品内に同梱し、NovelAIの画風見本を案内するときはキット側のHTMLの場所を使います。版と各ファイルのSHA-256は `docs/distribution-snapshot.json`、作品名・作成日・配布版・コピー元は `project.json` に記録します。コピー元の `sourceKitRelativePath` は作品ルートからキットへの相対パスで、作成スクリプトが実際の位置から算出します。見本案内時はこれを解決し、設定の `kit_sample_library_relative_path` を結合して実在だけを確認します。移動後に見つからない場合や記録のない既存作品では場所を確認し、パスを推測しません。保存する作業パスは相対パスです。
+
+### コマ別画像生成の正本
+
+生成方式の選択は `manga-ai-production`、画像条件付きのコマ作画は `skills/manga-external-panel-i2i/SKILL.md` を入口にします。共通判断は `docs/knowledge/external-panel-i2i.md`、モデル固有の症状・入力例は `docs/knowledge/image-generation/`、接続・費用は既存の `docs/knowledge/novelai-api.md` 等へ集約します。モデル名だけで独立スキルを増やしません。
+
+共通・モデル文書はknowledgeの再帰コピー、スキルはskillsのコピーで配布します。NovelAI組版文書は上表の雛形内原本を保ち、knowledge側に同名の複製を作りません。同文書やノウハウ一覧のリンクは、作品へ組み立てた後の `docs/knowledge/` を基準とします。キット内では上表の原本を参照します。
+
+2026-09-26の取り込みは、既存Qwenスキルの共通工程を共通スキルへ、入力例と観察をQwen文書・根拠要約へ整理したものです。このキットには旧名のスキルを重複追加せず、個人用や既存作品に導入済みの `manga-qwen-reference-production` は自動置換しません。更新する場合は作品の用途制限と実入力記録を照合します。NovelAIの未実施検証はキットの非公開 `docs/PLAN.md` に置き、新規作品の作業計画へコピーしません。
 
 ## 新規作品を作る
 
@@ -48,6 +61,8 @@
 # 既存の親フォルダを相対パスで指定する場合
 .\scripts\New-MangaProject.ps1 -ProjectName '別作品' -DestinationParent '..'
 ```
+
+キットはCodex（内蔵の画像生成あり）での利用を主とする。`-AgentMode Claude` を指定した場合だけ、`agent-modes/claude/` の２ファイルを作品ルートへ追加し、`project.json` の `agentMode` に記録する。`AGENTS.md`・`OPTION.md`・共通知識の本体は書き換えず、Codex前提の箇所（imagegen、呼称、`wait_agent` 等）は `AGENT-MODE.md` で読み替える。既定（`Codex`）では両ファイルを作らない。共通知識のClaude用の複製や、Claude Codeの権限設定の自動作成は行わない。範囲の整理は公開対象外の作業記録に置く。
 
 既定の作成先は `../作品名/`。`-DestinationParent` を変える場合も通常の制作先はキット外にします。日本語、英数字、空白、ハイフン、アンダースコアを使用できます。名前にパスやWindowsの予約名は使えません。既存フォルダは上書きせず、`-WhatIf` ではファイルを作りません。
 

@@ -126,8 +126,15 @@ class NovelAIClientTests(unittest.TestCase):
         network.assert_not_called()
         self.assertFalse((self.root / "output").exists())
 
-    def test_page_size_mismatch_and_multiple_samples_are_rejected(self):
-        for parameters in ({"width": 1024}, {"n_samples": 2}, {"n_samples": True}):
+    def test_panel_size_differs_from_page_canvas(self):
+        # コマ別素材は要求に書いた寸法を優先し、generationCanvasとの一致を求めない。
+        self.request["parameters"].update({"width": 1216, "height": 832})
+        self.save_request()
+        request, _ = api.prepare_request(self.root, self.args.request)
+        self.assertEqual((request["parameters"]["width"], request["parameters"]["height"]), (1216, 832))
+
+    def test_invalid_size_and_multiple_samples_are_rejected(self):
+        for parameters in ({"width": 1024}, {"width": 1000, "height": 1024}, {"n_samples": 2}, {"n_samples": True}):
             with self.subTest(parameters=parameters):
                 original = self.request["parameters"].copy()
                 self.request["parameters"].update(parameters)

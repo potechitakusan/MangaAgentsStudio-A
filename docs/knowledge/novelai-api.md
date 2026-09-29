@@ -60,7 +60,7 @@ python -X utf8 scripts/novelai_api.py status
 
 1. 作品の画風選択を済ませ、使用するモデル・sampler・機能を公式仕様で確認する。画風未選択の試験生成も行わない。
 2. `config/novelai-request.example.json` を作品の `input/novelai-request.json` へコピーし、`input` にプロンプト、`model` に確認したモデルIDを設定する。samplerとscaleは採用モデルに合わせて見直す。例のモデル・プロンプトは空なので、そのまま送信できない。
-3. [ページ設定](page-layout.md)に従い、`config/page-layout.json` の `generationCanvas` に採用した幅・高さを設定する。要求JSONのwidth・heightが未指定ならここから補い、指定済みで不一致なら止める。同梱枠の2000×3000pxは生成寸法の既定値ではない。
+3. 要求JSONに `width`・`height` を両方書いた場合はその寸法を使う（64以上の64の倍数）。コマ別の素材はコマより広い範囲を生成するため、ページ全体の生成希望寸法と違ってよい。書かない場合は [ページ設定](page-layout.md)に従い、`config/page-layout.json` の `generationCanvas` から補う。同梱枠の2000×3000pxは生成寸法の既定値ではない。2026-09-29のユーザー指示で、従来の「generationCanvasとの不一致で止める」動作から変更した。
 4. steps未指定ならV5は23、それ以外は28。n_samplesは１枚に限定し、seedは固定する。V4・V5の `v4_prompt` と `v4_negative_prompt` が未指定なら、本文から人物別指定なしの構造を補う。人物別プロンプト等の指定済み構造は保持する。モデルごとの追加要件・samplerの互換性まではローカルで検証しない。
 
 ```powershell
@@ -68,6 +68,8 @@ python -X utf8 scripts/novelai_api.py generate --request input/novelai-request.j
 ```
 
 この段階はキーを読まず通信もしない。寸法・steps・枚数・モデル・送信する要求全体のSHA-256を表示する。費用確認前に試験送信はしない。
+
+漫画のコマ素材は、１コマ１要求のJSONを `input/novelai/requests/` に保存し、`scripts/novelai_batch.py` でページ単位・全ページを１枚ずつ順に生成する。検証・費用確認・実行記録・再送しない扱いはこの文書と同じ。使い方は [NovelAIでの制作手順](novelai-composed-production.md#batch)。公式APIの説明には人の操作を起点とする生成と過大な自動負荷の禁止が記載されているため、一括生成は人の指示で起動し、既定の送信間隔と件数の上限を保つ。この運用が利用条件に適合するかは未検証で、利用者が最新の規約を確認する。
 
 ## 確認後に生成する
 
@@ -118,3 +120,11 @@ input/novelai-request.jsonとページ設定を整え、送信なしの要求確
 確認日：2026-09-21。確認事実は [NovelAI公式画像APIスキーマ](https://image.novelai.net/docs/doc.json) に記載されたPersistent API token認証、`/user/subscription`、`/ai/generate-image`、生成パラメーター、JSON/base64・ZIP応答、照会IDの形式。スキーマの `basePath` は `/`、hostは未指定のため、この実装ではスキーマ提供元の `https://image.novelai.net` に接続先を固定する。リダイレクトへ認証ヘッダーを転送しない。
 
 既定値・保存規則・費用確認フラグはキットの実装方針。実際の契約での接続、各モデルの生成、APIでの0 Anlas適用、V5残枠、生成品質は未検証。公式スキーマの取得と実APIでの動作確認を区別し、確認結果は作品の通常の進捗記録へ残す。
+
+### 残る検証の単位
+
+2026-09-26のフィードバック取り込みでは、NAI-VERIFY-01をキットの非公開作業計画に登録した。現行仕様と接続、費用・使用枠、最小の実API往復、対応する画像入力、コマ別制作の比較、確認結果の文書反映を分けて扱う。実施条件・進行状況は作業計画、接続・料金の確認結果はこの文書を正本とする。作品への配布物だけでは検証済みと判断しない。
+
+初期画像i2i、外見・画風の専用参照、複数画像入力は、対象モデルの実スキーマ・枚数・強度・前処理・追加費用をそれぞれ確認する。UIの機能名からAPI対応を推測せず、t2i成功をi2iの検証完了に数えない。無消費扱いのt2i候補条件を画像入力へ流用しない。
+
+コマ比較は [外部画像生成の共通手順](external-panel-i2i.md) へ接続するが、NovelAIでの同等効果は未検証。完了の根拠には実施日・モデル・環境・対応入力・要求設定・許可と費用の根拠・実結果と原画・失敗と限界・反映先が必要。未対応は対象と根拠を残し、未実施・費用不明の機能は残項目にする。タスク登録をAPI送信やAnlas消費の許可にはしない。

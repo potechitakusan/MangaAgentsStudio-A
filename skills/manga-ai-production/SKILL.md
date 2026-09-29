@@ -9,9 +9,15 @@ description: キャラ参照絵やページ配置から漫画のページ・コ�
 
 対象シーン・狙い・入力（あらすじ/字コンテ/ネーム/原稿/参照絵）を確認し、`docs/knowledge/review-workflow.md` に従って実効重点を読む。担当する主観点は `characterConsistency`。内容の判断には `docs/knowledge/ai-production.md` の該当箇所を参照する。
 
+QwenやNovelAI等へ画像を条件として渡し、コマ別に作画する方式を選んだ場合は、同梱の `manga-external-panel-i2i` と `docs/knowledge/external-panel-i2i.md` へ進む。モデル固有の入力・症状は該当モデル文書、接続・料金はサービス文書を参照する。接続確認だけ、文字だけの生成、imagegenによる新規のコマ・ページ作画にはこの分岐を強制しない。Qwen-Image 2.1の制作記録とQwen-Image-Edit-2511の資料を区別する。
+
 ページ作画の生成前は `docs/knowledge/panel-layout-policy.md` を読み、テンプレートの採用ID、または演出上の独自配置とその理由をページ別記録へ残す。原則テンプレートを使用し、ユーザーの必須・不使用指定を優先する。imagegenでは番号付きレイアウト画像と各コマの内容を実際に画像入力・指示へ渡し、ページ全体の一括生成を基本とする。独自配置でも参照画像を用意し、必要時のコマ別生成は理由を記録する。枠・吹き出し・文字を含めた生成を一律禁止せず、生成後に計画・原文と照合して番号等の混入やずれを修正する。キャラ参照絵だけの生成にはページ配置を要求しない。NovelAI等は各環境の制作手順に従う。
 
-NovelAIを使うときは `docs/knowledge/ai-production.md` のOpus節を読む。OpusならAnlas消費なしを既定とし、寸法・Steps・１回の枚数・追加機能とV5の利用上限を確認する。採用寸法は `config/page-layout.json` と生成ツールへ反映し、枠・最終PNGは `docs/knowledge/page-layout.md` に従って生成実寸に合わせる。0 Anlasを確認できない生成を試験送信せず、有料利用は既に明示された指示の範囲でのみ行う。
+NovelAIを使うときは `docs/knowledge/ai-production.md` のOpus節を読む。OpusならAnlas消費なしを既定とし、寸法・Steps・１回の枚数・追加機能とV5の利用上限を確認する。採用寸法は `config/page-layout.json` と生成ツールへ反映し、枠・最終PNGは `docs/knowledge/page-layout.md` に従って生成実寸に合わせる。0 Anlasを確認できない生成を試験送信せず、有料利用は既に明示された指示の範囲でのみ行う。NovelAIのコマ素材は `docs/knowledge/novelai-composed-production.md` に従い、本番前に人物試作を１回生成して外見を照合し、コマの形に近い縦横比で生成する。コマより広い範囲を生成して最上段のコマ枠とマスクで必要な部分を見せ、拡大しすぎて字コンテの主対象・動作・画角を失わない。要求のプロンプトは `docs/knowledge/novelai-composed-production.md` の「要求プロンプトの組み立て」に従い、`generate` の警告を直してから送信する。要求は１コマ１JSONで `input/novelai/requests/` に保存し、生成・採用・組み直しは `scripts/novelai_batch.py` で行い、人間が再実施できるコマンドを `docs/production/NOVELAI-BATCH.md` に残す。キャラ別プロンプトの `.env` 変数化は人間の依頼がある場合だけ、変数名を確認して行う。
+
+文字・吹き出しは `docs/knowledge/page-layout.md` の「文字・吹き出しの仕上げ」に従い、imagegenでは画像に含めて生成するのを基本とし、imagegen以外では作画後に別に載せる。作画前に使用手段から判断し、組版方法の回答を制作開始条件にしない。
+
+作画後は画像を実際に開き、`docs/reviews/NAME-REVIEW.md` の「作画後の照合表」をコマごとに記入する。別組版する場合は組版前に照合を終え、`scripts/typeset_manga.py` の点検結果と原画入りの確認画像を使って「組版後の点検」を記入する。imagegenで文字・吹き出し込みで生成した場合は生成後に完成ページを照合・点検する。文字・フキダシ・画中の文字の扱いは `docs/knowledge/japanese-manga-readability.md` に従い、依頼にない作品名・ページ番号を入れない。
 
 キャラの固定特徴、参照絵、変更したい要素、利用可能な環境を確認する。反復比較はComfyUI、局所編集は利用可能な画像編集機能を候補とし、NovelAI出力をComfyUIで絵柄へ寄せる場合は元の特徴を残す条件も記録する。指定モデル名の実在と互換性を調べ、未導入を勝手に導入済みと扱わない。seed固定だけでキャラ一貫性を保証しない。実験はdocs/experiments/TEMPLATE.mdの形式で条件・試行数・失敗・結果を残し、未生成なら未実証と明示する。認証キーの値を回答やログへ書かない。画像生成・編集時は環境にある対応Skillの必要な手順を確認し、提供されていないツール/APIをあるものとして実行しない。
 

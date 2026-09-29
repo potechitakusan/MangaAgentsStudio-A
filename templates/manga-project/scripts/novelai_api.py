@@ -195,7 +195,10 @@ def subscription(key: str) -> dict:
 
 
 def prepare_request(root: Path, relative: str) -> tuple[dict, bytes]:
-    request = read_json(project_path(root, relative))
+    return prepare_request_data(root, read_json(project_path(root, relative)))
+
+
+def prepare_request_data(root: Path, request: dict) -> tuple[dict, bytes]:
     if set(request) != {"action", "input", "model", "parameters"} or request.get("action") != "generate":
         raise ClientError("要求はaction=generate、input、model、parametersの４項目にしてください。")
     if not isinstance(request["input"], str) or not request["input"].strip():
@@ -205,17 +208,23 @@ def prepare_request(root: Path, relative: str) -> tuple[dict, bytes]:
     params = request["parameters"]
     if not isinstance(params, dict):
         raise ClientError("parametersはオブジェクトにしてください。")
-    layout = read_json(root / "config/page-layout.json")
-    canvas = layout.get("generationCanvas")
-    if not isinstance(canvas, dict):
-        raise ClientError("先にconfig/page-layout.jsonのgenerationCanvasへ採用したwidth・heightを設定してください。")
-    for dimension in ("width", "height"):
-        size = canvas.get(dimension)
-        if type(size) is not int or size < 64 or size % 64:
-            raise ClientError("生成希望寸法は64以上の64の倍数で指定してください。")
-        if dimension in params and (type(params[dimension]) is not int or params[dimension] != size):
-            raise ClientError("要求寸法とgenerationCanvasが一致していません。採用寸法をそろえてください。")
-        params[dimension] = size
+    if "width" in params or "height" in params:
+        # コマ別の素材はコマより広い範囲を生成し、配置時にコマ枠・マスクで必要な部分を見せる。
+        # 要求に書いた寸法を優先し、ページ全体の生成希望寸法との一致は求めない。
+        for dimension in ("width", "height"):
+            size = params.get(dimension)
+            if type(size) is not int or size < 64 or size % 64:
+                raise ClientError("要求のwidth・heightは両方を64以上の64の倍数で指定してください。")
+    else:
+        layout = read_json(root / "config/page-layout.json")
+        canvas = layout.get("generationCanvas")
+        if not isinstance(canvas, dict):
+            raise ClientError("要求にwidth・heightを書くか、config/page-layout.jsonのgenerationCanvasへ採用した寸法を設定してください。")
+        for dimension in ("width", "height"):
+            size = canvas.get(dimension)
+            if type(size) is not int or size < 64 or size % 64:
+                raise ClientError("生成希望寸法は64以上の64の倍数で指定してください。")
+            params[dimension] = size
     params.setdefault("n_samples", 1)
     if type(params["n_samples"]) is not int or params["n_samples"] != 1:
         raise ClientError("１回の生成枚数は１枚だけにしてください。")
@@ -327,6 +336,12 @@ def run(args, root: Path) -> None:
     if not args.execute:
         print("送信なし。実行には--executeと費用確認の指定が必要です。")
         return
+    execute_generation(root, request, payload, args.output, args)
+
+
+def execute_generation(root: Path, request: dict, payload: bytes, output_relative: str, args) -> Path:
+    """費用確認・契約照会の後に１回だけ送信し、PNGと実行記録を保存する。再送はしない。"""
+    digest = hashlib.sha256(payload).hexdigest()
     check_cost(args, request)
     key, source = load_key(root)
     # 誤って要求・費用メモへキーを貼った場合も送信・保存しない。
@@ -339,7 +354,7 @@ def run(args, root: Path) -> None:
         usage = state.get("usage", {})
         if usage.get("isNegative") is True or ("percent" in usage and usage["percent"] <= 0):
             raise ClientError("契約照会がV5利用上限の不足を示しています。回復を待ってください。")
-    output = project_path(root, args.output)
+    output = project_path(root, output_relative)
     if not output.is_relative_to(root / "output") or output.suffix.lower() != ".png":
         raise ClientError("保存先はoutput/内のPNGにしてください。")
     record_path = output.with_suffix(".novelai.json")
@@ -375,6 +390,7 @@ def run(args, root: Path) -> None:
     print("保存: " + output.relative_to(root).as_posix())
     print(f"生成実寸: {width}×{height}px。ページ設定に従って枠・最終PNGへ反映してください。")
     print("Anlasの実消費は未確認です。実行記録のactualAnlasCostはnullのまま保持しました。")
+    return output
 
 
 def main() -> int:

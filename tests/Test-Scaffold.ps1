@@ -33,7 +33,7 @@ Check ($creationText.Contains($projectRoot) -and $creationText.Contains('この�
 $project = Get-Content -LiteralPath (Join-Path $projectRoot 'project.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 Check ($project.name -ceq $japaneseName) 'Japanese project name survives JSON round trip'
 Check ((Split-Path $projectRoot -Parent) -eq $testRoot) 'Project is a direct child of the selected parent'
-Check (@(Get-ChildItem -LiteralPath (Join-Path $projectRoot '.agents\skills') -Directory).Count -eq 9) '監修とプロセスチェッカーを含む9つのスキルが同梱される'
+Check (@(Get-ChildItem -LiteralPath (Join-Path $projectRoot '.agents\skills') -Directory).Count -eq 10) '監修・プロセスチェッカー・外部コマ作画を含む10のスキルが同梱される'
 Check ((Test-Path -LiteralPath (Join-Path $projectRoot '.agents/skills/manga-process-checker/SKILL.md')) -and
        (Test-Path -LiteralPath (Join-Path $projectRoot 'scripts/process_checker.py')) -and
        (Test-Path -LiteralPath (Join-Path $projectRoot 'docs/knowledge/process-checker.md'))) 'プロセスチェッカーの手順・管理スクリプト・知識が配布される'
@@ -79,6 +79,10 @@ Check ((Test-Path -LiteralPath (Join-Path $projectRoot 'OPTION.md') -PathType Le
 Check ((Test-Path -LiteralPath (Join-Path $projectRoot 'PRINT-OPTION.md')) -and
        (Test-Path -LiteralPath (Join-Path $projectRoot 'docs\knowledge\page-layout.md')) -and
        (Test-Path -LiteralPath (Join-Path $projectRoot 'scripts\prepare_page_layout.py'))) '印刷専用の別紙とWeb用の基本枠手順・処理が配布される'
+Check ((Test-Path -LiteralPath (Join-Path $projectRoot 'scripts\typeset_manga.py') -PathType Leaf) -and
+       (Get-Content -LiteralPath (Join-Path $projectRoot 'docs\reviews\NAME-REVIEW.md') -Raw -Encoding UTF8).Contains('## 作画後の照合表')) '組版スクリプトと、組版前に記入する作画後の照合表が配布される'
+Check ((Test-Path -LiteralPath (Join-Path $projectRoot 'scripts\novelai_batch.py') -PathType Leaf) -and
+       (Test-Path -LiteralPath (Join-Path $projectRoot 'docs\production\NOVELAI-BATCH.md') -PathType Leaf)) 'NovelAIの一括生成・採用・組み直しの処理と記録の雛形が配布される'
 $pageConfig = Get-Content -LiteralPath (Join-Path $projectRoot 'config\page-layout.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 Check ($pageConfig.schemaVersion -eq 2 -and $null -eq $pageConfig.generationCanvas -and
        $null -eq $pageConfig.canvas -and $null -eq $pageConfig.exportCanvas -and
@@ -140,6 +144,22 @@ Check $inheritedHashesValid '指示を引き継いだAGENTSと正本も作成時
 Check ((Get-FileHash -LiteralPath (Join-Path $processSource 'config/process-requirements.json')).Hash -eq $sourceRequirementsHash) '引継ぎ元の指示は変更しない'
 $originalHash = (Get-FileHash -LiteralPath (Join-Path $projectRoot 'project.json')).Hash
 Must-Fail { & $maker -ProjectName $japaneseName -DestinationParent $testRoot } 'Existing project is rejected'
+# 既定はCodex。Claude用のファイルは -AgentMode Claude のときだけ配布する。
+Check ($project.agentMode -eq 'Codex' -and
+       -not (Test-Path -LiteralPath (Join-Path $projectRoot 'CLAUDE.md')) -and
+       -not (Test-Path -LiteralPath (Join-Path $projectRoot 'AGENT-MODE.md')) -and
+       -not (Test-Path -LiteralPath (Join-Path $projectRoot 'agent-modes'))) '既定のCodexモードではClaude用のファイルを作らない'
+$claudeResult = & $maker -ProjectName 'ClaudeMode' -DestinationParent $testRoot -AgentMode Claude -InformationVariable claudeMessages
+$claudeRoot = (Resolve-Path -LiteralPath $claudeResult.Path).ProviderPath
+$claudeProject = Get-Content -LiteralPath (Join-Path $claudeRoot 'project.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+$claudeSnapshot = Get-Content -LiteralPath (Join-Path $claudeRoot 'docs\distribution-snapshot.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+$claudeFiles = @($claudeSnapshot.files | Where-Object { $_.path -in @('CLAUDE.md', 'AGENT-MODE.md') })
+Check ($claudeProject.agentMode -eq 'Claude' -and $claudeResult.AgentMode -eq 'Claude' -and $claudeFiles.Count -eq 2 -and
+       @($claudeFiles | Where-Object { $_.sha256 -ne (Get-FileHash -LiteralPath (Join-Path $claudeRoot $_.path) -Algorithm SHA256).Hash.ToLowerInvariant() }).Count -eq 0 -and
+       (Get-Content -LiteralPath (Join-Path $claudeRoot 'CLAUDE.md') -Raw -Encoding UTF8).Contains('@AGENTS.md') -and
+       -not (Test-Path -LiteralPath (Join-Path $claudeRoot 'agent-modes'))) 'Claude用モードでCLAUDE.mdと読み替えを配布し、記録する'
+Check (($claudeMessages | Out-String -Width 4096).Contains('Claudeを開き直してください')) 'Claude用モードではClaudeで開き直すよう案内する'
+Must-Fail { & $maker -ProjectName 'UnknownMode' -DestinationParent $testRoot -AgentMode 'Gemini' } '未対応のエージェントモードを拒否する'
 Check ((Get-FileHash -LiteralPath (Join-Path $projectRoot 'project.json')).Hash -eq $originalHash) 'Existing project remains unchanged'
 $previewResult = & $maker -ProjectName 'PreviewOnly' -DestinationParent $testRoot -WhatIf -InformationVariable previewMessages
 Check (-not (Test-Path -LiteralPath (Join-Path $testRoot 'PreviewOnly'))) 'WhatIf does not create files'

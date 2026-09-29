@@ -27,8 +27,10 @@
 | 連載、群像、ギャグを作りたい | [連載とギャグ](knowledge/manga/06-series-comedy.md) | [情報と反復の管理表](story/INFORMATION-SHEET.md) |
 | 演出の選択肢と比較例を見たい | [効果別の演出パターン](knowledge/manga/07-case-patterns.md)、[コマ配分の比較手順](knowledge/manga/09-worked-example.md) | [ネーム点検表](reviews/NAME-REVIEW.md) |
 | 通読して改稿したい | [ネームからPSDまで](knowledge/manga/08-workflow-review.md)、[レビュー運用](knowledge/review-workflow.md) | [ネーム点検表](reviews/NAME-REVIEW.md) |
-| 縦書き・フキダシ・読み順を直したい | [日本語漫画の読みやすさ](knowledge/japanese-manga-readability.md) | [確定セリフ](production/DIALOGUE.md) |
+| 縦書き・フキダシ・読み順を直したい | [日本語漫画の読みやすさ](knowledge/japanese-manga-readability.md)、[組版スクリプトと自動点検](knowledge/japanese-manga-readability.md#typeset-script) | [確定セリフ](production/DIALOGUE.md)、[ネーム点検表](reviews/NAME-REVIEW.md)の「作画後の照合表」「組版後の点検」 |
 | AIで絵を作り、キャラを保ちたい | [画像制作と実験](knowledge/ai-production.md) | [実験記録](experiments/TEMPLATE.md) |
+| 外部機能へ下絵・参照画像を渡し、コマ別に作りたい | [共通手順](knowledge/external-panel-i2i.md)、[Qwen-Image 2.1](knowledge/image-generation/qwen-image-2.1.md)、[制作根拠](knowledge/image-generation/production-evidence.md) | `manga-external-panel-i2i`、[実験記録](experiments/TEMPLATE.md) |
+| NovelAIで素材生成と組版を行いたい | [接続・費用](knowledge/novelai-api.md)、[制作手順](knowledge/novelai-composed-production.md)、[一括生成・採用・組み直し](knowledge/novelai-composed-production.md#batch) | 採用設定と通常の制作記録。t2iと画像入力を区別。[NovelAI一括生成の記録](production/NOVELAI-BATCH.md) |
 | 人間が仕上げられるPSDにしたい | [PSD引き渡しの条件](knowledge/psd-handoff.md) | [引き継ぎ仕様と検証](production/PSD-HANDOFF.md) |
 | 用語や出典、採否を確認したい | [用語辞書](knowledge/glossary.md)、[新規取り込みの出典](knowledge/manga-sources.md)、[還元手順](knowledge/feedback-workflow.md) | [作品用語](story/TERMS.md)、[フィードバック](feedback/TEMPLATE.md) |
 

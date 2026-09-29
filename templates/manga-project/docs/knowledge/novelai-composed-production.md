@@ -14,13 +14,148 @@
 
 ## 素材生成と組版
 
+文字だけのt2iと、初期画像・参照画像を使う方式を区別する。画像条件付きのコマ作画を選んだ場合だけ `manga-external-panel-i2i` と [共通手順](external-panel-i2i.md) を併用し、入力の実装・追加費用は [API手順](novelai-api.md) で確認する。画風選択・費用確認・文字と枠の分離はt2iにも適用する。Qwenの画像順や強度をNovelAIへ流用しない。
+
 Codexでコマ割りと読み順を設計し、NovelAIは文字・枠のない組版用イラストに使う。全身や周囲の余白を残しやすい構図で生成し、配置時に回転・拡大・部分表示する。必要な場面では人物だけを枠より前へ置く。見せたい接点・顔・手と、文字を置く余地を生成前に決める。
+
+### 本番前の人物試作
+
+コマの生成へ進む前に、主要人物ごとに人物試作を１回生成する（Opusの無料条件内。複数人物を１枚にまとめてもよい）。字コンテやキャラ設定の外見（髪の長さ・色、眼鏡、上着と制服の重ね順、小物の左右）と照合し、ずれがあれば人物の外見文を直してから本番へ進む。試作と修正内容は制作記録へ残す。依頼で人物試作を省く指示がある場合はそれに従う。
+
+### 生成寸法と配置
+
+コマ別の素材は**コマより広い範囲**を生成し、ページではコマ枠（コマ外を白で覆う最上段の枠レイヤー）とマスクで必要な部分だけを見せる。元画像は全体をPSDのレイヤーに残し、人間があとからペイントソフトで位置・大きさを調整できるようにする。
+
+- 寸法は要求JSONの `width`・`height` に書く。ページ全体の生成希望寸法（`generationCanvas`）と違ってよい。縦横比はコマの形に近いものを選ぶと、使える範囲が広くなる（横長のコマは横長、縦長のコマは縦長）。寸法の例は `config/novelai-production-policy.json` の `panel_canvas_examples`。Opusの無消費候補の画素数・steps等の条件は従来どおり確認する。
+- コマ内の見せ方はページ構成JSONの `focus`（画像内でコマの中心に置く点）・`zoom`・`rotation` で指定する。
+- 「引き・上から中庭を見下ろす」のように空間を見せるコマで、大きく拡大して一部だけを見せると空間が消える。引きの構図そのものを生成し直す。
+- 配置の後にも、字コンテの主対象・動作・人物・小物がコマ内に見えるかを、下の照合表で確かめる。顔がコマ端で半分切れる等の問題は配置を直す。
+
+<a id="prompt-writing"></a>
+
+### 要求プロンプトの組み立て
+
+字コンテのコマを、画像に**見える形**の語へ置き換えてから書く。2026-09-29の比較で、プロンプトが原因の不一致（人のいない靴だけ、紙が折られたまま、座るはずが立っている）が出た書き方を避けるための制作提案であり、効果は検証中。
+
+1. **順番**：人数と主対象（`1boy, solo` / `no humans`）→ 見える姿勢・動作・表情 → 画角・被写体の大きさ・画面内の位置 → 場所の目印 → 時間・光 → 画風。画風の定型文は最後に置き、コマ固有の内容を先に書く。
+2. **否定語を肯定側に書かない**：`not smiling`、`no people`、`without glasses`、`neither …` は、その語（smiling、people、glasses）に反応して逆に出ることがある。避けたい要素は `negative_prompt` に書く。人物なしは `no humans` のタグを使う。
+3. **意図ではなく見える形を書く**：`about to sigh`、`as if starting to reply`、`awkward` ではなく、`eyes half closed, shoulders dropped, mouth slightly open, looking aside` のように顔・手・体の形で書く。
+4. **途中ではなく状態を書く**：`unfolding a paper airplane` は途中の形（折られたまま）で出やすい。見せたいのが結果なら `an unfolded sheet of paper with fold creases, held open in both hands` のように、その瞬間に見える状態を書く。
+5. **部分のアップは誰の体かを書く**：`dark school shoes` だけでは靴が置いてある絵になる。`1boy, lower body, standing, legs in navy trousers and white lab coat hem, school shoes, a paper airplane on the ground at his feet` のように、人物・体の範囲・姿勢を書く。手のアップも `1girl, hands only, …` のように持ち主を書く。
+6. **2人のコマ**：１つの文に２人分の外見を続けて詰めると、姿勢の指定が埋もれ、外見も混ざりやすい。まず１人ずつのコマに分けられないかを検討する（相手は画面外・肩越しなど）。２人を同時に描く場合は、姿勢と位置関係（`sitting side by side on the floor, knees up, girl on the right`）を外見より前に書き、外見は識別に必要な最小限にする。人物ごとに分けて書く機能（`v4_prompt` の `char_captions`）を使う場合は、使う前に公式スキーマで書式を確認する。
+7. **画角は字コンテから選ぶ**：`from above`・`from below`・`from behind` は候補であり、全コマの先頭に付ける決まりではない。何を見せるかに合わせて選び、画面内の目印（`rooftop edge at the top of the frame`、`courtyard far below`）や被写体の大きさ（`small in frame`、`upper body`）も書く。同じ画角が続く場合は意図を確認する。
+
+8. **識別の特徴を要求ごとに書く**：人物が出る要求には、その人物を見分ける特徴（髪の色と長さ、眼鏡の形、服の重ね順・内側の服、小物）を毎回同じ語で書く。前のコマに書いたから省く、ということをしない。2026-09-29の検証では、要求ごとに書き方が揺れたコマで髪色・眼鏡の形・内側の服がばらついた。特徴は人物試作で採用した見本に合わせて `input/novelai/characters.json` に登録し、要求ごとの登場人物と、そのコマで見える特徴を `cast` に書く。
+
+```json
+{
+  "characters": {
+    "mio": {"name_ja": "日向ミオ", "features": {
+      "hair": "light brown short bob hair", "hairpin": "yellow hairpin on left bangs",
+      "outer": "open yellow hoodie worn over navy blazer"}},
+    "ren": {"name_ja": "月島レン", "features": {
+      "hair": "short black hair", "glasses": "thin black rectangular glasses",
+      "outer": "white lab coat over navy blazer"}}
+  },
+  "cast": {
+    "p01-01": {"mio": "all"},
+    "p01-03": {"mio": ["outer"]},
+    "p04-05": {"mio": "all", "ren": "all"}
+  }
+}
+```
+
+`"all"` は全特徴、配列はそのコマで見える特徴だけ（手元のアップなら服の袖だけ等）。特徴の文字列は要求のプロンプトにそのまま含める（大文字・小文字は区別しない）。キャラ別プロンプトを `.env` の変数にしている場合は、展開後の文で点検する。
+
+9. **数値の年齢や man・woman を入れない**：`25 years old`、`40歳` のような数値の年齢は見た目に効きにくい。`man`・`woman` を書くと、`1girl`・`1boy` で指定した人物とは別の２人目が現れることがある（2026-09-29のユーザー指示）。人物は `1girl`・`1boy`・`solo` と外見の語で書く。`teenage`、`high school student`、`adult` のような年代・立場の語は使ってよい。大人びて・幼く見せる調整は、体格・顔立ち・服装の語も合わせて行う。
+
+`novelai_batch.py generate` は送信前に上の2・3・5・6・8・9と画角の連続を点検し、警告を表示する。警告が残る要求は、プロンプトを直すか、残す理由を [NovelAI一括生成の記録](../production/NOVELAI-BATCH.md) に書いてから `--accept-warnings` を付けて送信する。点検は語の検出であり、プロンプトの良否を判定するものではない。
+
+<a id="batch"></a>
+
+### 要求JSON・一括生成・採用・組み直し（人間が再実施できる形）
+
+NovelAIの生成は結果のばらつきが大きい。人間がページ単位・全ページで何度か生成し直し、採用する画像を選んでから続きを進められるように、要求と構成をすべてファイルに残し、同梱の `scripts/novelai_batch.py` で生成・採用・組み直しを行う。独自の生成・組版スクリプトで置き換えない。
+
+| 置き場所 | 内容 |
+| --- | --- |
+| `input/novelai/requests/p01-03.json` | １コマ１要求のJSON（`novelai_api.py` と同じ形式）。ファイル名は `p{ページ2桁}-{コマ2桁}`、差し替え案は `p01-03b.json` のように末尾を足す。人物試作は `chara-mio.json` 等 |
+| `output/novelai/candidates/p01-03/r001.png` | 生成候補。実行ごとに番号が増え、上書きしない。隣に実行記録 `.novelai.json` |
+| `input/novelai/adopted.json` | 採用した候補（`adopt` で記録） |
+| `input/typeset/page-01.json` | 組版指定（フキダシ・文字・画中の文字・文字を置かない範囲）。形式は [組版スクリプト](japanese-manga-readability.md#typeset-script) |
+| `input/pages/page-01.json` | ページ構成：`layout.json`、組版指定、コマごとの採用画像（`request` またはファイル直接の `source`）と `focus`・`zoom`・`rotation`、効果音等の `overlays` |
+| `output/build/page-01/v001/` | 組み直しの結果。版ごとに新しいフォルダ。`page-01.png`、指定時は `page-01.psd`、`build.json`、組版の点検結果 |
+
+ページ構成の例：
+
+```json
+{
+  "schema_version": 1,
+  "layout": "output/layout/page-001-v1/layout.json",
+  "typeset": "input/typeset/page-01.json",
+  "panels": [
+    {"panel": 1, "request": "p01-01", "focus": [0.5, 0.4]},
+    {"panel": 2, "request": "p01-02", "focus": [0.5, 0.5], "zoom": 1.1},
+    {"panel": 3, "source": "output/fixed/p01-03-fix.png", "original_source": "output/novelai/candidates/p01-03/r002.png"}
+  ],
+  "overlays": [{"name": "効果音 パタ", "source": "templates/onomatopoeia/images/burst-pata.webp", "center": [700, 1300], "scale": 0.6, "rotation": -10}]
+}
+```
+
+コマンド（作品ルートで実行）：
+
+```powershell
+# 送信せずに内容・寸法・seedを確認
+python -X utf8 scripts/novelai_batch.py generate --page 1
+# 1ページ分を１枚ずつ順に生成（全ページは --all、特定コマは --ids p01-02,p01-04）
+python -X utf8 scripts/novelai_batch.py generate --page 1 --execute --confirm-zero-anlas --confirm-v5-allowance --cost-note '確認した方法・日時'
+# 候補を見比べて採用
+python -X utf8 scripts/novelai_batch.py list --page 1
+python -X utf8 scripts/novelai_batch.py adopt p01-02 --candidate 3
+# 同じページ・コマ・配置で組み直す（PSDも作るときは --write-psd）
+python -X utf8 scripts/novelai_batch.py build --page 1
+python -X utf8 scripts/novelai_batch.py build --all --write-psd
+```
+
+- `generate` は初回は要求のseed、２回目以降は乱数のseedを使う（`--seed request` で固定）。１件ずつ送信し、送信間隔は既定３秒、１回の上限は既定30件。失敗したら残りを送らずに止まり、自動再送しない。結果不明の実行記録があるコマは、確認して記録を移すまで再生成しない。費用確認のフラグは `novelai_api.py` と同じ意味で、確認していないフラグを付けない。
+- `build` は採用画像が未選択なら止まる。画像がコマの一部を覆えない配置は警告を出す。人間がコマンドで作ったPSDは、あとからペイントソフトで調整する前提とする。Codexが引き渡すPSDは、従来どおりPNGの修正確認とPSD作成の指示がそろってから作る。
+- Codexは最初の作画でもこの手順を使い、各ページのコマンドを [NovelAI一括生成の記録](../production/NOVELAI-BATCH.md) に残す。ユーザーに見せるPNGは `build` の出力を使う。
+
+<a id="character-variables"></a>
+
+### キャラ別プロンプトを .env から読み込む（依頼があった場合）
+
+人間が見た目を一括で変えて再生成できるように、キャラ別プロンプトを作品ルートの `.env` の変数にし、要求JSONからは `${NOVELAI_CHAR_MIO}` のように参照できる。**人間から依頼があった場合だけ**行う。
+
+1. 変数名の案（`NOVELAI_CHAR_` ＋半角英大文字・数字・`_`。例：`NOVELAI_CHAR_MIO`）と、各変数に入れるプロンプトを示し、ユーザーに確認する。
+2. `python -X utf8 scripts/novelai_batch.py env-set NOVELAI_CHAR_MIO --value-file input/novelai/char-mio.txt` で `.env` へ書く。`.env` の他の行（APIキー）は表示・変更しない。
+3. `templatize NOVELAI_CHAR_MIO --dry-run` で置き換える箇所を確認し、`templatize NOVELAI_CHAR_MIO` で要求JSON内の同じ文を変数に置き換える。
+4. `vars` で変数名を確認し、変数名と使う要求を [NovelAI一括生成の記録](../production/NOVELAI-BATCH.md) に残す。
+
+以後、人間は `.env` の値を書き換えてから `generate` を再実施できる。生成時には変数を展開した要求が実行記録に残る。`NOVELAI_CHAR_` 以外の変数・APIキーは要求へ展開しない。同じ変数が `.env` と `.secrets/` の両方にあると止まる。
+
+### 作画後の照合（組版の前に必ず行う）
+
+全コマの採用画像が揃ったら、組版へ進む前に作品の [ネーム点検表](../reviews/NAME-REVIEW.md) の「作画後の照合表」を、コマごとに**画像を実際に開いて**記入する。「計画」は字コンテの主対象・動作・画角・人物、「画像で見えたもの」は画像に実際に描かれた内容を書く。計画を写しただけの記入や、未確認のままの「一致」は不可。不一致は再生成・配置の変更・計画の見直しのどれかで解消し、採否と理由を残す。記入が終わるまで組版へ進まない。
+
+2026-09-29の比較では、照合を行わなかった側で、着地したはずの紙ひこうきがない、紙を開くはずが折られたまま、座るはずが立っている、等の不一致が６件残った。
+
+### 組版
+
+フキダシ・縦書きセリフ・画中の文字・コマ枠は、同梱の `scripts/typeset_manga.py` で組版する（使い方は [読みやすさ](japanese-manga-readability.md#typeset-script)）。独自に組版コードを書く場合も、次を満たす。
+
+- 会話のフキダシにはしっぽを付け、話者の口元へ向ける。しっぽを付けない場合（画面外の声等）は理由を記録する。
+- 顔・手・重要な小物の範囲に文字を置かない。範囲は画像を見て指定する。
+- 調査票・手紙・画面など、画中の物に書かれた文字は、物そのものを描いた差し込み（アップのコマや、コマ内に置いた用紙の絵）として見せる。ゲームの会話枠のような四角を画面の上に重ねない。
+- 依頼にない作品名・ページ番号・ロゴ・署名をページへ入れない。
 
 通常は `from above`、`from below`、`from behind` から場面に適した一つを選ぶ。`dutch angle`、`cinematic angle` は補助として適度に使う。全タグを毎回同時に入れない。水平・横からの視点は、新人物と背景の紹介、静止による緊張など意図を記録した場合だけ使う。俯瞰・背面でも重要な表情や接点が消えていないか確認する。
 
+この画角の優先は `config/novelai-production-policy.json` の採用設定に従うNovelAI制作の運用で、外部i2i全般の規則ではない。画角の意図は [画角・視点](manga/02-visual-direction.md) で判断し、生成・切り抜き後も接点・表情・動作のつながりを照合する。種類を増やすこと自体を目標にしない。
+
 オノマトペは `templates/onomatopoeia/catalog.json` を意味・読み・用途・強さ・書体・反復数で検索する。素材の文字をそのまま完成形とせず、`placement_hint_ja` と [反復して使う語の配置](../../templates/onomatopoeia/README.md#反復して使う語の配置) を確認する。震えの「プル」は同じ素材を2個並べて「プルプル」にする。継続するざわめきは「ザワザワ」、賑わいは「ワイワイ」のように反復形を選ぶ。読む方向に沿って近接させ、PNGでひと続きの語として読めるか確認する。一瞬の「ドキ」等の単独で自然な用法や、既に連結済みの素材まで一律に2個にしない。この配置方針は2026-09-21のユーザー指示による。
 
-適切な素材がなければ別の透過素材を生成し、実alpha・文字・反復数を確認する。反復の1文字連結は4〜7文字を別IDで扱う。セリフは原則縦書き・各列上詰めで組版し、枠・効果音・吹き出し・文字を分離する。
+適切な素材がなければ別の透過素材を生成し、実alpha・文字・反復数を確認する。反復の1文字連結は4〜7文字を別IDで扱う。セリフは原則縦書き・各列上詰めで組版し、枠・効果音・吹き出し・文字を分離する。オノマトペは音の出る時点のコマへ置く（着地音を滑空中のコマに付けない）。
 
 見た目が採用可能で一部分だけ違うときにimagegenで局所修正する。原画と編集版を両方保持する。構図・人物数・動作全体の不一致は組版や生成条件を見直す。過去セッションの「再生成5枚まで」を新作品の恒久上限にはしない。各依頼の上限に従う。
 

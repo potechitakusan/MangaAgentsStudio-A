@@ -17,6 +17,7 @@
 | 場面の笑い・魅力・感情・関係・展開を監修する | [監修知識の一覧](knowledge/supervision/README.md)、[監修スキル](../skills/manga-supervision/SKILL.md) |
 | 収録内容と配布方法を確認する | [構成と配布](architecture.md) |
 | 作画の環境と一貫性を考える | [AIによる画像制作](knowledge/ai-production.md) |
+| 外部機能へ下絵・参照を渡しコマ別に作る | [共通手順](knowledge/external-panel-i2i.md)、[Qwen-Image 2.1](knowledge/image-generation/qwen-image-2.1.md)、[根拠と限界](knowledge/image-generation/production-evidence.md) |
 | PNG確認からPSDへ進む | [PSD引き渡し](knowledge/psd-handoff.md) |
 | 任意の動画試作を行う | [動画試作](knowledge/video-previsualization.md)、[動画補助処理](knowledge/video-tools.md) |
 | 出典と適用範囲を確かめる | [出典台帳](SOURCES.md)、[脚本資料](knowledge/manga-sources.md) |

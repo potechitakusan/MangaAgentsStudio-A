@@ -1,6 +1,6 @@
 # レビューの重点設定と役割分担
 
-更新: 2026-09-17。以下は本プロジェクトの運用設計であり、評価効果を実証した尺度ではない。
+更新: 2026-09-26。以下は本プロジェクトの運用設計であり、評価効果を実証した尺度ではない。
 
 ## 1～5の意味
 
@@ -45,6 +45,8 @@
 | 情報差・前振り・緩急・無言 | [変化・緩急・提示順](manga/03-beat-pacing-timing.md) | `manga-immersion-review` |
 | 注目対象・反応・身体・空間 | [画角・視点](manga/02-visual-direction.md) | `manga-cinema-review` |
 | 絵と台詞の伝達・読み順・表示条件 | [日本語漫画の読みやすさ](japanese-manga-readability.md) | `manga-readability-review` |
+| 生成方式・キャラ一貫性・実験 | [画像制作](ai-production.md) | `manga-ai-production` |
+| 画像条件付きのコマ作画・修正・切り抜き | [共通手順](external-panel-i2i.md)、採用モデルの文書（[Qwen-Image 2.1](image-generation/qwen-image-2.1.md)） | `manga-external-panel-i2i` |
 | 指摘・比較・実画像と読者反応の確認 | この文書の[レビュー記録](#レビュー記録)以降 | 各レビュースキルと `manga-supervision` |
 | ユーザーが必須にした工程の登録・実施照合 | [プロセスチェッカー](process-checker.md) | `manga-process-checker` |
 
@@ -62,10 +64,13 @@
 | manga-supervision | 既存のギャグと、追加15テーマの試行版（一覧はsupervision） | 字コンテで表現案を相談し、プレビューを見て改善案を検討 |
 | manga-readability-review | 縦書き、読み順、文字配置 | ネーム・文字入れの相談とレビュー |
 | manga-ai-production | キャラ一貫性、モデル選択、実験 | 参照絵からコマを制作する段階 |
+| manga-external-panel-i2i | 構図・参照の実入力、コマ原画の修正、切り抜き後の整合 | 外部機能による画像条件付きのコマ作画を選んだ段階 |
 | manga-terminology-review | 用語と設定の表記ゆれ | レビュー時のみ。初稿執筆には辞書を読ませない |
 | manga-process-checker | 明示登録した必須工程と実施根拠 | 登録相談、登録事項がある作品の再開・工程の節目・引き渡し前 |
 
 レビュー依頼は「scene-003、p4～5、告白直前の緊張を残したい。無言コマの要否と画角を検討。本文は…」のように対象と効果を指定する。制作中に全Skillを毎回呼ぶ必要はない。
+
+コマ別の画像生成へは、cinemaが決めた注目対象・画角・接点、immersionが決めた間・感情・顔の見せ方を渡す。生成側はその意図を入力へ変換し、生成・切り抜き・後処理後にも保持されたか照合する。物語の因果はstory、枠・文字・読順はreadabilityへ戻し、角度の種類や顔を隠す頻度を生成側の一律規則にしない。[制作根拠E3](image-generation/production-evidence.md#e3)はこの接続の採用根拠で、個別技法の読者効果を実証したものではない。
 
 作品の `config/process-requirements.json` に登録事項がある場合は、字コンテ完了・各ページ完成等でプロセスチェッカーへ対象・版・根拠を報告する。強い指示は指定した工程へ着手する前にも確認する。空なら詳細な照合は不要。標準文書に推奨されているという理由だけで必須事項を追加しない。
 
