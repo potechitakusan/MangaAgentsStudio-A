@@ -30,11 +30,11 @@
 | 縦書き・フキダシ・読み順を直したい | [日本語漫画の読みやすさ](knowledge/japanese-manga-readability.md)、[組版スクリプトと自動点検](knowledge/japanese-manga-readability.md#typeset-script) | [確定セリフ](production/DIALOGUE.md)、[ネーム点検表](reviews/NAME-REVIEW.md)の「作画後の照合表」「組版後の点検」 |
 | AIで絵を作り、キャラを保ちたい | [画像制作と実験](knowledge/ai-production.md) | [実験記録](experiments/TEMPLATE.md) |
 | 外部機能へ下絵・参照画像を渡し、コマ別に作りたい | [共通手順](knowledge/external-panel-i2i.md)、[Qwen-Image 2.1](knowledge/image-generation/qwen-image-2.1.md)、[制作根拠](knowledge/image-generation/production-evidence.md) | `manga-external-panel-i2i`、[実験記録](experiments/TEMPLATE.md) |
-| NovelAIで素材生成と組版を行いたい | [接続・費用](knowledge/novelai-api.md)、[制作手順](knowledge/novelai-composed-production.md)、[一括生成・採用・組み直し](knowledge/novelai-composed-production.md#batch) | 採用設定と通常の制作記録。t2iと画像入力を区別。[NovelAI一括生成の記録](production/NOVELAI-BATCH.md) |
+| NovelAIで素材生成と組版を行いたい | [接続・費用](knowledge/novelai-api.md)、[制作手順](knowledge/novelai-composed-production.md)、[一括生成・採用・組み直し](knowledge/novelai-composed-production.md#batch)、[V5で観察した症状](knowledge/image-generation/novelai-v5.md)、[制作根拠E4・E5](knowledge/image-generation/production-evidence.md#e4) | 採用設定と通常の制作記録。t2iと画像入力を区別。[NovelAI一括生成の記録](production/NOVELAI-BATCH.md) |
 | 人間が仕上げられるPSDにしたい | [PSD引き渡しの条件](knowledge/psd-handoff.md) | [引き継ぎ仕様と検証](production/PSD-HANDOFF.md) |
 | 用語や出典、採否を確認したい | [用語辞書](knowledge/glossary.md)、[新規取り込みの出典](knowledge/manga-sources.md)、[還元手順](knowledge/feedback-workflow.md) | [作品用語](story/TERMS.md)、[フィードバック](feedback/TEMPLATE.md) |
 
-## 技法の索引（77項目）
+## 技法の索引（78項目）
 
 漫画の制作・レビューに使う技法を以下の6分野に収録した。用途の同じ知識を該当項目へ統合して整理している。確認事実、制作提案、独自例、未検証の効果を区別する。番号は検索用で、読む順や必須項目数を指定するものではない。
 
@@ -71,6 +71,7 @@
 | V12 | [前後の絵の組み合わせで意味を作る](knowledge/manga/02-visual-direction.md#v12) |
 | V13 | [空間の連続性を字コンテに残す](knowledge/manga/02-visual-direction.md#v13) |
 | V14 | [重要なものが重要に見えるかを縮小して確認する](knowledge/manga/02-visual-direction.md#v14) |
+| V15 | [描きにくい動作は、意図を保つ別の見え方へ置き換える](knowledge/manga/02-visual-direction.md#v15) |
 
 ### 03 変化の単位・緩急・提示のタイミングと間
 

@@ -78,3 +78,13 @@ PowerShell 5.1以上で実行する。Gitはインストール済みを前提に
 | [Geminiを使うスキルの配布記事](https://note.com/genkaijokyo/n/n8562c2500420)・[公開ZIP](https://note.com/api/v2/attachments/download/33c55af0abaece1236195095d1e31bb3) | 2026-09-19取得。README・SKILL・実行契約と全12ファイルを確認。Antigravity CLIと指定モデルは配布者が記した実行条件であり、利用者の環境での可用性は別途確認 |
 
 第三者のスキル本文・ZIPはキットへ同梱しない。Gemini版には再配布許諾の明記を確認できていないため、許可を得た各作品で配布元から直接取得する方式とする。導入先の第三者スキルは作品のGit除外対象にする。キットの配布設定には取得先・固定版・ハッシュだけを収録する。導入時は原文を保持し、呼び出しポリシーの追記だけを導入記録に残す。各スキルの文章品質・Geminiの実行・利用枠の量は未検証。
+
+## Linuxでの実行
+
+作品ルートから `bash scripts/Initialize-OptionalSkills.sh` を使えます。PowerShellは不要で、Python 3.10以上が必要です。`--provider`、`--gemini-consent`、`--consent-note`、`--project-root` はそれぞれPowerShell版の同名引数に対応します。結果はJSONです。既定の無効状態、導入前の許可、固定版・ファイルハッシュの確認、作品ごとの導入記録はPowerShell版と共通です。明示回答がないのに `--gemini-consent Granted` を指定してはいけません。
+
+## Antigravity用モードでの適用
+
+`project.json` の `agentMode` が `Antigravity` の作品では、専用の `AGENT-MODE.md` に従います。保存先は既存の `.agents/skills/` を維持します。無効なら導入済みでも使わず、有効でも選択したスキルと対象だけに明示適用します。`agents/openai.yaml` の設定がAntigravityでも効くとは仮定しません。Antigravityで制作していることは、任意のGemini推敲スキルの導入・追加呼び出しの許可にはなりません。上の許可手順をそのまま適用します。
+
+第三者スキルにCodex照合・指定CLI・指定モデルの実行契約がある場合は、Gemini自身の照合や別のCLI・APIへ黙って置き換えず、必要な環境がなければその推敲だけを保留します。Antigravity用モードでの実行は未検証です。2026-10-03追加のキット運用方針であり、Codex用の導入手順・既定値は維持します。

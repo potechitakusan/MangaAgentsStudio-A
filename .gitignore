@@ -18,6 +18,7 @@
 !/distribution-version.txt
 !/docs/
 !/scripts/
+!/scripts/*.sh
 !/scripts/render_panel_templates.cjs
 !/skills/
 !/templates/

@@ -12,7 +12,7 @@ from urllib.parse import unquote
 import zlib
 
 ROOT = Path(__file__).resolve().parents[1]
-ROOT_FILES = ('.gitignore', '.gitattributes', 'README.md', 'AGENTS.md', 'LICENSE', 'distribution-version.txt')
+ROOT_FILES = ('.gitignore', '.gitattributes', 'README.md', 'AGENTS.md', 'CLAUDE.md', 'LICENSE', 'distribution-version.txt')
 DOC_FILES = ('README.md', 'architecture.md', 'SOURCES.md', 'RIGHTS.md', 'publication.md')
 PUBLIC_TREES = ('docs/knowledge', 'skills', 'templates/manga-project', 'resources', 'scripts', 'tests', 'examples')
 EXTENSIONS = {'.md', '.py', '.ps1', '.json'}
@@ -105,8 +105,9 @@ def public_files(root=ROOT):
                     or (path.parent.relative_to(root).as_posix() == 'templates/manga-project/templates/onomatopoeia/images' and path.suffix == '.webp')
                 )
                 panel_renderer = relative_path == 'scripts/render_panel_templates.cjs'
+                portable_shell = path.parent == root / 'scripts' and path.suffix == '.sh'
                 template_requirements = relative_path == TEMPLATE_REQUIREMENTS
-                if path.suffix not in EXTENSIONS and name not in SPECIAL_FILES and not example_image and not panel_asset and not novelai_resource and not onomatopoeia_asset and not panel_renderer and not template_requirements:
+                if path.suffix not in EXTENSIONS and name not in SPECIAL_FILES and not example_image and not panel_asset and not novelai_resource and not onomatopoeia_asset and not panel_renderer and not portable_shell and not template_requirements:
                     raise ValueError(f'公開範囲に想定外のファイルがあります: {relative_path}')
                 if (name.startswith('.env') and name != '.env.example') or '.secrets' in path.parts:
                     raise ValueError(f'公開範囲に秘密設定があります: {relative_path}')
@@ -242,6 +243,9 @@ def anchors(body):
 
 def distributed_target(root, target):
     """原本の分離配置を、新規作品に配布した際の配置へ対応させる。"""
+    # 雛形内に正本がある場合は、その実在する原本を優先する。
+    if target.is_file():
+        return target
     template = root / 'templates/manga-project'
     try:
         relative = target.relative_to(template).as_posix()
@@ -260,6 +264,8 @@ def distributed_target(root, target):
         relative = target.relative_to(root).as_posix()
     except ValueError:
         return target
+    if relative == 'docs/knowledge/novelai-composed-production.md':
+        return template / relative
     if relative in ('OPTION.md', 'PRINT-OPTION.md') or relative.startswith(('docs/story/', 'docs/production/', 'docs/reviews/', 'docs/experiments/', 'docs/feedback/', 'templates/panel-templates/', 'config/')):
         return template / relative
     return target
@@ -305,8 +311,10 @@ def check(root=ROOT):
             continue
         # コード例はリンク検証から除く。文章中と参照定義のリンクを対象にする。
         prose = re.sub(r'^```[^\n]*\n.*?^```\s*$', '', body, flags=re.M | re.S)
-        targets = re.findall(r'\[[^\]\n]*\]\(([^)\s]+)\)', prose)
-        targets += re.findall(r'^\[[^\]\n]+\]:\s+(\S+)', prose, re.M)
+        # インラインコード内のリンク記法の説明例もリンクとして数えない。
+        link_prose = re.sub(r'(`+)(?!`)([^\n]*?)(?<!`)\1(?!`)', '', prose)
+        targets = re.findall(r'\[[^\]\n]*\]\(([^)\s]+)\)', link_prose)
+        targets += re.findall(r'^\[[^\]\n]+\]:\s+(\S+)', link_prose, re.M)
         for value in targets:
             if re.match(r'https?://|mailto:', value):
                 continue

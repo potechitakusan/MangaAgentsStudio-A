@@ -24,8 +24,12 @@
 | `templates/manga-project/scripts/novelai_batch.py` | コマ別の要求JSONのページ単位・全ページの順次生成、候補の採用、キャラ別プロンプト変数（`.env` の `NOVELAI_CHAR_*`）の展開、採用画像・配置・組版からのページPNG・PSDの組み直し。人が再実施できる形で残す | 雛形から `scripts/` へコピー。生成は `novelai_api.py`、組版は `typeset_manga.py`、PSDは `export_composed_psd.py` を使う |
 | `templates/manga-project/scripts/typeset_manga.py` | フキダシ・縦書きセリフ・画中の文字・コマ枠の透明レイヤー組版と、句読点・しっぽ・重なり・読み順等の点検。作画は変更しない | 雛形から `scripts/` へコピー。Pillowを使う。フォントは同梱せず作品の `assets/fonts/` またはOSのフォントを使う |
 | `templates/manga-project/config/novelai-request.example.json` | モデルとプロンプト未設定の生成要求例 | 同じ相対パスへコピー。採用後は作品側で要求JSONを作る |
-| `scripts/New-MangaProject.ps1` | 新規作品の作成。`-AgentMode`（`Codex` 既定／`Claude`）で作業エージェント別の追加ファイルを切り替える | しない |
+| `scripts/New-MangaProject.sh`・`scripts/new_manga_project.py` | BashからPython標準ライブラリで新規作品を作成。PowerShell不要 | しない |
+| `scripts/Resolve-ReviewProfile.sh`・`scripts/resolve_review_profile.py` | Linux用レビュー重点の解決。JSON出力 | `scripts/` へコピー |
+| `scripts/Initialize-OptionalSkills.sh`・`scripts/initialize_optional_skills.py` | Linux用任意スキル導入。既存の許可・固定版照合を維持 | `scripts/` へコピー。作品作成時には実行しない |
+| `scripts/New-MangaProject.ps1` | 新規作品の作成。`-AgentMode`（`Codex` 既定／`Claude`／`Antigravity`）で作業エージェント別の追加ファイルを切り替える | しない |
 | `templates/manga-project/agent-modes/claude/` | Claude用モードの `CLAUDE.md`（`AGENTS.md` と読み替えの読込）と `AGENT-MODE.md`（Codex前提の箇所の読み替え） | 既定の一括コピーから除外。`-AgentMode Claude` のときだけ作品ルートへコピー |
+| `templates/manga-project/agent-modes/antigravity/` | Antigravity用モードの `GEMINI.md`（入口）と `AGENT-MODE.md`（生成手段・画像確認・ブラウザー禁止・任意推敲等の読み替え） | 既定の一括コピーから除外。`-AgentMode Antigravity` または `--agent-mode Antigravity` のときだけ作品ルートへコピー |
 | `scripts/Resolve-ReviewProfile.ps1` | レビュー重点の解決 | `scripts/` へコピー |
 | `scripts/Initialize-OptionalSkills.ps1` | 有効にした推敲スキルを作品の最初の作業時に導入。Gemini版は利用許可後のみ | `scripts/` へコピー。作品の作成時には実行しない |
 | `scripts/validate_panel_plan.py` | コマ割り計画のルール検証 | `scripts/` へコピー |
@@ -63,6 +67,8 @@
 ```
 
 キットはCodex（内蔵の画像生成あり）での利用を主とする。`-AgentMode Claude` を指定した場合だけ、`agent-modes/claude/` の２ファイルを作品ルートへ追加し、`project.json` の `agentMode` に記録する。`AGENTS.md`・`OPTION.md`・共通知識の本体は書き換えず、Codex前提の箇所（imagegen、呼称、`wait_agent` 等）は `AGENT-MODE.md` で読み替える。既定（`Codex`）では両ファイルを作らない。共通知識のClaude用の複製や、Claude Codeの権限設定の自動作成は行わない。範囲の整理は公開対象外の作業記録に置く。
+
+`Antigravity` を明示した場合も同様に、`agent-modes/antigravity/` の `GEMINI.md` と `AGENT-MODE.md` だけを作品ルートへ追加し、`project.json` と配布スナップショットに記録する。PowerShell版・Linux用Python版の両方で対応する。`GEMINI.md` は共通の `AGENTS.md` を正本として参照し、`@[label](path)` で読み替えを展開する。スキルの配布先は既存の `.agents/skills/` を維持し、共通知識・スキル本文を別に複製しない。Codexの既定値・imagegenの制作手順・Claudeモードの分岐は維持する。Antigravity用の認証情報・権限設定・ユーザー全体のルールは配布しない。仕様の出典・確認日と実機未検証の範囲は専用の読み替えに置く。
 
 既定の作成先は `../作品名/`。`-DestinationParent` を変える場合も通常の制作先はキット外にします。日本語、英数字、空白、ハイフン、アンダースコアを使用できます。名前にパスやWindowsの予約名は使えません。既存フォルダは上書きせず、`-WhatIf` ではファイルを作りません。
 

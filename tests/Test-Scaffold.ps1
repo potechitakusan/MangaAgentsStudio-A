@@ -144,11 +144,12 @@ Check $inheritedHashesValid '指示を引き継いだAGENTSと正本も作成時
 Check ((Get-FileHash -LiteralPath (Join-Path $processSource 'config/process-requirements.json')).Hash -eq $sourceRequirementsHash) '引継ぎ元の指示は変更しない'
 $originalHash = (Get-FileHash -LiteralPath (Join-Path $projectRoot 'project.json')).Hash
 Must-Fail { & $maker -ProjectName $japaneseName -DestinationParent $testRoot } 'Existing project is rejected'
-# 既定はCodex。Claude用のファイルは -AgentMode Claude のときだけ配布する。
+# 既定はCodex。環境専用のファイルは各モードの明示時だけ配布する。
 Check ($project.agentMode -eq 'Codex' -and
        -not (Test-Path -LiteralPath (Join-Path $projectRoot 'CLAUDE.md')) -and
+       -not (Test-Path -LiteralPath (Join-Path $projectRoot 'GEMINI.md')) -and
        -not (Test-Path -LiteralPath (Join-Path $projectRoot 'AGENT-MODE.md')) -and
-       -not (Test-Path -LiteralPath (Join-Path $projectRoot 'agent-modes'))) '既定のCodexモードではClaude用のファイルを作らない'
+       -not (Test-Path -LiteralPath (Join-Path $projectRoot 'agent-modes'))) '既定のCodexモードでは他環境用のファイルを作らない'
 $claudeResult = & $maker -ProjectName 'ClaudeMode' -DestinationParent $testRoot -AgentMode Claude -InformationVariable claudeMessages
 $claudeRoot = (Resolve-Path -LiteralPath $claudeResult.Path).ProviderPath
 $claudeProject = Get-Content -LiteralPath (Join-Path $claudeRoot 'project.json') -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -159,6 +160,23 @@ Check ($claudeProject.agentMode -eq 'Claude' -and $claudeResult.AgentMode -eq 'C
        (Get-Content -LiteralPath (Join-Path $claudeRoot 'CLAUDE.md') -Raw -Encoding UTF8).Contains('@AGENTS.md') -and
        -not (Test-Path -LiteralPath (Join-Path $claudeRoot 'agent-modes'))) 'Claude用モードでCLAUDE.mdと読み替えを配布し、記録する'
 Check (($claudeMessages | Out-String -Width 4096).Contains('Claudeを開き直してください')) 'Claude用モードではClaudeで開き直すよう案内する'
+Check (-not (Test-Path -LiteralPath (Join-Path $claudeRoot 'GEMINI.md'))) 'Claude用モードへAntigravityの入口を配布しない'
+$antigravityResult = & $maker -ProjectName 'AntigravityMode' -DestinationParent $testRoot -AgentMode Antigravity -InformationVariable antigravityMessages
+$antigravityRoot = (Resolve-Path -LiteralPath $antigravityResult.Path).ProviderPath
+$antigravityProject = Get-Content -LiteralPath (Join-Path $antigravityRoot 'project.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+$antigravitySnapshot = Get-Content -LiteralPath (Join-Path $antigravityRoot 'docs\distribution-snapshot.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+$antigravityFiles = @($antigravitySnapshot.files | Where-Object { $_.path -in @('GEMINI.md', 'AGENT-MODE.md') })
+Check ($antigravityProject.agentMode -eq 'Antigravity' -and $antigravityResult.AgentMode -eq 'Antigravity' -and $antigravityFiles.Count -eq 2 -and
+       @($antigravityFiles | Where-Object { $_.sha256 -ne (Get-FileHash -LiteralPath (Join-Path $antigravityRoot $_.path) -Algorithm SHA256).Hash.ToLowerInvariant() }).Count -eq 0 -and
+       (Get-Content -LiteralPath (Join-Path $antigravityRoot 'GEMINI.md') -Raw -Encoding UTF8).Contains('@[Antigravity用の読み替え](AGENT-MODE.md)') -and
+       -not (Test-Path -LiteralPath (Join-Path $antigravityRoot 'CLAUDE.md')) -and
+       -not (Test-Path -LiteralPath (Join-Path $antigravityRoot 'agent-modes'))) 'Antigravity専用の2ファイルだけを配布し、記録する'
+Check ((Get-FileHash -LiteralPath (Join-Path $antigravityRoot 'AGENTS.md')).Hash -eq (Get-FileHash -LiteralPath (Join-Path $projectRoot 'AGENTS.md')).Hash -and
+       (Get-FileHash -LiteralPath (Join-Path $antigravityRoot 'OPTION.md')).Hash -eq (Get-FileHash -LiteralPath (Join-Path $projectRoot 'OPTION.md')).Hash) 'Antigravityモードでも共通ルールと既定オプションを変更しない'
+Check (($antigravityMessages | Out-String -Width 4096).Contains('Antigravityを開き直してください')) 'Antigravity用モードの開き直し先を案内する'
+$null = & $maker -ProjectName 'AntigravityPreviewOnly' -DestinationParent $testRoot -AgentMode Antigravity -WhatIf -InformationVariable antigravityPreviewMessages
+Check (-not (Test-Path -LiteralPath (Join-Path $testRoot 'AntigravityPreviewOnly')) -and
+       -not (($antigravityPreviewMessages | Out-String).Contains('Antigravityを開き直してください'))) 'AntigravityのWhatIfでは作成や完了案内を行わない'
 Must-Fail { & $maker -ProjectName 'UnknownMode' -DestinationParent $testRoot -AgentMode 'Gemini' } '未対応のエージェントモードを拒否する'
 Check ((Get-FileHash -LiteralPath (Join-Path $projectRoot 'project.json')).Hash -eq $originalHash) 'Existing project remains unchanged'
 $previewResult = & $maker -ProjectName 'PreviewOnly' -DestinationParent $testRoot -WhatIf -InformationVariable previewMessages

@@ -7,8 +7,8 @@ param(
     [string]$ProjectName,
     [string]$DestinationParent,
     [string]$ProcessRequirementsFrom,
-    # 既定はCodex（内蔵の画像生成あり）。Claudeを指定した場合だけ、Claude用の読込ファイルと読み替えを追加する。
-    [ValidateSet('Codex', 'Claude')]
+    # 既定はCodex。ClaudeまたはAntigravityを明示した場合だけ、その環境の読込ファイルと読み替えを追加する。
+    [ValidateSet('Codex', 'Claude', 'Antigravity')]
     [string]$AgentMode = 'Codex'
 )
 Set-StrictMode -Version Latest
@@ -144,11 +144,26 @@ $package.Add([pscustomobject]@{ Source = $validator; Destination = 'scripts\vali
 $package.Add([pscustomobject]@{ Source = (Join-Path $PSScriptRoot 'prepare_page_layout.py'); Destination = 'scripts\prepare_page_layout.py' })
 $package.Add([pscustomobject]@{ Source = (Join-Path $PSScriptRoot 'Initialize-OptionalSkills.ps1'); Destination = 'scripts\Initialize-OptionalSkills.ps1' })
 $package.Add([pscustomobject]@{ Source = (Join-Path $PSScriptRoot 'process_checker.py'); Destination = 'scripts\process_checker.py' })
+# Linux向けの入口も同梱する。Windows PowerShellの既存処理と引数は維持する。
+foreach ($portableScript in @('Resolve-ReviewProfile.sh', 'resolve_review_profile.py', 'Initialize-OptionalSkills.sh', 'initialize_optional_skills.py')) {
+    $portableSource = Join-Path $PSScriptRoot $portableScript
+    Assert-NoLinks $portableSource
+    if (-not (Test-Path -LiteralPath $portableSource -PathType Leaf)) { throw "Missing portable script: $portableScript" }
+    $package.Add([pscustomobject]@{ Source = $portableSource; Destination = "scripts\$portableScript" })
+}
 $package.Add([pscustomobject]@{ Source = (Join-Path $sourceRootPath 'LICENSE'); Destination = 'docs\toolkit-license.txt' })
 if ($AgentMode -eq 'Claude') {
     foreach ($name in @('CLAUDE.md', 'AGENT-MODE.md')) {
         $modeSource = Join-Path $sourceRootPath "templates\manga-project\agent-modes\claude\$name"
         if (-not (Test-Path -LiteralPath $modeSource -PathType Leaf)) { throw "Claude用モードの雛形がありません: $name" }
+        Assert-NoLinks $modeSource
+        $package.Add([pscustomobject]@{ Source = $modeSource; Destination = $name })
+    }
+}
+if ($AgentMode -eq 'Antigravity') {
+    foreach ($name in @('GEMINI.md', 'AGENT-MODE.md')) {
+        $modeSource = Join-Path $sourceRootPath "templates\manga-project\agent-modes\antigravity\$name"
+        if (-not (Test-Path -LiteralPath $modeSource -PathType Leaf)) { throw "Antigravity用モードの雛形がありません: $name" }
         Assert-NoLinks $modeSource
         $package.Add([pscustomobject]@{ Source = $modeSource; Destination = $name })
     }
@@ -212,6 +227,9 @@ try {
     if ($AgentMode -eq 'Claude') {
         Write-Host 'Claude用モードで作成しました（CLAUDE.md と AGENT-MODE.md を追加）。このフォルダでClaudeを開き直してください。作品フォルダで新しい会話を始めてから漫画を制作します。'
         Write-Host '作画は既定でNovelAIを使います。NovelAIへの通信は、Claude Codeの権限設定で許可が必要になる場合があります。'
+    } elseif ($AgentMode -eq 'Antigravity') {
+        Write-Host 'Antigravity用モードで作成しました（GEMINI.md と AGENT-MODE.md を追加）。このフォルダでAntigravityを開き直してください。作品フォルダで新しい会話を始めてから漫画を制作します。'
+        Write-Host '作画は既定でNovelAIを使います。利用可能な生成・画像表示機能と通信の許可を確認してから作画します。'
     } else {
         Write-Host 'このフォルダでCodexを開き直してください。作品フォルダで新しい会話を始めてから漫画を制作します。'
     }

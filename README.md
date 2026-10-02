@@ -49,7 +49,35 @@ flowchart TD
 
 ## はじめ方
 
-Windows PowerShell 5.1以上で、リポジトリのルートから実行します。
+### Linux（Bash + Python 3.10以上）
+
+PowerShellをインストールせずに使用できます。追加のPythonパッケージは不要です。リポジトリのルートから実行します。
+
+```bash
+bash scripts/New-MangaProject.sh --project-name '作品名' --what-if
+bash scripts/New-MangaProject.sh --project-name '作品名'
+# 別の既存親フォルダ、Claude用モード、明示した作品からの必須事項の引継ぎ
+bash scripts/New-MangaProject.sh '作品名' --destination-parent .. --agent-mode Claude
+# Gemini（Antigravity）で制作する場合
+bash scripts/New-MangaProject.sh '作品名' --agent-mode Antigravity
+# bash scripts/New-MangaProject.sh '次の作品' --process-requirements-from '../前の作品'
+```
+
+`--what-if`（`--dry-run`）は配置確認だけで、ファイルを作りません。作品名は日本語・空白を使えます。既存作品は上書きせず、リンクを経由するコピーも拒否します。従来の `-ProjectName`、`-DestinationParent`、`-AgentMode`、`-ProcessRequirementsFrom`、`-WhatIf` という引数名も使えます。任意の作業フォルダから入口のパスを指定できます。相対指定の作成先・引継ぎ元は実行時の作業フォルダ基準です。`PYTHON` 環境変数でPython実行ファイルのパスを指定でき、未指定時は `python3`、`python` の順に探します。
+
+作成後は表示された作品フォルダへ移り、次を実行できます。レビューと任意スキルの入口は作品にも同梱されます。
+
+```bash
+bash scripts/Resolve-ReviewProfile.sh
+bash scripts/Initialize-OptionalSkills.sh
+python3 scripts/process_checker.py status
+```
+
+任意の日本語推敲スキルは既定で無効です。有効化・外部取得・Gemini利用は[既存の許可手順](docs/knowledge/optional-skills.md)に従います。Linuxでも作品作成だけでは取得・生成・有料API呼び出しを行いません。各 `.sh` の `--help` で引数を確認できます。Linux版ではプリセット・シーン名・選択肢の大文字小文字を設定どおりに指定してください。JSON結果は標準出力、案内・エラーは標準エラーへ出します。ZIP展開等で実行権限が失われても、上記の `bash` 呼び出しで利用できます。
+
+### Windows PowerShell
+
+Windows PowerShell 5.1以上で、リポジトリのルートから実行します。既存の `.ps1` と引数、`-WhatIf`、`-Confirm` はそのまま使えます。Linux用のPythonを導入する必要はありません（必須事項の引継ぎは従来どおりPythonが必要です）。
 
 ```powershell
 .\scripts\New-MangaProject.ps1 -ProjectName '作品名' -WhatIf
@@ -61,6 +89,14 @@ Windows PowerShell 5.1以上で、リポジトリのルートから実行しま�
 ```powershell
 .\scripts\New-MangaProject.ps1 -ProjectName '作品名' -AgentMode Claude
 ```
+
+Gemini（Antigravity）で制作する場合は `-AgentMode Antigravity` を指定します。作品に `GEMINI.md` と専用の `AGENT-MODE.md` が追加されます。作成後は、表示された作品フォルダでAntigravityを開き直してください。既定のCodexモードと制作手順は維持し、Antigravity専用ファイルは指定時だけ配布します。
+
+```powershell
+.\scripts\New-MangaProject.ps1 -ProjectName '作品名' -AgentMode Antigravity
+```
+
+Antigravity用モードは、利用できる生成・編集・画像表示機能を確認してから作画します。作画は既定でNovelAIのコマ別生成と別組版を使います（APIキー・画風・費用確認が必要）。Chrome・Edgeや内蔵ブラウザーの操作は禁止です。任意の日本語推敲は既定で無効で、Geminiを使う推敲スキルの導入・追加呼び出しには従来の許可手順を適用します。[読み替えの内容と確認範囲](templates/manga-project/agent-modes/antigravity/AGENT-MODE.md)を参照してください。Gemini CLI等の別環境用モードではありません。Antigravity実機での動作は未検証です。
 
 既定の作成先は `../作品名/`。別の親フォルダを使う場合は、キット外に作成される既存の相対パスを `-DestinationParent` で指定します。リポジトリのフォルダ名は自由に変更できます。既存の作品は上書きしません。`-WhatIf` は配置の確認だけで、プロジェクトを作成しません。
 
