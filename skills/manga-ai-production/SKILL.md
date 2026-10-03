@@ -15,6 +15,10 @@ QwenやNovelAI等へ画像を条件として渡し、コマ別に作画する方
 
 NovelAIを使うときは `docs/knowledge/ai-production.md` のOpus節を読む。OpusならAnlas消費なしを既定とし、寸法・Steps・１回の枚数・追加機能とV5の利用上限を確認する。採用寸法は `config/page-layout.json` と生成ツールへ反映し、枠・最終PNGは `docs/knowledge/page-layout.md` に従って生成実寸に合わせる。0 Anlasを確認できない生成を試験送信せず、有料利用は既に明示された指示の範囲でのみ行う。NovelAIのコマ素材は `docs/knowledge/novelai-composed-production.md` に従い、本番前に人物試作を１回生成して外見を照合し、コマの形に近い縦横比で生成する。コマより広い範囲を生成して最上段のコマ枠とマスクで必要な部分を見せ、拡大しすぎて字コンテの主対象・動作・画角を失わない。要求のプロンプトは `docs/knowledge/novelai-composed-production.md` の「要求プロンプトの組み立て」に従い、`generate` の警告を直してから送信する。要求は１コマ１JSONで `input/novelai/requests/` に保存し、生成・採用・組み直しは `scripts/novelai_batch.py` で行い、人間が再実施できるコマンドを `docs/production/NOVELAI-BATCH.md` に残す。キャラ別プロンプトの `.env` 変数化は人間の依頼がある場合だけ、変数名を確認して行う。
 
+### NovelAIのプロンプト組み立て・送信前確認
+
+NovelAI用の要求を作成・修正・点検する場合だけ、`docs/knowledge/novelai-composed-production.md` の「場面の関係と継続状態を各要求へ展開する」「送信前の内容照合」を必ず読む。関係・継続状態を実要求へ展開して照合し、セリフ・文字・吹き出しは後から組版する。imagegenだけを使う作業では、この詳細文書とNovelAI用の照合記録を読み込まず、この節の方式を適用しない。
+
 文字・吹き出しは `docs/knowledge/page-layout.md` の「文字・吹き出しの仕上げ」に従い、imagegenでは画像に含めて生成するのを基本とし、imagegen以外では作画後に別に載せる。作画前に使用手段から判断し、組版方法の回答を制作開始条件にしない。
 
 作画後は画像を実際に開き、`docs/reviews/NAME-REVIEW.md` の「作画後の照合表」をコマごとに記入する。別組版する場合は組版前に照合を終え、`scripts/typeset_manga.py` の点検結果と原画入りの確認画像を使って「組版後の点検」を記入する。imagegenで文字・吹き出し込みで生成した場合は生成後に完成ページを照合・点検する。文字・フキダシ・画中の文字の扱いは `docs/knowledge/japanese-manga-readability.md` に従い、依頼にない作品名・ページ番号を入れない。
