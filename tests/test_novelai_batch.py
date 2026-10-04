@@ -246,6 +246,44 @@ class BatchTests(unittest.TestCase):
         with self.assertRaises(nb.BatchError):
             nb.adopt(self.root, "p01-02", 9, None)
 
+    def test_adopt_latest_selects_numbers_and_preserves_other_adoptions(self):
+        for rid, numbers in (("p01-01", (3, 999, 1000)), ("p01-02", (2, 5))):
+            folder = self.root / nb.CANDIDATES_DIR / rid
+            folder.mkdir(parents=True)
+            for number in numbers:
+                Image.new("RGB", (8, 8)).save(folder / f"r{number:03d}.png")
+            (folder / "r9999.png").mkdir()  # ディレクトリは候補にしない
+            (folder / "edited.png").write_bytes(b"not a candidate")
+        other = {"path": "other.png", "sha256": "existing", "adopted_at": "previous"}
+        nb.write_json(self.root / nb.ADOPTED, {"schema_version": 1, "adopted": {"p02-01": other}})
+        chosen = nb.adopt_latest(self.root, nb.select_ids(self.root, [1], None, False), False)
+        self.assertEqual(chosen["p01-01"].name, "r1000.png")
+        self.assertEqual(chosen["p01-02"].name, "r005.png")
+        saved = nb.load_adopted(self.root)["adopted"]
+        self.assertEqual(saved["p02-01"], other)
+        self.assertEqual(saved["p01-01"]["sha256"], nb.sha(chosen["p01-01"]))
+        self.assertEqual(nb.next_candidate(self.root, "p01-01"), 1001)
+        (chosen["p01-01"].parent / "r1001.novelai.json").write_text("{}", encoding="utf-8")
+        with self.assertRaises(nb.BatchError):
+            nb.next_candidate(self.root, "p01-01")
+
+    def test_adopt_latest_dry_run_and_missing_candidate_leave_record_unchanged(self):
+        folder = self.root / nb.CANDIDATES_DIR / "p01-01"
+        folder.mkdir(parents=True)
+        Image.new("RGB", (8, 8)).save(folder / "r003.png")
+        path = self.root / nb.ADOPTED
+        chosen = nb.adopt_latest(self.root, ["p01-01"], True)
+        self.assertEqual(chosen["p01-01"].name, "r003.png")
+        self.assertFalse(path.exists())
+        nb.write_json(path, {"schema_version": 1, "adopted": {"p01-01": {"path": "previous.png"}}})
+        before = path.read_bytes()
+        nb.adopt_latest(self.root, ["p01-01"], True)
+        self.assertEqual(path.read_bytes(), before)
+        for dry_run in (False, True):
+            with self.assertRaises(nb.BatchError):
+                nb.adopt_latest(self.root, ["p01-01", "p01-02"], dry_run)
+            self.assertEqual(path.read_bytes(), before)
+
     def test_placement_centers_focus_and_reports_clamp(self):
         affine, notes = nb.placement([0, 0, 400, 300], (800, 600), [0.5, 0.5], 1.0, 0)
         a, b, c, d, e, f = affine

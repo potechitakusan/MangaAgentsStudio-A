@@ -11,15 +11,19 @@ NovelAIを使う作品で、人間がページ単位・全ページの生成を�
 
 | ページ | 要求（`input/novelai/requests/`） | 生成（送信なしの確認は `--execute` 以降を外す） | 組み直し |
 | --- | --- | --- | --- |
-| 1 |  | `python -X utf8 scripts/novelai_batch.py generate --page 1 --execute --confirm-zero-anlas --cost-note '…'` | `python -X utf8 scripts/novelai_batch.py build --page 1` |
+| 1 |  | `python -X utf8 scripts/novelai_batch.py generate --page 1 --execute --accept-warnings --confirm-zero-anlas --cost-note '…'` | `python -X utf8 scripts/novelai_batch.py build --page 1` |
 
-全ページ：`python -X utf8 scripts/novelai_batch.py generate --all --execute …`、`python -X utf8 scripts/novelai_batch.py build --all`（PSDも作るときは `--write-psd`）。
+全ページ：`python -X utf8 scripts/novelai_batch.py generate --all --execute --accept-warnings …`、`python -X utf8 scripts/novelai_batch.py build --all`（PSDも作るときは `--write-psd`）。
 
 候補の確認と採用：`python -X utf8 scripts/novelai_batch.py list --page 1` → 候補の画像を見比べる → `python -X utf8 scripts/novelai_batch.py adopt p01-02 --candidate 3`。
+
+各フォルダの最大番号のPNGをまとめて採用：`python -X utf8 scripts/novelai_batch.py adopt-latest --page 1`（全ページは `--all`、特定コマは `--ids p01-02,p01-04`）。`--dry-run` を付けると対象の表示だけになる。新しい生成が失敗したコマでは以前の最大番号のPNGを選ぶため、生成結果と画像を確認して使う。詳細は [編集・再生成のREADME](../novelai-prompts/README.md#各フォルダの最新番号をまとめて採用する)。
 
 ## プロンプトの警告を残した理由
 
 `generate` の送信なし確認で出た警告は、原則としてプロンプトを直す。残す場合だけ理由を書き、`--accept-warnings` を付けて送信する。
+
+生成・再生成の実行例には `--accept-warnings` を既定で付けている。警告をチェックし、残っていれば送信を止めたい場合は外す。付けた場合も警告は表示され、費用確認・エラーの検証は省略されない。
 
 | 要求ID | 警告 | 残した理由 | 日付 |
 | --- | --- | --- | --- |

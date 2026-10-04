@@ -8,6 +8,7 @@
   templatize 要求JSON内の変数値と同じ文を ${変数名} に置き換える
   generate  ページ単位・全ページ・指定IDの要求を１枚ずつ順に生成する（既定は送信しない確認）
   adopt     候補から採用画像を選ぶ
+  adopt-latest 対象の各フォルダの最大番号のPNGをまとめて採用する（通信なし）
   build     採用画像・コマ内の配置・組版指定からページPNG（指定時はPSD）を作り直す
 
 生成は novelai_api.py と同じ検証・費用確認・実行記録を使い、失敗時は止まって自動再送しない。
@@ -201,18 +202,19 @@ def select_ids(root: Path, pages: list[int] | None, ids: list[str] | None, all_p
 
 def candidates(root: Path, request_id: str) -> list[Path]:
     folder = root / CANDIDATES_DIR / request_id
-    return sorted(folder.glob("r[0-9][0-9][0-9].png")) if folder.is_dir() else []
+    return sorted((p for p in folder.glob("r*.png") if p.is_file() and re.fullmatch(r"r[0-9]{3,}", p.stem)),
+                  key=lambda p: int(p.stem[1:])) if folder.is_dir() else []
 
 
 def next_candidate(root: Path, request_id: str) -> int:
     """次の候補番号。PNGのない実行記録（結果不明）があれば、再送にならないよう止める。"""
     folder = root / CANDIDATES_DIR / request_id
-    records = sorted(folder.glob("r[0-9][0-9][0-9].novelai.json")) if folder.is_dir() else []
+    records = [p for p in folder.glob("r*.novelai.json") if p.is_file() and re.fullmatch(r"r[0-9]{3,}\.novelai\.json", p.name)] if folder.is_dir() else []
     unknown = [r.name for r in records if not r.with_name(r.name.split(".")[0] + ".png").is_file()]
     if unknown:
         raise BatchError(f"{request_id} に結果不明の実行記録があります: {', '.join(unknown)}。"
                          "NovelAI側の結果と消費を確認し、記録を failed/ へ移してから再実行してください。")
-    numbers = [int(p.name[1:4]) for p in candidates(root, request_id)] + [int(r.name[1:4]) for r in records]
+    numbers = [int(p.stem[1:]) for p in candidates(root, request_id)] + [int(r.name.split(".")[0][1:]) for r in records]
     return max(numbers or [0]) + 1
 
 
@@ -420,6 +422,27 @@ def adopt(root: Path, request_id: str, number: int | None, file: str | None) -> 
     return path
 
 
+def adopt_latest(root: Path, ids: list[str], dry_run: bool) -> dict[str, Path]:
+    """全対象の候補を確認してから、採用記録を一括で保存する。"""
+    chosen = {}
+    missing = []
+    for request_id in ids:
+        available = candidates(root, request_id)
+        if not available:
+            missing.append(request_id)
+        else:
+            chosen[request_id] = available[-1]
+    if missing:
+        raise BatchError("候補PNGがありません: " + ", ".join(missing) + "。採用記録は変更していません。")
+    if not dry_run:
+        data = load_adopted(root)
+        timestamp = now()
+        for request_id, path in chosen.items():
+            data["adopted"][request_id] = {"path": rel(root, path), "sha256": sha(path), "adopted_at": timestamp}
+        write_json(root / ADOPTED, data)
+    return chosen
+
+
 # ---------------------------------------------------------------- ページの組み直し
 
 def placement(frame, image_size, focus, zoom, rotation):
@@ -608,6 +631,12 @@ def main(argv=None) -> int:
     which = pick.add_mutually_exclusive_group(required=True)
     which.add_argument("--candidate", type=int, help="候補番号（r003.png なら 3）")
     which.add_argument("--file", help="修正版など作品内の画像を直接指定")
+    latest = commands.add_parser("adopt-latest", help="各フォルダの最大番号のPNGをまとめて採用する")
+    target = latest.add_mutually_exclusive_group(required=True)
+    target.add_argument("--page", type=int, action="append", help="ページ番号。複数指定可")
+    target.add_argument("--ids", type=lambda s: [v for v in s.split(",") if v], help="要求IDをカンマ区切りで指定")
+    target.add_argument("--all", action="store_true", help="全ページの要求（p01-… の形式）")
+    latest.add_argument("--dry-run", action="store_true", help="採用対象を表示するだけで記録を変更しない")
     make = commands.add_parser("build", help="ページPNG（指定時はPSD）を組み直す")
     make.add_argument("--page", type=int, action="append")
     make.add_argument("--all", action="store_true")
@@ -645,6 +674,13 @@ def main(argv=None) -> int:
         elif args.command == "adopt":
             path = adopt(root, args.request_id, args.candidate, args.file)
             print(f"{args.request_id}: {rel(root, path)} を採用しました。")
+        elif args.command == "adopt-latest":
+            if args.ids == []:
+                raise BatchError("--ids に要求IDを指定してください。")
+            ids = select_ids(root, args.page, args.ids, args.all)
+            chosen = adopt_latest(root, ids, args.dry_run)
+            for request_id, path in chosen.items():
+                print(f"{request_id}: {rel(root, path)}" + ("（確認のみ）" if args.dry_run else " を採用しました。"))
         elif args.command == "build":
             pages = pages_from_manifests(root) if args.all else (args.page or [])
             if not pages:

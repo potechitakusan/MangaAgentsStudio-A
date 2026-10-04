@@ -2,7 +2,7 @@
 
 このREADMEは、**NovelAI用のプロンプトが組み立て済み、または漫画のPNGプレビューが完成している作品**で、人間が見た目を変更するための手順です。既存の作品フォルダで作業します。キャラクター・絵柄・背景を、作品フォルダの `.env` という設定ファイルで編集できます。NovelAI以外の画像生成には使いません。
 
-この手順では、**Codexが編集環境を準備し、人間が本文を編集してコマンドを実行し、画像を選びます。** 人間がコマンド実行をCodexへ任せる場合は、各段階でその作業を依頼してください。準備依頼だけで画像生成や有料利用を許可したことにはなりません。
+この手順では、**Codex（または、ClaudeCode、GrokBuild、AntigravityなどのAIエージェント）が編集環境を準備し、人間が本文を編集してコマンドを実行し、画像を選びます。** 人間がコマンド実行をCodexへ任せる場合は、各段階でその作業を依頼してください。準備依頼だけで画像生成や有料利用を許可したことにはなりません。
 
 | 作業 | 通常の担当 |
 | --- | --- |
@@ -166,7 +166,7 @@ python -X utf8 scripts/novelai_batch.py generate --page 1
 
 スクリプトは登録した特徴の文字列が要求文に含まれるかを調べます。スクリプトは言い換えの意味、どの人物に特徴が付くか、生成画像に実際にツインテールが描かれたかを判定しません。人間とCodexは生成後に画像を別途確認します。特徴一覧がなければスクリプトは特徴チェックを行いません。絵柄・背景用の同等の特徴一覧チェックはありません。
 
-Codexは警告の内容を確認し、原則としてプロンプトを直します。人間とCodexが意図して残すと判断した場合、Codexが `docs/production/NOVELAI-BATCH.md` に理由を記録します。その後、人間または実行担当のCodexが生成コマンドへ `--accept-warnings` を追加できます。費用の確認やエラーを省略する引数ではありません。
+Codexは警告の内容を確認し、原則としてプロンプトを直します。人間とCodexが意図して残すと判断した場合、Codexが `docs/production/NOVELAI-BATCH.md` に理由を記録します。以下の生成・再生成の実行例には、警告が残っていても送信できる `--accept-warnings` を既定で付けています。警告をチェックし、残っている場合に送信を止めたいときは、この引数を外してください。付けた場合も警告は表示されます。費用の確認やエラーを省略する引数ではありません。送信なしの確認例は、この引数を付けずに使います。
 
 ## 6. 人間が費用・利用枠を確認し、生成を実行する
 
@@ -175,7 +175,7 @@ Codexは警告の内容を確認し、原則としてプロンプトを直しま
 **今回の全設定が0 Anlasで、V5の利用枠も確認済みの場合だけ**、人間は次のV5用のコマンドを実行します。人間は `--cost-note` の本文を実際の確認方法と日時へ書き換えてください。V4／V4.5の場合、人間は `--confirm-v5-allowance` を外します。
 
 ```powershell
-python -X utf8 scripts/novelai_batch.py generate --page 1 --execute --confirm-zero-anlas --confirm-v5-allowance --cost-note '今回の全設定の費用と利用枠を確認した方法・日時を記入'
+python -X utf8 scripts/novelai_batch.py generate --page 1 --execute --accept-warnings --confirm-zero-anlas --confirm-v5-allowance --cost-note '今回の全設定の費用と利用枠を確認した方法・日時を記入'
 ```
 
 `--execute` は実際に生成を送信する指定です。スクリプトは１ページの各コマを１枚ずつ生成し、以前の画像を上書きせず候補を追加します。画像生成前の作品では初回生成、プレビュー完成後の作品では再生成になります。失敗した場合、スクリプトは自動再送しません。人間は結果と消費を確認し、必要ならCodexへ状況の整理を依頼します。
@@ -202,9 +202,30 @@ python -X utf8 scripts/novelai_batch.py adopt p01-02 --candidate 3
 
 人間は要求IDと候補番号を実在するものへ書き換え、変更した各コマを採用します。初回生成の場合、人間はページ内の全コマを採用します。再生成だけでは採用画像は切り替わらないため、ここを飛ばすと古い画像でページが組み直される場合があります。
 
+### 各フォルダの最新番号をまとめて採用する
+
+再生成した各コマの最大番号のPNGを使う場合は、番号を手で書き換えず、次のコマンドでまとめて採用できます。まず `--dry-run` で対象を確認し、画像を確認してから採用します。
+
+```powershell
+# 対象を表示するだけ（採用記録は変更しない）
+python -X utf8 scripts/novelai_batch.py adopt-latest --page 1 --dry-run
+# １ページ目の各フォルダの最大番号のPNGを採用
+python -X utf8 scripts/novelai_batch.py adopt-latest --page 1
+# 全ページを採用
+python -X utf8 scripts/novelai_batch.py adopt-latest --all
+# 一部のコマだけ再生成した場合は、その要求IDだけを指定
+python -X utf8 scripts/novelai_batch.py adopt-latest --ids p01-02,p01-04
+```
+
+例えば、あるコマは `r003.png`、別のコマは `r005.png` が最大番号なら、それぞれを選びます。「最新」は更新日時ではなく候補番号で判定します。対象は要求JSONのあるコマで、`--all` は `p01-…` の形式の全ページが対象です。生成・再生成と同じ `--page`・`--all`・`--ids` を選んでください。
+
+このコマンドは `input/novelai/adopted.json` の対象コマの既存採用を置き換え、対象外の採用は保持します。生成失敗などで新しいPNGがないコマは、以前の最大番号のPNGが選ばれます。対象に候補PNGが１枚もないコマがあれば、採用記録を変更せずエラーになります。生成結果と画像を確認してから使ってください。API通信は行わず、採用後は手順8の `build` でページPNGを組み直します。
+
 人間が採用の記録をCodexへ任せる場合の依頼例：
 
 > 画像を確認しました。p01-02は候補３を使います。adoptで採用を記録してください。
+
+> 画像を確認しました。各フォルダで最新（最大番号）の画像を採用します。adoptで採用を記録してください。
 
 Codexは人間が指定した候補を採用記録へ反映します。人間が画像レビューも依頼した場合、Codexは画像を実際に開いて確認し、採用案を説明します。
 
@@ -248,4 +269,4 @@ python -X utf8 scripts/novelai_batch.py build --page 1 --write-psd
 
 初期の要求を変数へ置き換える `templatize` は、同じ文がある箇所をまとめて変更します。**Codexが初回の準備時に** `--dry-run` で対象を確認してから使います。人間の通常の編集では、Codexが設定した変数の本文を変更するだけでよく、`templatize` を毎回実行する必要はありません。
 
-手順の正本は [NovelAI制作手順](../knowledge/novelai-composed-production.md#character-variables)、作品ごとのコマンドと採用記録は [NovelAI一括生成の記録](../production/NOVELAI-BATCH.md) です。説明の更新日：2026-10-04。ローカルスクリプトの実装に基づく案内で、実生成の効果は作品ごとに確認します。
+手順の正本は [NovelAI制作手順](../knowledge/novelai-composed-production.md#character-variables)、作品ごとのコマンドと採用記録は [NovelAI一括生成の記録](../production/NOVELAI-BATCH.md) です。説明の更新日：2026-10-05。ローカルスクリプトの実装に基づく案内で、実生成の効果は作品ごとに確認します。

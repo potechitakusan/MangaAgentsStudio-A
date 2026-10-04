@@ -178,16 +178,20 @@ NovelAIの生成は結果のばらつきが大きい。人間がページ単位�
 # 送信せずに内容・寸法・seedを確認
 python -X utf8 scripts/novelai_batch.py generate --page 1
 # 1ページ分を１枚ずつ順に生成（全ページは --all、特定コマは --ids p01-02,p01-04）
-python -X utf8 scripts/novelai_batch.py generate --page 1 --execute --confirm-zero-anlas --confirm-v5-allowance --cost-note '確認した方法・日時'
+python -X utf8 scripts/novelai_batch.py generate --page 1 --execute --accept-warnings --confirm-zero-anlas --confirm-v5-allowance --cost-note '確認した方法・日時'
 # 候補を見比べて採用
 python -X utf8 scripts/novelai_batch.py list --page 1
 python -X utf8 scripts/novelai_batch.py adopt p01-02 --candidate 3
+# 各コマの最大番号のPNGを使う場合はまとめて採用（確認のみは --dry-run）
+python -X utf8 scripts/novelai_batch.py adopt-latest --page 1
 # 同じページ・コマ・配置で組み直す（PSDも作るときは --write-psd）
 python -X utf8 scripts/novelai_batch.py build --page 1
 python -X utf8 scripts/novelai_batch.py build --all --write-psd
 ```
 
 - `generate` は初回は要求のseed、２回目以降は乱数のseedを使う（`--seed request` で固定）。１件ずつ送信し、送信間隔は既定３秒、１回の上限は既定30件。失敗したら残りを送らずに止まり、自動再送しない。結果不明の実行記録があるコマは、確認して記録を移すまで再生成しない。費用確認のフラグは `novelai_api.py` と同じ意味で、確認していないフラグを付けない。
+- 生成・再生成の実行例は `--accept-warnings` 付き。警告をチェックし、残っていれば送信を止めたい場合は外す。付けた場合も警告は表示され、費用確認やエラーの検証は省略されない。
+- `adopt-latest` は対象の各フォルダの最大番号のPNGを採用する（全ページは `--all`、特定コマは `--ids`）。対象に候補PNGがなければ採用記録を変更せず止まる。新しい生成が失敗したコマは以前の最大番号が選ばれるため、生成結果と画像を確認する。詳細は [編集・再生成のREADME](../novelai-prompts/README.md#各フォルダの最新番号をまとめて採用する)。
 - `build` は採用画像が未選択なら止まる。画像がコマの一部を覆えない配置は警告を出す。人間がコマンドで作ったPSDは、あとからペイントソフトで調整する前提とする。Codexが引き渡すPSDは、従来どおりPNGの修正確認とPSD作成の指示がそろってから作る。
 - 要求の書き方を比べるときは、変更前の採用要求を差し替え案（`p01-03b.json` 等）と別に残す。両方の `parameters.seed` を同じ値にして `--seed request` で生成し、Seedの値を変えて複数の組を作る。変えた語以外の設定、未変更の要求（対照）が成功したか、失敗したSeedを含む全試行を記録する。対照が成功していない組から、その語が必要・不要とは結論しない。推奨の方法であり、全コマに必須の回数ではない。根拠は[制作根拠E4](image-generation/production-evidence.md#e4)。
 - Codexは最初の作画でもこの手順を使い、各ページのコマンドを [NovelAI一括生成の記録](../production/NOVELAI-BATCH.md) に残す。ユーザーに見せるPNGは `build` の出力を使う。
