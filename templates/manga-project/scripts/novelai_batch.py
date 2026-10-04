@@ -3,8 +3,8 @@
 人が繰り返し実行して採用画像を選べるように、要求・候補・採用・ページ構成をすべてファイルに残す。
 
   list      要求・候補数・採用状況の一覧（通信なし）
-  vars      .env等のキャラ別プロンプト変数（NOVELAI_CHAR_*）の一覧（通信なし）
-  env-set   キャラ別プロンプト変数を .env へ書き込む（他の行は変えない）
+  vars      .env等のキャラクター・絵柄・背景の変数の一覧（通信なし）
+  env-set   プロンプト変数を .env へ書き込む（他の設定値は変えない）
   templatize 要求JSON内の変数値と同じ文を ${変数名} に置き換える
   generate  ページ単位・全ページ・指定IDの要求を１枚ずつ順に生成する（既定は送信しない確認）
   adopt     候補から採用画像を選ぶ
@@ -36,7 +36,9 @@ CANDIDATES_DIR = "output/novelai/candidates"
 PAGES_DIR = "input/pages"
 BUILD_DIR = "output/build"
 VAR_FILES = (".env", ".secrets/novelai.env", ".secrets/.env")
-VAR_NAME = re.compile(r"NOVELAI_CHAR_[A-Z0-9_]+")
+VAR_NAME = re.compile(r"NOVELAI_(?:CHAR|STYLE|BACKGROUND)_[A-Z0-9_]+")
+VAR_ASSIGNMENT = re.compile(r"^\s*(?:export\s+)?(NOVELAI_(?:CHAR|STYLE|BACKGROUND)_[A-Z0-9_]+)\s*=(.*)$")
+VAR_HELP = "NOVELAI_CHAR_・NOVELAI_STYLE_・NOVELAI_BACKGROUND_ のいずれかで始まる半角英大文字・数字・_"
 PLACEHOLDER = re.compile(r"\$\{([^}]*)\}")
 REQUEST_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}")
 PAGE_OF = re.compile(r"p(\d{1,3})-")
@@ -223,7 +225,7 @@ def load_adopted(root: Path) -> dict:
     return data
 
 
-# ---------------------------------------------------------------- キャラ別プロンプト変数
+# ---------------------------------------------------------------- キャラクター・絵柄・背景のプロンプト変数
 
 def parse_value(raw: str) -> str:
     raw = raw.strip()
@@ -236,7 +238,7 @@ def parse_value(raw: str) -> str:
 
 
 def read_variables(root: Path) -> dict[str, tuple[str, str]]:
-    """NOVELAI_CHAR_* だけを読み、他の行（APIキーを含む）は保持も表示もしない。"""
+    """許可した３種類の変数だけを読み、APIキー等は展開・表示しない。"""
     found: dict[str, list[tuple[str, str]]] = {}
     for name, value in os.environ.items():
         if VAR_NAME.fullmatch(name):
@@ -246,7 +248,7 @@ def read_variables(root: Path) -> dict[str, tuple[str, str]]:
         if not path.is_file():
             continue
         for line in path.read_text(encoding="utf-8-sig").splitlines():
-            match = re.match(r"^\s*(?:export\s+)?(NOVELAI_CHAR_[A-Z0-9_]+)\s*=(.*)$", line)
+            match = VAR_ASSIGNMENT.match(line)
             if match:
                 found.setdefault(match.group(1), []).append((parse_value(match.group(2)), relative))
     duplicated = [f"{n}（{'・'.join(s for _, s in v)}）" for n, v in found.items() if len(v) > 1]
@@ -260,7 +262,7 @@ def expand(value, variables: dict[str, tuple[str, str]], used: set[str]):
         def replace(match):
             name = match.group(1)
             if not VAR_NAME.fullmatch(name):
-                raise BatchError(f"使えない変数名です: ${{{name}}}。キャラ別プロンプトは NOVELAI_CHAR_ で始めます。")
+                raise BatchError(f"使えない変数名です: ${{{name}}}。変数名は {VAR_HELP} にしてください。")
             if name not in variables:
                 raise BatchError(f"変数 {name} が .env 等にありません。`vars` で確認してください。")
             used.add(name)
@@ -281,7 +283,7 @@ def resolved_request(root: Path, request_id: str, variables) -> tuple[dict, set[
 
 def env_set(root: Path, name: str, value: str) -> str:
     if not VAR_NAME.fullmatch(name):
-        raise BatchError("変数名は NOVELAI_CHAR_ で始まる半角英大文字・数字・_ にしてください。")
+        raise BatchError(f"変数名は {VAR_HELP} にしてください。")
     if "\n" in value or "\r" in value:
         raise BatchError("値は１行にしてください。")
     if '"' in value and "'" in value:
@@ -576,9 +578,9 @@ def main(argv=None) -> int:
     commands = parser.add_subparsers(dest="command", required=True)
     listing = commands.add_parser("list", help="要求・候補・採用の一覧")
     listing.add_argument("--page", type=int, action="append")
-    show = commands.add_parser("vars", help="キャラ別プロンプト変数の一覧")
+    show = commands.add_parser("vars", help="キャラクター・絵柄・背景の変数の一覧")
     show.add_argument("--show-values", action="store_true", help="値（プロンプト本文）も表示する")
-    setter = commands.add_parser("env-set", help="キャラ別プロンプト変数を .env へ書く")
+    setter = commands.add_parser("env-set", help="キャラクター・絵柄・背景の変数を .env へ書く")
     setter.add_argument("name")
     group = setter.add_mutually_exclusive_group(required=True)
     group.add_argument("--value")
@@ -626,7 +628,7 @@ def main(argv=None) -> int:
         elif args.command == "vars":
             variables = read_variables(root)
             if not variables:
-                print("NOVELAI_CHAR_ で始まる変数はありません。")
+                print("キャラクター・絵柄・背景のプロンプト変数はありません（NOVELAI_CHAR_・NOVELAI_STYLE_・NOVELAI_BACKGROUND_）。")
             for name, (value, source) in sorted(variables.items()):
                 print(f"{name}（{source}、{len(value)}字）" + (f": {value}" if args.show_values else ""))
         elif args.command == "env-set":

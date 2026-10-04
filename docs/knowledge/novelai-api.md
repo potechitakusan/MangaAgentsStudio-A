@@ -71,6 +71,38 @@ python -X utf8 scripts/novelai_api.py generate --request input/novelai-request.j
 
 漫画のコマ素材は、１コマ１要求のJSONを `input/novelai/requests/` に保存し、`scripts/novelai_batch.py` でページ単位・全ページを１枚ずつ順に生成する。検証・費用確認・実行記録・再送しない扱いはこの文書と同じ。使い方は [NovelAIでの制作手順](novelai-composed-production.md#batch)。公式APIの説明には人の操作を起点とする生成と過大な自動負荷の禁止が記載されているため、一括生成は人の指示で起動し、既定の送信間隔と件数の上限を保つ。この運用が利用条件に適合するかは未検証で、利用者が最新の規約を確認する。
 
+<a id="position-pins"></a>
+
+## 配置ピンの要求
+
+NovelAIで画面内の人物・物の位置を指定する場合だけ使う。UIの使い方・使用判断・モデルによる違いは [配置ピンの制作手順](novelai-composed-production.md#position-pins) を参照する。
+
+公式画像APIスキーマで `parameters.v4_prompt` の `use_coords`・`use_order`（真偽値）、`caption.char_captions` 内の `char_caption`（文字列）・`centers`（`x`・`y` の数値を持つオブジェクトの配列）を確認した。V5でもこのフィールド名を使う既存実装で、指定済み構造は `novelai_api.py` が保持する。独自のトップレベル `position` やプロンプト内のピン番号で置き換えない。
+
+以下は `parameters.v4_prompt` の構造例であり、送信できる要求全体ではない。例の本文を `input` と一致させ、画風・除外文・モデル・生成寸法等は作品の採用設定に合わせる。
+
+```json
+{
+  "caption": {
+    "base_caption": "2girls, standing side by side, full body, outdoors",
+    "char_captions": [
+      {"char_caption": "girl, short black hair, blue jacket, on the left",
+       "centers": [{"x": 0.3, "y": 0.5}]},
+      {"char_caption": "girl, long brown hair, red jacket, on the right",
+       "centers": [{"x": 0.7, "y": 0.5}]}
+    ]
+  },
+  "use_coords": true,
+  "use_order": true
+}
+```
+
+例は生成素材内の左上を原点とし、右・下へ増える0〜1の正規化座標を想定した検証候補（V5用）。ページ内のピクセル座標や組版の `focus` と混同しない。今回確認した公式スキーマは `x`・`y` の型だけを示し、座標の範囲・原点・V4／V4.5の5×5グリッドとの数値対応は記載していない。その意味と実受理は使用モデルで別途確認し、未確認の換算を公式仕様として断定しない。
+
+比較時は本文・人物別本文・Seed等を同じにし、`use_coords` を切り替える案を使える。自動配置へ戻す要求では `use_coords: false` を明示する。人物別入力・文字と枠の除外は保持し、`v4_negative_prompt` を指定する場合も対応する人物と順序を照合する。配置ピンは専用の画像参照とは別の機能で、ピンの使用を理由に参照画像を追加しない。
+
+出典・取得日：2026-10-04、[NovelAI公式画像APIスキーマ](https://image.novelai.net/docs/doc.json) の `image.V4ConditionInput`・`image.V4ExternalCharacterCaption`・`image.Coordinates`。確認したのは書式とローカル実装の読み取りで、API送信・生成効果・座標解釈・費用は未検証。生成前には従来どおり全設定の費用と利用枠を確認する。
+
 ## 確認後に生成する
 
 有効なOpus契約で、**今回の要求の全設定が0 Anlasであることを実際に確認した場合だけ** `--confirm-zero-anlas` を付ける。これは人または確認手段から得た結果の宣言であり、サーバーへ無課金を強制する機能ではない。[Opusの条件](ai-production.md#novelai-opus)に従い、APIでの適用を確認できない場合も止める。

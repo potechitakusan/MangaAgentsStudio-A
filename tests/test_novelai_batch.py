@@ -75,6 +75,54 @@ class BatchTests(unittest.TestCase):
         with self.assertRaises(nb.BatchError):
             nb.read_variables(self.root)
 
+    def test_style_and_background_round_trip_keeps_key_and_resolves_nested_prompts(self):
+        nb.env_set(self.root, "NOVELAI_STYLE_MAIN", "bold lineart, vivid colors")
+        nb.env_set(self.root, "NOVELAI_BACKGROUND_CLASSROOM", "教室、窓から夕方の光")
+        data = request(text="${NOVELAI_CHAR_MIO}, ${NOVELAI_BACKGROUND_CLASSROOM}, ${NOVELAI_STYLE_MAIN}")
+        data["parameters"]["v4_prompt"] = {
+            "caption": {"base_caption": data["input"], "char_captions": [
+                {"char_caption": "${NOVELAI_CHAR_MIO}", "centers": [{"x": 0.3, "y": 0.5}]}]},
+            "use_coords": True, "use_order": True}
+        self.save("p01-01", data)
+        variables = nb.read_variables(self.root)
+        resolved, used = nb.resolved_request(self.root, "p01-01", variables)
+        self.assertEqual(used, {"NOVELAI_CHAR_MIO", "NOVELAI_STYLE_MAIN", "NOVELAI_BACKGROUND_CLASSROOM"})
+        self.assertIn("教室、窓から夕方の光", resolved["input"])
+        self.assertEqual(resolved["input"], resolved["parameters"]["v4_prompt"]["caption"]["base_caption"])
+        character = resolved["parameters"]["v4_prompt"]["caption"]["char_captions"][0]
+        self.assertEqual(character, {"char_caption": PROMPT, "centers": [{"x": 0.3, "y": 0.5}]})
+        self.assertIn(f"NOVELAI_API_KEY={KEY}", (self.root / ".env").read_text(encoding="utf-8"))
+        self.assertNotIn(KEY, json.dumps(resolved))
+        out = StringIO()
+        with redirect_stdout(out), patch.object(api, "load_key") as key, patch.object(api, "api_request") as network:
+            nb.generate(self.root, self.gen_args(ids=["p01-01"]))
+        key.assert_not_called()
+        network.assert_not_called()
+        self.assertNotIn(KEY, out.getvalue())
+
+    def test_new_variable_types_templatize_and_reject_duplicate_sources(self):
+        for name, value in (("NOVELAI_STYLE_MAIN", "soft colors, clean lineart"),
+                            ("NOVELAI_BACKGROUND_CLASSROOM", "classroom, windows, daylight")):
+            with self.subTest(name=name):
+                nb.env_set(self.root, name, value)
+                self.save("p01-01", request(text=value))
+                self.assertEqual(nb.templatize(self.root, name, True), {"p01-01": 1})
+                nb.templatize(self.root, name, False)
+                resolved, used = nb.resolved_request(self.root, "p01-01", nb.read_variables(self.root))
+                self.assertIn(value, resolved["input"])
+                self.assertEqual(used, {name})
+                with patch.dict(os.environ, {name: "duplicate"}):
+                    with self.assertRaises(nb.BatchError):
+                        nb.read_variables(self.root)
+
+    def test_prompt_variable_allowlist_rejects_keys_and_unrelated_settings(self):
+        for name in ("NOVELAI_API_KEY", "COMFYUI_URL", "NOVELAI_OTHER_MAIN", "NOVELAI_STYLE_", "NOVELAI_BACKGROUND_classroom"):
+            with self.subTest(name=name):
+                with self.assertRaises(nb.BatchError):
+                    nb.env_set(self.root, name, "some prompt")
+                with self.assertRaises(nb.BatchError):
+                    nb.expand("${" + name + "}", nb.read_variables(self.root), set())
+
     def test_env_set_keeps_other_lines_and_templatize(self):
         self.assertEqual(nb.templatize(self.root, "NOVELAI_CHAR_MIO", True), {r: 1 for r in ("chara-mio", "p01-01", "p01-02", "p02-01")})
         nb.templatize(self.root, "NOVELAI_CHAR_MIO", False)

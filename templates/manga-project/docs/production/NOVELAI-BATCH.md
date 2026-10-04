@@ -39,10 +39,10 @@ NovelAIを使う作品で、人間がページ単位・全ページの生成を�
 | --- | --- | --- | --- |
 |  |  |  |  |
 
-## キャラ別プロンプトの変数（依頼があった場合のみ）
+## キャラクター・絵柄・背景の変数（依頼があった場合のみ）
 
 | 変数名 | 人物・用途 | 使う要求 | 設定・確認日 |
 | --- | --- | --- | --- |
 |  |  |  |  |
 
-値は作品ルートの `.env` にある。ここには値を写さず、変数名だけを書く。確認は `python -X utf8 scripts/novelai_batch.py vars`。
+値は作品ルートの `.env` にある。ここには値を写さず、変数名だけを書く。`NOVELAI_CHAR_*`・`NOVELAI_STYLE_*`・`NOVELAI_BACKGROUND_*` を使用できる。確認は `python -X utf8 scripts/novelai_batch.py vars`。編集・反映・再生成は [初心者向けREADME](../novelai-prompts/README.md)。

@@ -13,11 +13,13 @@ QwenやNovelAI等へ画像を条件として渡し、コマ別に作画する方
 
 ページ作画の生成前は `docs/knowledge/panel-layout-policy.md` を読み、テンプレートの採用ID、または演出上の独自配置とその理由をページ別記録へ残す。原則テンプレートを使用し、ユーザーの必須・不使用指定を優先する。imagegenでは番号付きレイアウト画像と各コマの内容を実際に画像入力・指示へ渡し、ページ全体の一括生成を基本とする。独自配置でも参照画像を用意し、必要時のコマ別生成は理由を記録する。枠・吹き出し・文字を含めた生成を一律禁止せず、生成後に計画・原文と照合して番号等の混入やずれを修正する。キャラ参照絵だけの生成にはページ配置を要求しない。NovelAI等は各環境の制作手順に従う。
 
-NovelAIを使うときは `docs/knowledge/ai-production.md` のOpus節を読む。OpusならAnlas消費なしを既定とし、寸法・Steps・１回の枚数・追加機能とV5の利用上限を確認する。採用寸法は `config/page-layout.json` と生成ツールへ反映し、枠・最終PNGは `docs/knowledge/page-layout.md` に従って生成実寸に合わせる。0 Anlasを確認できない生成を試験送信せず、有料利用は既に明示された指示の範囲でのみ行う。NovelAIのコマ素材は `docs/knowledge/novelai-composed-production.md` に従い、本番前に人物試作を１回生成して外見を照合し、コマの形に近い縦横比で生成する。コマより広い範囲を生成して最上段のコマ枠とマスクで必要な部分を見せ、拡大しすぎて字コンテの主対象・動作・画角を失わない。要求のプロンプトは `docs/knowledge/novelai-composed-production.md` の「要求プロンプトの組み立て」に従い、`generate` の警告を直してから送信する。要求は１コマ１JSONで `input/novelai/requests/` に保存し、生成・採用・組み直しは `scripts/novelai_batch.py` で行い、人間が再実施できるコマンドを `docs/production/NOVELAI-BATCH.md` に残す。キャラ別プロンプトの `.env` 変数化は人間の依頼がある場合だけ、変数名を確認して行う。
+NovelAIを使うときは `docs/knowledge/ai-production.md` のOpus節を読む。OpusならAnlas消費なしを既定とし、寸法・Steps・１回の枚数・追加機能とV5の利用上限を確認する。採用寸法は `config/page-layout.json` と生成ツールへ反映し、枠・最終PNGは `docs/knowledge/page-layout.md` に従って生成実寸に合わせる。0 Anlasを確認できない生成を試験送信せず、有料利用は既に明示された指示の範囲でのみ行う。NovelAIのコマ素材は `docs/knowledge/novelai-composed-production.md` に従い、本番前に人物試作を１回生成して外見を照合し、コマの形に近い縦横比で生成する。コマより広い範囲を生成して最上段のコマ枠とマスクで必要な部分を見せ、拡大しすぎて字コンテの主対象・動作・画角を失わない。要求のプロンプトは `docs/knowledge/novelai-composed-production.md` の「要求プロンプトの組み立て」に従い、`generate` の警告を直してから送信する。要求は１コマ１JSONで `input/novelai/requests/` に保存し、生成・採用・組み直しは `scripts/novelai_batch.py` で行い、人間が再実施できるコマンドを `docs/production/NOVELAI-BATCH.md` に残す。キャラクター・絵柄・背景の `.env` 変数化は人間の依頼がある場合だけ、変数名と内容を確認して行う。導入・編集は `docs/knowledge/novelai-composed-production.md` の変数化の節、利用者向けの変更例は `docs/novelai-prompts/README.md` を参照する。
 
 ### NovelAIのプロンプト組み立て・送信前確認
 
 NovelAI用の要求を作成・修正・点検する場合だけ、`docs/knowledge/novelai-composed-production.md` の「場面の関係と継続状態を各要求へ展開する」「送信前の内容照合」を必ず読む。関係・継続状態を実要求へ展開して照合し、セリフ・文字・吹き出しは後から組版する。imagegenだけを使う作業では、この詳細文書とNovelAI用の照合記録を読み込まず、この節の方式を適用しない。
+
+NovelAIで人物・物の画面内位置を指定する場合は、同文書の「配置ピン（Character Positions）」を読む。必要なコマで人物別入力と配置ピンを使い、プロンプトの順序・左右の記述・組版後の切り抜きと整合させる。APIの `use_coords`・`centers` の書式は `docs/knowledge/novelai-api.md` の「配置ピンの要求」を参照する。全コマでの使用を必須にせず、NovelAI以外の生成・編集には適用しない。
 
 文字・吹き出しは `docs/knowledge/page-layout.md` の「文字・吹き出しの仕上げ」に従い、imagegenでは画像に含めて生成するのを基本とし、imagegen以外では作画後に別に載せる。作画前に使用手段から判断し、組版方法の回答を制作開始条件にしない。
 
