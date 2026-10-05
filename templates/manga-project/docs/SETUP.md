@@ -12,7 +12,7 @@ input/に作品固有の入力、assets/characters/にキャラ参照、assets/r
 
 動画で映画的演出を試す依頼には、任意機能のmanga-video-previsualization Skillと [動画試作の運用](knowledge/video-previsualization.md) を使う。動作確認済みの動画ワークフローを作品のworkflows/へ用意し、モデルと入力の対応を確認してから実行する。人物参照はassets/characters/、動画・音声はoutput/、条件・所要時間・採否はdocs/experiments/へ保存する。通常の漫画制作の前提作業にはしない。
 
-NovelAIは同梱の `scripts/novelai_api.py` でキーの自動読込・契約照会・１枚生成ができる。Python 3.10以上を使用し、追加パッケージは不要。設定と実行例は [NovelAI APIの接続手順](knowledge/novelai-api.md) を参照する。実値は環境変数 `NOVELAI_API_KEY` または作品の `.secrets/novelai.env` に用意し、`.env.example` へは書かない。まず `python -X utf8 scripts/novelai_api.py key-status` で読込元を確認し、`python -X utf8 scripts/novelai_api.py status` で生成なしの契約照会を行う。生成コマンドも `--execute` がなければ送信しない。
+NovelAIは同梱の `scripts/novelai_api.py` でキーの自動読込・契約照会・１枚生成ができる。Python 3.10以上を使用し、追加パッケージは不要。設定と実行例は [NovelAI APIの接続手順](knowledge/novelai-api.md) を参照する。実値は環境変数 `NOVELAI_API_KEY` または作品の `.secrets/novelai.env` に用意し、`.env.example` へは書かない。まず `python -X utf8 scripts/novelai_api.py key-status` で読込元を確認し、`python -X utf8 scripts/novelai_api.py status` で生成なしの契約照会を行う。生成コマンドも `--execute` がなければ送信しない。NovelAI APIで生成する要求は、原則として同梱の `scripts/novelai_compose.py`（V5が既定、V4.5はユーザーが指定した場合だけ）で組み立てる。使い方は [NovelAI APIの接続手順](knowledge/novelai-api.md#compose-standard)。
 
 ファイルで設定する場合、`.secrets/novelai.env` には**トークンだけでなく、設定名と `=` も含めて**次の１行を書く。
 

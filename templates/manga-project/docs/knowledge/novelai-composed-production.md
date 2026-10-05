@@ -10,7 +10,7 @@
 4. ユーザーの選択前はNovelAI API等による生成試作を行わず、0 Anlasの場合も含めて待つ。待機対象は画風の確定と画風に依存する作画であり、別途依頼されたあらすじ整理などは進めてよい。選択回答を受けて `config/novelai-style-presets.json` の該当IDと照合し、作品の採用IDとプロンプトを記録する。`default_ids` は選択可能なIDの一覧であり、候補説明・全画風の混合・先頭候補の無断自動選択を指示するものではない。特定作家・漫画家の名前は使わない。`sample_prompt_prefix` は見本用の人物数指定であり、実作品で全コマを女性2人に固定する規則ではない。
 5. 採用した画風文・除外文・人物外見文・主要生成設定を共通化し、コマごとに動作・画角・背景だけを変える。seedだけで一貫性は保証しない。指定場面に見える人物だけのキャラクタープロンプトを送る。
 
-現在の10画風は掲載順の `style-01`〜`style-10`（2026-09-21更新）。同日のユーザー指示で「細く鋭い線のお絵描き」を除外し、直前の `style-10`（かわいいカラー漫画）を `style-09`、`style-11`（かわいいモノクロ漫画）を `style-10` へ詰めた。見本HTML・カタログ・新規作品の設定は同じIDを使う。既存作品の旧IDを新IDとして読み替えず、必要な場合は画風名とプロンプトを照合する。
+現在の11画風は掲載順の `style-01`〜`style-11`（2026-10-06更新。`style-11` は同日のユーザー追加指定で、画風文に品質語を含み、見本のネガティブはスクリプトの既定）。2026-09-21時点は10画風。同日のユーザー指示で「細く鋭い線のお絵描き」を除外し、直前の `style-10`（かわいいカラー漫画）を `style-09`、`style-11`（かわいいモノクロ漫画）を `style-10` へ詰めた。見本HTML・カタログ・新規作品の設定は同じIDを使う。既存作品の旧IDを新IDとして読み替えず、必要な場合は画風名とプロンプトを照合する。
 
 ## 素材生成と組版
 
@@ -63,7 +63,7 @@ NovelAIで人物・物の画面内位置を誘導する機能。人物別プロ�
 6. **2人のコマ**：１つの文に２人分の外見を続けて詰めると、姿勢の指定が埋もれ、外見も混ざりやすい。まず１人ずつのコマに分けられないかを検討する（相手は画面外・肩越しなど）。２人を同時に描く場合は、姿勢と位置関係（`sitting side by side on the floor, knees up, girl on the right`）を外見より前に書き、外見は識別に必要な最小限にする。人物ごとに分けて書く機能（`v4_prompt` の `char_captions`）を使う場合は、使う前に公式スキーマで書式を確認する。
 7. **画角は字コンテから選ぶ**：`from above`・`from below`・`from behind` は候補であり、全コマの先頭に付ける決まりではない。何を見せるかに合わせて選び、画面内の目印（`rooftop edge at the top of the frame`、`courtyard far below`）や被写体の大きさ（`small in frame`、`upper body`）も書く。同じ画角が続く場合は意図を確認する。
 
-8. **識別の特徴を要求ごとに書く**：人物が出る要求には、その人物を見分ける特徴（髪の色と長さ、眼鏡の形、服の重ね順・内側の服、小物）を毎回同じ語で書く。前のコマに書いたから省く、ということをしない。2026-09-29の検証では、要求ごとに書き方が揺れたコマで髪色・眼鏡の形・内側の服がばらついた。特徴は人物試作で採用した見本に合わせて `input/novelai/characters.json` に登録し、要求ごとの登場人物と、そのコマで見える特徴を `cast` に書く。
+8. **識別の特徴を要求ごとに書く**：人物が出る要求には、その人物を見分ける特徴（髪の色と長さ、眼鏡の形、服の重ね順・内側の服、小物）を毎回同じ語で書く。前のコマに書いたから省く、ということをしない。2026-09-29の検証では、要求ごとに書き方が揺れたコマで髪色・眼鏡の形・内側の服がばらついた。特徴は人物試作で採用した見本に合わせて `input/novelai/characters.json` に登録し、要求ごとの登場人物と、そのコマで見える特徴を `cast` に書く。`generate` の識別特徴の自動点検（警告）は**既定では行わない**。`.env` または環境変数に `NOVELAI_CHECK_IDENTITY=1` を指定した場合だけ行う（作品「NAIプロンプト検証」でのユーザー指示、2026-10-05。点検を使わない場合も、特徴を毎回同じ語で書く）。
 
 ```json
 {
@@ -137,7 +137,7 @@ NovelAIで人物・物の画面内位置を誘導する機能。人物別プロ�
 
 不一致は要求を直す。資料不足は未確認として対象と理由を残し、必須の動作や前後の接続が決まるまで該当要求を送らない。ユーザーに追加設定の一括回答を求める手順にはしない。チェック記録は「要求ID／必須の関係／継続・変更状態／照合結果・修正理由」の形で残せる。自動点検で警告がなくても、この内容照合の代わりにはならない。
 
-`novelai_batch.py generate` は送信前に上の2・3・5・6・8・9と画角の連続を点検し、警告を表示する。警告が残る要求は、プロンプトを直すか、残す理由を [NovelAI一括生成の記録](../production/NOVELAI-BATCH.md) に書いてから `--accept-warnings` を付けて送信する。点検は語の検出であり、関係・継続状態・文字分離を意味として判定するものではない。`--accept-warnings` で内容照合を省略しない。
+`novelai_batch.py generate` は送信前に上の2・3・5・6・9と画角の連続を点検し、警告を表示する（8の識別特徴は `NOVELAI_CHECK_IDENTITY=1` の場合だけ点検する）。警告が残る要求は、プロンプトを直すか、残す理由を [NovelAI一括生成の記録](../production/NOVELAI-BATCH.md) に書いてから `--accept-warnings` を付けて送信する。点検は語の検出であり、関係・継続状態・文字分離を意味として判定するものではない。`--accept-warnings` で内容照合を省略しない。
 
 出典と適用範囲：既存の [制作根拠E4](image-generation/production-evidence.md#e4) の関係記述、[空間の連続性V13](manga/02-visual-direction.md#v13) を、生成要求への展開手順として具体化した。人物別入力・位置の自然言語による補強・行為タグは [NovelAI公式文書](https://docs.novelai.net/en/image/multiplecharacters/)、自然言語と日本語の対応は [V5公式発表](https://journal.novelai.net/novelai-diffusion-v5-release-jp-343211a45664/)（確認日：2026-10-03）。
 
@@ -196,6 +196,29 @@ python -X utf8 scripts/novelai_batch.py build --all --write-psd
 - 要求の書き方を比べるときは、変更前の採用要求を差し替え案（`p01-03b.json` 等）と別に残す。両方の `parameters.seed` を同じ値にして `--seed request` で生成し、Seedの値を変えて複数の組を作る。変えた語以外の設定、未変更の要求（対照）が成功したか、失敗したSeedを含む全試行を記録する。対照が成功していない組から、その語が必要・不要とは結論しない。推奨の方法であり、全コマに必須の回数ではない。根拠は[制作根拠E4](image-generation/production-evidence.md#e4)。
 - Codexは最初の作画でもこの手順を使い、各ページのコマンドを [NovelAI一括生成の記録](../production/NOVELAI-BATCH.md) に残す。ユーザーに見せるPNGは `build` の出力を使う。
 
+<a id="compose"></a>
+
+### 引数から要求JSONを組み立てる（`scripts/novelai_compose.py`）
+
+**NovelAI APIで生成する要求の標準の組み立て手段。** モデルはV5（既定 `nai-diffusion-5-curated`。Fullは書き込みが多くなり漫画に向かないため既定にしない）で、V4.5はユーザーから指定があった場合だけ使う。絵柄・背景・人物別の文・配置ピン・生成設定を引数で受け取り、要求JSONを `input/novelai/requests/<ID>.json` へ保存する。通信はせず、保存後に `novelai_batch.py generate` と同じ送信なし確認を表示する。送信・費用確認・実行記録は従来どおり `novelai_batch.py` が行い、`--execute` と費用確認フラグを渡したときだけ同じ処理へ引き継ぐ。保存した要求JSONは手で編集してよく、引数を使わずJSONを直接書いても同じ `generate` で送れる。i2i・参照等の追加機能や仕様変更で改造が必要な場合は、このスクリプトを元に改造して使う（追加機能の費用・書式は [API手順](novelai-api.md#compose-standard) で先に確認する）。スクリプトは作品「NAIプロンプト検証」（ユーザー指示、2026-10-05）で作成・検証されたもの。
+
+```powershell
+python -X utf8 scripts/novelai_compose.py --id p01-03 --seed 123 `
+  --scene "standing side by side, upper body, eye level" --background "city street, daylight" --style "<絵柄>" `
+  --char1-appearance "<見た目>" --char1-action "<ポーズ・行動>" --char1-pos 0.3,0.5 `
+  --char2-appearance "<見た目>" --char2-action "<ポーズ・行動>" --char2-pos 0.7,0.5
+```
+
+- **順序**：ベースは「人数タグ（人物から自動、人物なしは `no humans`）→ `--scene` → `--background` → `--style` → 品質タグ」。人物別は「`girl`/`boy`/`other`（数字なし）→ 見た目 → ポーズ・行動」。除外は「プリセット → `--negative`」。入力の文は書き換えず（空白・読点を含め）そのまま連結する。出典：[タグの順序](https://docs.novelai.net/en/image/tags/)・[複数人物](https://docs.novelai.net/en/image/multiplecharacters/)・[品質タグ](https://docs.novelai.net/en/image/qualitytags/)・[除外プリセット](https://docs.novelai.net/en/image/undesiredcontent/)（確認日2026-10-05）。
+- **モデル**：`--model` で `nai-diffusion-5-curated`（既定）・`nai-diffusion-5-full`（指定時のみ）・`nai-diffusion-4-5-curated`（指定時のみ）。品質タグ・除外プリセット・Guidance（V5は7.0、V4.5は5.0）・送るパラメーターはモデルごとの画面の既定に合わせる。V4.5の人物は最大6人で、配置ピンは5×5マスの中心へ寄せる。V5の人物は最大22人。設定の根拠は実行時に表示する。**V5 Curated・V5 Full・V4.5 Curatedは、画面PNGと同Seed・同入力で画素まで一致を確認済み**（各1回。条件と限界は [画面と一致させる観察](novelai-api.md#compose-standard)）。V5 Fullの画面は除外の先頭に `nsfw, ` を付けるが、ユーザー指示によりスクリプトは足さない（画面と完全に同じにする場合は `--uc-preset-text` に `nsfw, …` を含む全文を渡す）。V4.5のlight・humanなど画面PNGで確認していないプリセットは `--uc-preset-text` で全文を指定する。
+- **品質タグ**：画面の品質タグを末尾に自動で付ける。入力（ベース・人物別）に同じタグがあれば付けず１個だけにする（重みつきの `-0.8::feet::` は重みごと同じ場合だけ重複扱い）。`--allow-duplicate-quality` で画面と同じ重複を再現できる。品質タグの `no text` は、`generate` の「肯定側の否定語」警告の対象にしない。
+- **.envで上書きできる設定**：読むのは次の4つだけで、APIキーの行は読まない。優先順は 引数 ＞ 環境変数・`.env`・`.secrets` ＞ 既定。`NOVELAI_QUALITY_TAGS`（品質タグの全文。空で付けない。引数 `--quality-tags`）、`NOVELAI_UC_PRESET`（`heavy`・`none`、V5 Curatedは `light`・`human` も。引数 `--uc-preset`）、`NOVELAI_UC_PRESET_TEXT`（除外プリセットの全文。引数 `--uc-preset-text`）、`NOVELAI_CHECK_IDENTITY`（`1` で識別特徴の点検を行う）。
+- **人物**：`--charN-type`・`--charN-appearance`・`--charN-action`・`--charN-pos`・`--charN-negative`（Nは1から連続）。配列で渡すなら `--chars-json`。配置ピンは全員に指定した場合だけ使い、`use_coords` を真にする（`--coords on|off|auto`）。指定がなければ `use_coords: false`（AI’s Choice）。**`use_coords: false` でも `centers` の値は絵に影響した例がある**。画面と同じ絵を再現するときは `--coords off` と `--charN-pos` で画面の座標を渡す。画面PNGの `tag_hint_qt`・`tag_hint_uc_preset` は絵に影響しなかったため送らない。
+- **絵柄・背景・人物の文**：`.env` の `NOVELAI_STYLE_`・`NOVELAI_BACKGROUND_`・`NOVELAI_CHAR_` の値をそのまま引数へ渡す。このスクリプトは `.env` を読まず、`${変数名}` も展開せずエラーにする（変数を展開した要求は、次節の `novelai_batch.py` の仕組みで使う）。
+- **生成設定の既定**：steps はV5が23、V4.5が28（`novelai_api.py` と同じ。画面と同じ絵を再現するときは画面の値を渡す）。k_euler_ancestral・karras・`prefer_brownian: true`・`deliberate_euler_ancestral_bug: false`。この2項目を省略するとAPIの既定が画面と違う値になる。寸法は `--width`・`--height`、なければ `config/page-layout.json` の `generationCanvas`、未設定なら画面の既定832×1216。Opusの無消費候補（1,048,576画素以下・28steps以下）を超えると注意を表示する。
+- **実際に送ったJSON**：送信のたびに、候補PNGの隣へ `r001.request-body.json`（送信バイトそのもの）と `r001.request.json`（同じ内容の整形版）を保存する。`.request.json` は要求JSONと同じ形式なので、`input/novelai/requests/` へコピーして手で調整し、再生成の元にできる。
+- 識別特徴の点検（`characters.json` の cast）を使う場合だけ、`--cast-from 既存の要求ID` で登場人物の登録を写す。
+
 <a id="character-variables"></a>
 
 ### キャラクター・絵柄・背景を .env から読み込む（依頼があった場合）
@@ -211,7 +234,7 @@ python -X utf8 scripts/novelai_batch.py build --all --write-psd
 
 絵柄・背景はBase（`input` と `v4_prompt.caption.base_caption`）、人物の特徴は対応するCharacterへ割り当てる。人物別入力を使わない要求では本文へ統合する。変数を参照した要求だけが変更の対象なので、全コマで同じ背景にせず場面ごとに背景変数を分ける。`templatize` は要求JSON内の一致する文字列をすべて置き換えるため、`--dry-run` と差分の読み取りで対象を確認する。
 
-日本語の値はUTF-8の１行で保存・展開できる。翻訳機能はなく、モデルによる解釈は画像で確認する。特徴チェックは `characters.json` に登録した語と展開後の要求との照合で、画像認識・意味理解ではない。キャラ外見を変更したら同ファイルの特徴と見える特徴の指定（`cast`）も合わせ、人物別入力への割り当ては別途内容照合する。絵柄・背景に同じ特徴チェックを強制しない。
+日本語の値はUTF-8の１行で保存・展開できる。翻訳機能はなく、モデルによる解釈は画像で確認する。特徴チェックは既定では行わず、`NOVELAI_CHECK_IDENTITY=1` を指定した場合だけ `characters.json` に登録した語と展開後の要求を照合する（画像認識・意味理解ではない）。キャラ外見を変更したら同ファイルの特徴と見える特徴の指定（`cast`）も合わせ、人物別入力への割り当ては別途内容照合する。絵柄・背景に同じ特徴チェックを強制しない。
 
 実際の編集例、テキストからの反映、送信なし確認、再生成・採用・PNG／PSDの組み直しは [利用者向けREADME](../novelai-prompts/README.md) にまとめる。この機能はNovelAI一括生成専用で、他の生成手段へ適用しない。
 
@@ -239,6 +262,75 @@ python -X utf8 scripts/novelai_batch.py build --all --write-psd
 適切な素材がなければ別の透過素材を生成し、実alpha・文字・反復数を確認する。反復の1文字連結は4〜7文字を別IDで扱う。セリフは原則縦書き・各列上詰めで組版し、枠・効果音・吹き出し・文字を分離する。オノマトペは音の出る時点のコマへ置く（着地音を滑空中のコマに付けない）。
 
 見た目が採用可能で一部分だけ違うときにimagegenで局所修正する。原画と編集版を両方保持する。構図・人物数・動作全体の不一致は組版や生成条件を見直す。過去セッションの「再生成5枚まで」を新作品の恒久上限にはしない。各依頼の上限に従う。
+
+<a id="page-viewer"></a>
+
+### PNGプレビューをページ送りで確認するHTML（AIエージェントが作る）
+
+NovelAIで組版し、`novelai_batch.py build` でページPNGのプレビューを作ったら、各ページを前後に送りながら確認できるHTMLをAIエージェントが作り、ユーザーへ提示する。ユーザーの確認を楽にするための補助で、制作キットの運用提案（2026-10-06のユーザー指示）。imagegenなど他の制作方式には適用しない。HTMLは `output/` に置く確認用の生成物で、掲載・配布には使わず、画像の目視点検・照合表の代わりにもしない。
+
+1. **対象ページの収集**：`output/build/page-NN/` を番号順に調べ、各ページの**最新の版**（`vNNN` の数字が最大のフォルダ）から `page-NN.png` と `page-NN-display.png`（掲載幅に縮小した確認用画像）が両方あるものを集める。未build（フォルダなし）や番号の抜けは、HTMLに含めず、どのページが無いかをユーザーへ伝える。
+2. **HTMLの作成**：下のひな形の `__PAGES__` を、次の形のJSON配列に置き換えて `output/build/preview.html` へUTF-8で保存する。パスはHTMLからの相対パス（`output/build/` が基準）。
+
+   ```json
+   [{"page": 1, "version": "v002", "display": "page-01/v002/page-01-display.png", "png": "page-01/v002/page-01.png"}]
+   ```
+
+3. **読む方向**：ひな形の `RTL` は、作品の `OPTION.md` の掲載形式に合わせる。右から左へ読む（既定）なら `true`、左から右・横読みなら `false`。`true` では「次のページ」のボタンが左側に並び、矢印キーは ← が次、→ が前になる。
+4. **守ること**：外部ライブラリ・外部通信を使わない。画像はコピー・埋め込みせず、既存のPNGを参照する。ページ番号などの表示は確認画面の部品だけで、ページ画像へは入れない（依頼にないページ番号をページへ入れない規則はそのまま）。
+5. **作成後の確認**：HTMLに書いた `display`・`png` のパスがすべて実在することを確認する。**ブラウザーは起動しない**。作品内の相対パスと、実在を確認した絶対パスを提示し、ユーザーが自分で開く。
+6. **更新**：修正して再 `build` するたびに、1番から作り直す。古い版を指していないか（各ページが最新の `vNNN` か）を確認してから再提示する。
+
+ひな形（そのまま保存でき、動作はキー操作・ボタン・ページ選択の確認済み）：
+
+```html
+<!doctype html>
+<html lang="ja">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ページ確認</title>
+<style>
+:root{color-scheme:light dark}
+body{margin:0;height:100vh;display:flex;flex-direction:column;font:16px/1.5 system-ui,sans-serif}
+nav{display:flex;gap:.5rem;align-items:center;justify-content:center;flex-wrap:wrap;padding:.5rem;border-bottom:1px solid #8886}
+button,select{font:inherit;padding:.35rem .9rem}
+main{flex:1;min-height:0;display:flex;justify-content:center;align-items:center;padding:.5rem}
+img{max-width:100%;max-height:100%;object-fit:contain;background:#fff}
+</style>
+<nav dir="rtl">
+<button id="prev">前のページ</button>
+<select id="jump" aria-label="ページ"></select>
+<button id="next">次のページ</button>
+<span id="info"></span>
+<a id="full" target="_blank">原寸PNGを開く</a>
+</nav>
+<main><img id="page" alt=""></main>
+<script>
+const pages = __PAGES__;
+const RTL = true; // 右から左へ読む作品は true、左から右・横読みは false
+const $ = id => document.getElementById(id), img = $('page'), jump = $('jump');
+let index = 0;
+pages.forEach((p, k) => { const o = document.createElement('option'); o.value = k; o.textContent = p.page + 'ページ'; jump.append(o); });
+function show(k) {
+  index = Math.max(0, Math.min(pages.length - 1, k));
+  const p = pages[index];
+  img.src = p.display; img.alt = p.page + 'ページ'; $('full').href = p.png;
+  $('info').textContent = (index + 1) + ' / ' + pages.length + '（' + p.version + '）';
+  jump.value = index; $('prev').disabled = index === 0; $('next').disabled = index === pages.length - 1;
+  history.replaceState(null, '', '#' + p.page);
+}
+$('prev').onclick = () => show(index - 1);
+$('next').onclick = () => show(index + 1);
+jump.onchange = () => show(Number(jump.value));
+addEventListener('keydown', e => {
+  const step = e.key === 'ArrowLeft' ? (RTL ? 1 : -1) : e.key === 'ArrowRight' ? (RTL ? -1 : 1) : 0;
+  if (step) show(index + step);
+});
+const start = pages.findIndex(p => '#' + p.page === location.hash);
+show(start < 0 ? 0 : start);
+</script>
+</html>
+```
 
 ## Opusの費用確認
 

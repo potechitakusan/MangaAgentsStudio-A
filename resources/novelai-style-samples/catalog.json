@@ -10,7 +10,8 @@
     "style-07",
     "style-08",
     "style-09",
-    "style-10"
+    "style-10",
+    "style-11"
   ],
   "samples": [
     {
@@ -18,10 +19,10 @@
       "style": "style-01",
       "title": "黒ベタ＋ハッチング / 街中",
       "image": "previews/style-01-street.webp",
-      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
-      "prompt": "Monochrome black-and-white manga, gritty adventure art, variable-width dip-pen lines, large pure black ink masses, harsh white rim light, deep chiaroscuro, dense crosshatching, angular faces, realistic anatomy, white paper highlights.",
+      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。V5 Curatedで2026-10-05に生成し直した見本（人物別入力と配置ピンを使用）。",
+      "prompt": "2girls, 2boys, walking along a shopping street, diagonal composition, dynamic angle, daylight, city shopping street, buildings, pavement, Monochrome black-and-white manga, gritty adventure art, variable-width dip-pen lines, large pure black ink masses, harsh white rim light, deep chiaroscuro, dense crosshatching, angular faces, realistic anatomy, white paper highlights.\n人物1（配置ピン 0.15, 0.5）: girl, black bob cut hair with bangs, small hairclip, denim jacket over black top, black pants, walking, laughing, looking at the group\n人物2（配置ピン 0.38, 0.5）: boy, short curly black hair, glasses, black jacket over white t-shirt, light pants, walking, talking, smiling\n人物3（配置ピン 0.62, 0.5）: girl, long wavy light hair in a high ponytail, long cardigan over black camisole, long skirt, walking, smiling, gesturing with one hand\n人物4（配置ピン 0.85, 0.5）: boy, tall, light buzz cut, black hooded jacket over white shirt, hands in pockets, walking, talking, looking at the group",
       "negative": "color, flat cel shading, airbrush",
-      "seed": null,
+      "seed": 212100245,
       "repeat": null
     },
     {
@@ -29,10 +30,10 @@
       "style": "style-01",
       "title": "黒ベタ＋ハッチング / 学校",
       "image": "previews/style-01-school.webp",
-      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
-      "prompt": "Monochrome black-and-white manga, gritty adventure art, variable-width dip-pen lines, large pure black ink masses, harsh white rim light, deep chiaroscuro, dense crosshatching, angular faces, realistic anatomy, white paper highlights.",
+      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。V5 Curatedで2026-10-05に生成し直した見本（人物別入力と配置ピンを使用）。",
+      "prompt": "2girls, 2boys, tense conversation in a classroom, diagonal composition, dynamic angle, daylight, classroom, desks, large windows, curtains, Monochrome black-and-white manga, gritty adventure art, variable-width dip-pen lines, large pure black ink masses, harsh white rim light, deep chiaroscuro, dense crosshatching, angular faces, realistic anatomy, white paper highlights.\n人物1（配置ピン 0.15, 0.5）: girl, black bob cut hair with bangs, small hairclip, dark school blazer, white shirt, ribbon, standing with hands clasped, looking down, serious expression\n人物2（配置ピン 0.38, 0.5）: boy, short curly black hair, glasses, dark school blazer, necktie, standing, holding an open book out, serious expression\n人物3（配置ピン 0.62, 0.5）: girl, long wavy light hair in a high ponytail, school blazer, bow, pleated skirt, leaning on a desk with both hands, looking at the book\n人物4（配置ピン 0.85, 0.5）: boy, tall, light buzz cut, school blazer, necktie, sitting at a desk, arms crossed, frowning",
       "negative": "color, flat cel shading, airbrush",
-      "seed": null,
+      "seed": 811265767,
       "repeat": null
     },
     {
@@ -40,10 +41,10 @@
       "style": "style-02",
       "title": "淡彩水彩＋ペン線 / 街中",
       "image": "previews/style-09-street.webp",
-      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
-      "prompt": "Traditional watercolor illustration with delicate ink outlines, transparent pale watercolor washes, soft color bleeding at shadow edges, bright white paper reserves, subtle cold-press paper grain, fresh restrained pastel palette.",
+      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。V5 Curatedで2026-10-05に生成し直した見本（人物別入力と配置ピンを使用）。",
+      "prompt": "2girls, 2boys, walking along a shopping street, diagonal composition, dynamic angle, daylight, city shopping street, buildings, pavement, Traditional watercolor illustration with delicate ink outlines, transparent pale watercolor washes, soft color bleeding at shadow edges, bright white paper reserves, subtle cold-press paper grain, fresh restrained pastel palette.\n人物1（配置ピン 0.15, 0.5）: girl, black bob cut hair with bangs, small hairclip, denim jacket over black top, black pants, walking, laughing, looking at the group\n人物2（配置ピン 0.38, 0.5）: boy, short curly black hair, glasses, black jacket over white t-shirt, light pants, walking, talking, smiling\n人物3（配置ピン 0.62, 0.5）: girl, long wavy blonde hair in a high ponytail, long cream cardigan over black camisole, long skirt, walking, smiling, gesturing with one hand\n人物4（配置ピン 0.85, 0.5）: boy, tall, blonde buzz cut, black hooded jacket over white shirt, hands in pockets, walking, talking, looking at the group",
       "negative": "thick opaque paint, flat cel shading, glossy 3d",
-      "seed": null,
+      "seed": 3207191024,
       "repeat": null
     },
     {
@@ -51,10 +52,10 @@
       "style": "style-02",
       "title": "淡彩水彩＋ペン線 / 学校",
       "image": "previews/style-09-school.webp",
-      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
-      "prompt": "Traditional watercolor illustration with delicate ink outlines, transparent pale watercolor washes, soft color bleeding at shadow edges, bright white paper reserves, subtle cold-press paper grain, fresh restrained pastel palette.",
+      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。V5 Curatedで2026-10-05に生成し直した見本（人物別入力と配置ピンを使用）。",
+      "prompt": "2girls, 2boys, tense conversation in a classroom, diagonal composition, dynamic angle, daylight, classroom, desks, large windows, curtains, Traditional watercolor illustration with delicate ink outlines, transparent pale watercolor washes, soft color bleeding at shadow edges, bright white paper reserves, subtle cold-press paper grain, fresh restrained pastel palette.\n人物1（配置ピン 0.15, 0.5）: girl, black bob cut hair with bangs, small hairclip, dark school blazer, white shirt, ribbon, standing with hands clasped, looking down, serious expression\n人物2（配置ピン 0.38, 0.5）: boy, short curly black hair, glasses, dark school blazer, necktie, standing, holding an open book out, serious expression\n人物3（配置ピン 0.62, 0.5）: girl, long wavy blonde hair in a high ponytail, school blazer, bow, pleated skirt, leaning on a desk with both hands, looking at the book\n人物4（配置ピン 0.85, 0.5）: boy, tall, blonde buzz cut, school blazer, necktie, sitting at a desk, arms crossed, frowning",
       "negative": "thick opaque paint, flat cel shading, glossy 3d",
-      "seed": null,
+      "seed": 974616611,
       "repeat": null
     },
     {
@@ -62,10 +63,10 @@
       "style": "style-03",
       "title": "不透明ガッシュ / 街中",
       "image": "previews/style-11-street.webp",
-      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
-      "prompt": "Gouache illustration, opaque matte color planes, chalky painted highlights, subtle dry-brush texture, hand-painted edges, warm and cool muted color contrast, simplified strong shapes, lightly outlined expressive faces.",
+      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。V5 Curatedで2026-10-05に生成し直した見本（人物別入力と配置ピンを使用）。",
+      "prompt": "2girls, 2boys, walking along a shopping street, diagonal composition, dynamic angle, daylight, city shopping street, buildings, pavement, Gouache illustration, opaque matte color planes, chalky painted highlights, subtle dry-brush texture, hand-painted edges, warm and cool muted color contrast, simplified strong shapes, lightly outlined expressive faces.\n人物1（配置ピン 0.15, 0.5）: girl, black bob cut hair with bangs, small hairclip, denim jacket over black top, black pants, walking, laughing, looking at the group\n人物2（配置ピン 0.38, 0.5）: boy, short curly black hair, glasses, black jacket over white t-shirt, light pants, walking, talking, smiling\n人物3（配置ピン 0.62, 0.5）: girl, long wavy blonde hair in a high ponytail, long cream cardigan over black camisole, long skirt, walking, smiling, gesturing with one hand\n人物4（配置ピン 0.85, 0.5）: boy, tall, blonde buzz cut, black hooded jacket over white shirt, hands in pockets, walking, talking, looking at the group",
       "negative": "glossy, transparent watercolor, airbrush",
-      "seed": null,
+      "seed": 1976735317,
       "repeat": null
     },
     {
@@ -73,10 +74,10 @@
       "style": "style-03",
       "title": "不透明ガッシュ / 学校",
       "image": "previews/style-11-school.webp",
-      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
-      "prompt": "Gouache illustration, opaque matte color planes, chalky painted highlights, subtle dry-brush texture, hand-painted edges, warm and cool muted color contrast, simplified strong shapes, lightly outlined expressive faces.",
+      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。V5 Curatedで2026-10-05に生成し直した見本（人物別入力と配置ピンを使用）。",
+      "prompt": "2girls, 2boys, tense conversation in a classroom, diagonal composition, dynamic angle, daylight, classroom, desks, large windows, curtains, Gouache illustration, opaque matte color planes, chalky painted highlights, subtle dry-brush texture, hand-painted edges, warm and cool muted color contrast, simplified strong shapes, lightly outlined expressive faces.\n人物1（配置ピン 0.15, 0.5）: girl, black bob cut hair with bangs, small hairclip, dark school blazer, white shirt, ribbon, standing with hands clasped, looking down, serious expression\n人物2（配置ピン 0.38, 0.5）: boy, short curly black hair, glasses, dark school blazer, necktie, standing, holding an open book out, serious expression\n人物3（配置ピン 0.62, 0.5）: girl, long wavy blonde hair in a high ponytail, school blazer, bow, pleated skirt, leaning on a desk with both hands, looking at the book\n人物4（配置ピン 0.85, 0.5）: boy, tall, blonde buzz cut, school blazer, necktie, sitting at a desk, arms crossed, frowning",
       "negative": "glossy, transparent watercolor, airbrush",
-      "seed": null,
+      "seed": 2316200278,
       "repeat": null
     },
     {
@@ -84,10 +85,10 @@
       "style": "style-04",
       "title": "アクリル厚塗り / 街中",
       "image": "previews/style-12-street.webp",
-      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
-      "prompt": "Acrylic painting, bold opaque brushstrokes, visible paint ridges, layered saturated colors, decisive angular strokes defining clothes and architecture, crisp focal faces, matte textured painted surfaces.",
+      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。V5 Curatedで2026-10-05に生成し直した見本（人物別入力と配置ピンを使用）。",
+      "prompt": "2girls, 2boys, walking along a shopping street, diagonal composition, dynamic angle, daylight, city shopping street, buildings, pavement, Acrylic painting, bold opaque brushstrokes, visible paint ridges, layered saturated colors, decisive angular strokes defining clothes and architecture, crisp focal faces, matte textured painted surfaces.\n人物1（配置ピン 0.15, 0.5）: girl, black bob cut hair with bangs, small hairclip, denim jacket over black top, black pants, walking, laughing, looking at the group\n人物2（配置ピン 0.38, 0.5）: boy, short curly black hair, glasses, black jacket over white t-shirt, light pants, walking, talking, smiling\n人物3（配置ピン 0.62, 0.5）: girl, long wavy blonde hair in a high ponytail, long cream cardigan over black camisole, long skirt, walking, smiling, gesturing with one hand\n人物4（配置ピン 0.85, 0.5）: boy, tall, blonde buzz cut, black hooded jacket over white shirt, hands in pockets, walking, talking, looking at the group",
       "negative": "flat cel shading, vector, thin ink outline",
-      "seed": null,
+      "seed": 2057103239,
       "repeat": null
     },
     {
@@ -95,10 +96,10 @@
       "style": "style-04",
       "title": "アクリル厚塗り / 学校",
       "image": "previews/style-12-school.webp",
-      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
-      "prompt": "Acrylic painting, bold opaque brushstrokes, visible paint ridges, layered saturated colors, decisive angular strokes defining clothes and architecture, crisp focal faces, matte textured painted surfaces.",
+      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。V5 Curatedで2026-10-05に生成し直した見本（人物別入力と配置ピンを使用）。",
+      "prompt": "2girls, 2boys, tense conversation in a classroom, diagonal composition, dynamic angle, daylight, classroom, desks, large windows, curtains, Acrylic painting, bold opaque brushstrokes, visible paint ridges, layered saturated colors, decisive angular strokes defining clothes and architecture, crisp focal faces, matte textured painted surfaces.\n人物1（配置ピン 0.15, 0.5）: girl, black bob cut hair with bangs, small hairclip, dark school blazer, white shirt, ribbon, standing with hands clasped, looking down, serious expression\n人物2（配置ピン 0.38, 0.5）: boy, short curly black hair, glasses, dark school blazer, necktie, standing, holding an open book out, serious expression\n人物3（配置ピン 0.62, 0.5）: girl, long wavy blonde hair in a high ponytail, school blazer, bow, pleated skirt, leaning on a desk with both hands, looking at the book\n人物4（配置ピン 0.85, 0.5）: boy, tall, blonde buzz cut, school blazer, necktie, sitting at a desk, arms crossed, frowning",
       "negative": "flat cel shading, vector, thin ink outline",
-      "seed": null,
+      "seed": 1291358436,
       "repeat": null
     },
     {
@@ -106,10 +107,10 @@
       "style": "style-05",
       "title": "色鉛筆 / 街中",
       "image": "previews/style-15-street.webp",
-      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
-      "prompt": "Colored pencil illustration, visible fine colored hatching, layered translucent pencil colors, textured ivory paper, delicate dark pencil contours, detailed expressive faces, softly shaded dimensional clothes.",
+      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。V5 Curatedで2026-10-05に生成し直した見本（人物別入力と配置ピンを使用）。",
+      "prompt": "2girls, 2boys, walking along a shopping street, diagonal composition, dynamic angle, daylight, city shopping street, buildings, pavement, Colored pencil illustration, visible fine colored hatching, layered translucent pencil colors, textured ivory paper, delicate dark pencil contours, detailed expressive faces, softly shaded dimensional clothes.\n人物1（配置ピン 0.15, 0.5）: girl, black bob cut hair with bangs, small hairclip, denim jacket over black top, black pants, walking, laughing, looking at the group\n人物2（配置ピン 0.38, 0.5）: boy, short curly black hair, glasses, black jacket over white t-shirt, light pants, walking, talking, smiling\n人物3（配置ピン 0.62, 0.5）: girl, long wavy blonde hair in a high ponytail, long cream cardigan over black camisole, long skirt, walking, smiling, gesturing with one hand\n人物4（配置ピン 0.85, 0.5）: boy, tall, blonde buzz cut, black hooded jacket over white shirt, hands in pockets, walking, talking, looking at the group",
       "negative": "glossy, flat digital fills, thick paint",
-      "seed": null,
+      "seed": 2053534655,
       "repeat": null
     },
     {
@@ -117,10 +118,10 @@
       "style": "style-05",
       "title": "色鉛筆 / 学校",
       "image": "previews/style-15-school.webp",
-      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
-      "prompt": "Colored pencil illustration, visible fine colored hatching, layered translucent pencil colors, textured ivory paper, delicate dark pencil contours, detailed expressive faces, softly shaded dimensional clothes.",
+      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。V5 Curatedで2026-10-05に生成し直した見本（人物別入力と配置ピンを使用）。",
+      "prompt": "2girls, 2boys, tense conversation in a classroom, diagonal composition, dynamic angle, daylight, classroom, desks, large windows, curtains, Colored pencil illustration, visible fine colored hatching, layered translucent pencil colors, textured ivory paper, delicate dark pencil contours, detailed expressive faces, softly shaded dimensional clothes.\n人物1（配置ピン 0.15, 0.5）: girl, black bob cut hair with bangs, small hairclip, dark school blazer, white shirt, ribbon, standing with hands clasped, looking down, serious expression\n人物2（配置ピン 0.38, 0.5）: boy, short curly black hair, glasses, dark school blazer, necktie, standing, holding an open book out, serious expression\n人物3（配置ピン 0.62, 0.5）: girl, long wavy blonde hair in a high ponytail, school blazer, bow, pleated skirt, leaning on a desk with both hands, looking at the book\n人物4（配置ピン 0.85, 0.5）: boy, tall, blonde buzz cut, school blazer, necktie, sitting at a desk, arms crossed, frowning",
       "negative": "glossy, flat digital fills, thick paint",
-      "seed": null,
+      "seed": 1515160439,
       "repeat": null
     },
     {
@@ -128,10 +129,10 @@
       "style": "style-06",
       "title": "線画＋塗り込み / 街中",
       "image": "previews/style-17-street.webp",
-      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
-      "prompt": "Detailed painted anime illustration, expressive fine lineart blended with painterly shading, soft reflected light, layered warm and cool shadows, textured but controlled brushwork, sharp facial features and focal edges.",
+      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。V5 Curatedで2026-10-05に生成し直した見本（人物別入力と配置ピンを使用）。",
+      "prompt": "2girls, 2boys, walking along a shopping street, diagonal composition, dynamic angle, daylight, city shopping street, buildings, pavement, Detailed painted anime illustration, expressive fine lineart blended with painterly shading, soft reflected light, layered warm and cool shadows, textured but controlled brushwork, sharp facial features and focal edges.\n人物1（配置ピン 0.15, 0.5）: girl, black bob cut hair with bangs, small hairclip, denim jacket over black top, black pants, walking, laughing, looking at the group\n人物2（配置ピン 0.38, 0.5）: boy, short curly black hair, glasses, black jacket over white t-shirt, light pants, walking, talking, smiling\n人物3（配置ピン 0.62, 0.5）: girl, long wavy blonde hair in a high ponytail, long cream cardigan over black camisole, long skirt, walking, smiling, gesturing with one hand\n人物4（配置ピン 0.85, 0.5）: boy, tall, blonde buzz cut, black hooded jacket over white shirt, hands in pockets, walking, talking, looking at the group",
       "negative": "flat vector, heavy halftone, photorealistic skin",
-      "seed": null,
+      "seed": 628799543,
       "repeat": null
     },
     {
@@ -139,18 +140,18 @@
       "style": "style-06",
       "title": "線画＋塗り込み / 学校",
       "image": "previews/style-17-school.webp",
-      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。",
-      "prompt": "Detailed painted anime illustration, expressive fine lineart blended with painterly shading, soft reflected light, layered warm and cool shadows, textured but controlled brushwork, sharp facial features and focal edges.",
+      "description": "男女4人・斜めの構図。同じ画風の2場面の参考で、長編での安定保証ではありません。V5 Curatedで2026-10-05に生成し直した見本（人物別入力と配置ピンを使用）。",
+      "prompt": "2girls, 2boys, tense conversation in a classroom, diagonal composition, dynamic angle, daylight, classroom, desks, large windows, curtains, Detailed painted anime illustration, expressive fine lineart blended with painterly shading, soft reflected light, layered warm and cool shadows, textured but controlled brushwork, sharp facial features and focal edges.\n人物1（配置ピン 0.15, 0.5）: girl, black bob cut hair with bangs, small hairclip, dark school blazer, white shirt, ribbon, standing with hands clasped, looking down, serious expression\n人物2（配置ピン 0.38, 0.5）: boy, short curly black hair, glasses, dark school blazer, necktie, standing, holding an open book out, serious expression\n人物3（配置ピン 0.62, 0.5）: girl, long wavy blonde hair in a high ponytail, school blazer, bow, pleated skirt, leaning on a desk with both hands, looking at the book\n人物4（配置ピン 0.85, 0.5）: boy, tall, blonde buzz cut, school blazer, necktie, sitting at a desk, arms crossed, frowning",
       "negative": "flat vector, heavy halftone, photorealistic skin",
-      "seed": null,
+      "seed": 3264575205,
       "repeat": null
     },
     {
       "id": "style-07-two-girls",
       "style": "style-07",
-      "title": "year 2025 / 女性2人・画風単体テスト（旧設定の見本）",
+      "title": "year 2025 / 女性2人・画風単体テスト",
       "image": "previews/style-21-two-girls.webp",
-      "description": "表示プロンプトは現行の強調なし設定。掲載画像は旧設定の1.3強調で生成した見本で、変更後の画像は未生成。追加指定の女性2人・同じseedの画風単体テストで、旧見本と人物・背景の条件は異なります。",
+      "description": "女性2人・画風単体テスト。画風文以外の場面指定はなく、同じseed 91001でも画像ごとに場面が異なります。V5 Curatedで2026-10-05に生成し直した見本で、画風だけの比較ではありません。",
       "prompt": "2girls, multiple girls, year 2025",
       "negative": "nsfw, nudity, sexualized pose, explicit, text, watermark, signature, logo",
       "seed": 91001,
@@ -161,7 +162,7 @@
       "style": "style-08",
       "title": "デフォルメ・白い瞳孔・パステル / 女性2人・画風単体テスト",
       "image": "previews/style-22-two-girls.webp",
-      "description": "追加指定の女性2人・同じseedの画風単体テスト。旧見本と人物・背景の条件は異なります。",
+      "description": "女性2人・画風単体テスト。画風文以外の場面指定はなく、同じseed 91001でも画像ごとに場面が異なります。V5 Curatedで2026-10-05に生成し直した見本で、画風だけの比較ではありません。",
       "prompt": "2girls, multiple girls, deformed, white pupils, colored lineart, painterly, soft style, pastel colors, year 2025",
       "negative": "nsfw, nudity, sexualized pose, explicit, text, watermark, signature, logo",
       "seed": 91001,
@@ -172,7 +173,7 @@
       "style": "style-09",
       "title": "かわいいカラー漫画 / 女性2人・画風単体テスト",
       "image": "previews/style-24-two-girls.webp",
-      "description": "追加指定の女性2人・同じseedの画風単体テスト。旧見本と人物・背景の条件は異なります。",
+      "description": "女性2人・画風単体テスト。画風文以外の場面指定はなく、同じseed 91001でも画像ごとに場面が異なります。V5 Curatedで2026-10-05に生成し直した見本で、画風だけの比較ではありません。",
       "prompt": "2girls, multiple girls, cute manga style, pastel colors, anime coloring, delicate lineart, thin lines, colored outlines, rounded faces, large expressive eyes, small noses, small mouths, slightly oversized heads, simplified proportions, light cel shading, subtle highlights, bright gentle colors",
       "negative": "nsfw, nudity, sexualized pose, explicit, text, watermark, signature, logo",
       "seed": 91001,
@@ -183,14 +184,25 @@
       "style": "style-10",
       "title": "かわいいモノクロ漫画 / 女性2人・画風単体テスト",
       "image": "previews/style-25-two-girls.webp",
-      "description": "追加指定の女性2人・同じseedの画風単体テスト。旧見本と人物・背景の条件は異なります。",
+      "description": "女性2人・画風単体テスト。画風文以外の場面指定はなく、同じseed 91001でも画像ごとに場面が異なります。V5 Curatedで2026-10-05に生成し直した見本で、画風だけの比較ではありません。",
       "prompt": "2girls, multiple girls, monochrome, greyscale, cute manga style, delicate lineart, thin lines, rounded faces, large expressive eyes, small noses, small mouths, slightly oversized heads, simplified proportions, light screentones, minimal solid blacks, light shading",
       "negative": "nsfw, nudity, sexualized pose, explicit, text, watermark, signature, logo",
       "seed": 91001,
       "repeat": null
+    },
+    {
+      "id": "style-11-two-girls",
+      "style": "style-11",
+      "title": "鮮やかカラー・細線・大きな丸い目 / 女性2人・画風単体テスト",
+      "image": "previews/style-26-two-girls.webp",
+      "description": "追加指定の女性2人・同じseed 91001の画風単体テスト。画風文以外の場面指定はなく、同じseedでも画像ごとに場面が異なります（この画像は4人が描かれました）。V5 Curatedで2026-10-06に生成。他の見本と違い、品質タグ（very aesthetic, no text。masterpieceは画風文と重複のため追加なし）と除外プリセット（Heavy）はスクリプトの既定です。",
+      "prompt": "2girls, multiple girls, masterpiece, best quality, highly detailed,vivid colors, saturated,thin lines, clean lineart,digital art, clean coloring,large eyes, round eyes,, very aesthetic, no text",
+      "negative": "lowres, artistic error, film grain, scan artifacts, worst quality, bad quality, jpeg artifacts, very displeasing, chromatic aberration, dithering, halftone, screentone, multiple views, logo, too many watermarks, negative space, blank page",
+      "seed": 91001,
+      "repeat": null
     }
   ],
-  "model": "nai-diffusion-5-full",
+  "model": "nai-diffusion-5-curated",
   "generation_settings": {
     "width": 1344,
     "height": 704,
@@ -201,6 +213,8 @@
     "quality": false,
     "uc_preset": 0,
     "cfg_rescale": 0,
-    "auto_smea": false
+    "auto_smea": false,
+    "generated_on": "2026-10-05",
+    "generated_with": "scripts/novelai_compose.py（--no-quality-tags --uc-preset none、--scale 5.5）と novelai_batch.py。1回1枚・参照なし"
   }
 }

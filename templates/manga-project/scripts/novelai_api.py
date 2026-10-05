@@ -234,8 +234,10 @@ def prepare_request_data(root: Path, request: dict) -> tuple[dict, bytes]:
     params.setdefault("image_format", "png")
     if params["image_format"] != "png":
         raise ClientError("保存形式はPNGだけに対応しています。")
-    if type(params.get("seed")) is not int or not 0 <= params["seed"] <= 4294967295:
-        raise ClientError("seedを0〜4294967295の整数で固定してください。")
+    # seed未指定ならランダム。送った値は要求JSONの保存・実行記録に残る。
+    params.setdefault("seed", secrets.randbelow(4294967296))
+    if type(params["seed"]) is not int or not 0 <= params["seed"] <= 4294967295:
+        raise ClientError("seedは0〜4294967295の整数にしてください（省略するとランダム）。")
     if not isinstance(params.get("sampler"), str) or not params["sampler"].strip():
         raise ClientError("公式仕様で確認したsamplerを設定してください。")
     if type(params.get("scale")) not in (int, float) or not math.isfinite(params["scale"]) or params["scale"] <= 0:
@@ -261,7 +263,9 @@ def check_cost(args, request: dict) -> None:
         params = request["parameters"]
         if params["steps"] > 28 or params["width"] * params["height"] > 1048576:
             raise ClientError("この要求はキットのOpus無消費候補の寸法・steps範囲を超えています。")
-        if set(params) - PLAIN_PARAMETERS:
+        # controlnet_strength は novelai_compose.py が画面と同じ値（1.0）で送る。ControlNetの入力画像はなく、1.0だけは通常の生成として扱う。
+        extra = set(params) - PLAIN_PARAMETERS - ({"controlnet_strength"} if params.get("controlnet_strength") == 1.0 else set())
+        if extra:
             raise ClientError("追加機能・未確認パラメーターがあります。無消費扱いで送信できません。")
         if request["model"].startswith("nai-diffusion-5") and not args.confirm_v5_allowance:
             raise ClientError("V5は今回の生成に足りるOpus利用上限の確認も必要です。")
@@ -339,6 +343,74 @@ def run(args, root: Path) -> None:
     execute_generation(root, request, payload, args.output, args)
 
 
+# 契約照会（Anlas・利用上限の確認）は、生成のたびには呼ばない。API呼び出しが多すぎることによる警告のリスクを減らすため、
+# 最初の生成（おためし）で照会し、以後は前回の照会から数えて CHECK_INTERVAL 回目の生成ごとに照会する（2026-10-05のユーザー指示）。
+# 条件の変更・前回の生成の未完了・V5の利用上限が少ない間は、回数にかかわらず照会する。回数は目安で、実際の消費を示さない。
+CHECK_INTERVAL = 10
+LOW_USAGE_PERCENT = 3
+CHECK_STATE = "output/novelai/subscription-check.json"
+
+
+def check_signature(request: dict) -> str:
+    """費用に関わる条件。変わったら照会し直す。"""
+    params = request["parameters"]
+    extra = ",".join(sorted(set(params) - PLAIN_PARAMETERS))
+    return f"{request['model']}|{params['steps']}|{params['width']}x{params['height']}|{params['n_samples']}|{extra}"
+
+
+def read_check_state(root: Path) -> dict | None:
+    path = root / CHECK_STATE
+    if not path.is_file():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, UnicodeError):
+        return None
+    if (not isinstance(data, dict) or not isinstance(data.get("state"), dict) or not isinstance(data.get("signature"), str)
+            or type(data.get("generationsSinceCheck")) is not int or type(data.get("needsCheck")) is not bool
+            or not isinstance(data.get("checkedAt"), str)):
+        return None
+    return data
+
+
+def write_check_state(root: Path, state: dict, check: dict, signature: str, needs_check: bool) -> None:
+    path = root / CHECK_STATE
+    path.parent.mkdir(parents=True, exist_ok=True)
+    data = {"schemaVersion": 1, "checkedAt": check["checkedAt"], "signature": signature, "state": state,
+            "generationsSinceCheck": check["generationsSinceCheck"], "needsCheck": needs_check}
+    temporary = path.with_suffix(".tmp")
+    with temporary.open("w", encoding="utf-8") as stream:
+        json.dump(data, stream, ensure_ascii=False, indent=2)
+        stream.write("\n")
+    temporary.replace(path)
+
+
+def subscription_for_generation(root: Path, key: str, request: dict) -> tuple[dict, dict, str]:
+    """今回の生成に使う契約状態・照会の記録・条件を返す。必要なときだけAPIを呼ぶ。"""
+    signature = check_signature(request)
+    saved = read_check_state(root)
+    usage = (saved or {}).get("state", {}).get("usage", {})
+    reason = None
+    if saved is None:
+        reason = "最初の生成（おためし）"
+    elif saved["needsCheck"]:
+        reason = "前回の生成が完了を確認できていない"
+    elif saved["signature"] != signature:
+        reason = "モデル・寸法・steps・枚数・追加機能が前回の照会時と違う"
+    elif saved["generationsSinceCheck"] >= CHECK_INTERVAL:
+        reason = f"前回の照会から{CHECK_INTERVAL}回の生成を行った"
+    elif request["model"].startswith("nai-diffusion-5") and (
+            usage.get("isNegative") is True or ("percent" in usage and usage["percent"] <= LOW_USAGE_PERCENT)):
+        reason = "V5の利用上限の残量が少ない"
+    if reason is not None:
+        now = datetime.now(timezone.utc).isoformat()
+        state = subscription(key)
+        return state, {"method": "api", "reason": reason, "checkedAt": now, "generationsSinceCheck": 0}, signature
+    check = {"method": "cached", "reason": f"前回の照会の結果を利用（{CHECK_INTERVAL}回ごとに照会）", "checkedAt": saved["checkedAt"],
+             "generationsSinceCheck": saved["generationsSinceCheck"] + 1}
+    return saved["state"], check, signature
+
+
 def execute_generation(root: Path, request: dict, payload: bytes, output_relative: str, args) -> Path:
     """費用確認・契約照会の後に１回だけ送信し、PNGと実行記録を保存する。再送はしない。"""
     digest = hashlib.sha256(payload).hexdigest()
@@ -347,7 +419,8 @@ def execute_generation(root: Path, request: dict, payload: bytes, output_relativ
     # 誤って要求・費用メモへキーを貼った場合も送信・保存しない。
     if key in payload.decode("utf-8") or key in args.cost_note:
         raise ClientError("要求または費用メモへ認証情報を含めないでください。")
-    state = subscription(key)
+    state, check, signature = subscription_for_generation(root, key, request)
+    print("契約照会: " + ("API呼び出し" if check["method"] == "api" else "省略（前回の結果を利用）") + " / " + check["reason"])
     if args.confirm_zero_anlas and (state["active"] is not True or state["tier"] != 3):
         raise ClientError("有効なOpus契約を確認できないため、無消費扱いの生成を停止しました。")
     if args.confirm_zero_anlas and request["model"].startswith("nai-diffusion-5"):
@@ -358,7 +431,12 @@ def execute_generation(root: Path, request: dict, payload: bytes, output_relativ
     if not output.is_relative_to(root / "output") or output.suffix.lower() != ".png":
         raise ClientError("保存先はoutput/内のPNGにしてください。")
     record_path = output.with_suffix(".novelai.json")
-    if output.exists() or record_path.exists() or record_path.with_suffix(".tmp").exists():
+    # 実際に送るJSONを候補PNGの隣へ残す（補助目的）。-body.json は送信バイトそのもの、.request.json は同じ内容の整形版で、
+    # 作品の要求JSONと同じ形式のため、コピーして手で編集・再送の元にできる。
+    body_path = output.with_name(output.stem + ".request-body.json")
+    readable_path = output.with_name(output.stem + ".request.json")
+    if (output.exists() or record_path.exists() or record_path.with_suffix(".tmp").exists()
+            or body_path.exists() or readable_path.exists()):
         raise ClientError("同名の画像または実行記録があります。再送せず、記録を確認してください。")
     output.parent.mkdir(parents=True, exist_ok=True)
     correlation_id = "".join(secrets.choice("abcdefghijklmnopqrstuvwxyz0123456789") for _ in range(6))
@@ -366,8 +444,17 @@ def execute_generation(root: Path, request: dict, payload: bytes, output_relativ
               "correlationId": correlation_id, "requestSha256": digest, "request": request,
               "credentialSource": source, "subscriptionBefore": state,
               "costMode": "zero_anlas_confirmed" if args.confirm_zero_anlas else "paid_authorized",
-              "costNote": args.cost_note, "v5AllowanceConfirmed": args.confirm_v5_allowance,
+              "costNote": args.cost_note, "v5AllowanceConfirmed": args.confirm_v5_allowance, "subscriptionCheck": check,
               "actualAnlasCost": None, "output": output.relative_to(root).as_posix()}
+    record["sentRequestFiles"] = {"body": body_path.relative_to(root).as_posix(),
+                                  "readable": readable_path.relative_to(root).as_posix()}
+    with body_path.open("xb") as stream:
+        stream.write(payload)
+    with readable_path.open("x", encoding="utf-8") as stream:
+        json.dump(request, stream, ensure_ascii=False, indent=2)
+        stream.write("\n")
+    # 照会の状態は送信前に未完了で保存し、生成の完了を確認できたときだけ戻す。失敗・結果不明の次の生成では必ず照会する。
+    write_check_state(root, state, check, signature, True)
     # 同じ保存先への並行実行も送信前に止める。
     with record_path.open("x", encoding="utf-8") as stream:
         json.dump(record, stream, ensure_ascii=False, indent=2)
@@ -380,6 +467,7 @@ def execute_generation(root: Path, request: dict, payload: bytes, output_relativ
         record.update(status="PNG保存済み", actualCanvas={"width": width, "height": height},
                       finishedAt=datetime.now(timezone.utc).isoformat())
         write_record(record_path, record)
+        write_check_state(root, state, check, signature, False)
     except (ClientError, OSError):
         record["status"] = "処理未完了・再送前に結果と消費の確認が必要"
         try:

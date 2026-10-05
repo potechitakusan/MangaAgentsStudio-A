@@ -7,6 +7,10 @@ NovelAIを使う作品で、人間がページ単位・全ページの生成を�
 - モデル・steps・費用条件の確認方法（`--cost-note` に書く内容の例）：
 - 費用確認フラグ（確認済みの場合だけ付ける）：`--confirm-zero-anlas`、V5なら `--confirm-v5-allowance`
 
+## 契約照会の頻度
+
+契約・Anlas・V5利用上限の照会API（`/user/subscription`）は、最初の生成（おためし）で呼び、以後は前回の照会から数えて10回の生成ごとに1回にする（ユーザー指示、2026-10-05。API呼び出しの増えすぎを避けるため）。スクリプトが `output/novelai/subscription-check.json` で自動に数え、各生成の実行記録（`.novelai.json`）の `subscriptionCheck` に「API呼び出し／前回の結果を利用」を残す。モデル・寸法・steps・追加機能の変更、前回の生成の未完了、V5の利用上限が少ない場合は回数にかかわらず照会する。照会を強制するときは上のファイルを削除する。有料利用の許可、`--confirm-zero-anlas`・`--allow-anlas`・`--cost-note` は従来どおり各実行で必要。詳細は [Opusの手順](../knowledge/ai-production.md#novelai-opus)。
+
 ## ページごとのコマンド
 
 | ページ | 要求（`input/novelai/requests/`） | 生成（送信なしの確認は `--execute` 以降を外す） | 組み直し |

@@ -210,6 +210,34 @@ class BatchTests(unittest.TestCase):
         self.assertEqual(nb.lint_identity("p09-02", {"input": "no humans, sky", "parameters": {}}, characters), [])
         self.assertEqual(nb.lint_identity("p01-01", missing, None), [])
 
+    def test_identity_check_is_off_unless_enabled_and_no_text_is_not_a_negation(self):
+        characters = {"characters": {"mio": {"features": {"hair": "light brown short bob hair"}}},
+                      "cast": {"p01-01": {"mio": "all"}}}
+        (self.root / "input/novelai").mkdir(parents=True, exist_ok=True)
+        (self.root / nb.CHARACTERS).write_text(json.dumps(characters), encoding="utf-8")
+        self.save("p01-01", request(text="1girl, short black hair, very aesthetic, masterpiece, no text"))
+        self.assertEqual(nb.lint_prompt(request(text="1girl, masterpiece, no text")), [])
+        out = StringIO()
+        with redirect_stdout(out):
+            nb.generate(self.root, self.gen_args(ids=["p01-01"]))
+        self.assertNotIn("識別特徴", out.getvalue())
+        with (self.root / ".env").open("a", encoding="utf-8") as stream:
+            stream.write("NOVELAI_CHECK_IDENTITY=1\n")
+        out = StringIO()
+        with redirect_stdout(out):
+            nb.generate(self.root, self.gen_args(ids=["p01-01"]))
+        self.assertIn("識別特徴の点検: 有効", out.getvalue())
+        self.assertIn("識別特徴が抜けている", out.getvalue())
+
+    def test_setting_reader_only_reads_allowed_names(self):
+        (self.root / ".env").write_text(f'NOVELAI_API_KEY={KEY}\nNOVELAI_UC_PRESET="light"\n', encoding="utf-8")
+        self.assertEqual(nb.read_setting(self.root, "NOVELAI_UC_PRESET"), "light")
+        self.assertIsNone(nb.read_setting(self.root, "NOVELAI_QUALITY_TAGS"))
+        with patch.dict(os.environ, {"NOVELAI_QUALITY_TAGS": "masterpiece"}):
+            self.assertEqual(nb.read_setting(self.root, "NOVELAI_QUALITY_TAGS"), "masterpiece")
+        with self.assertRaises(nb.BatchError):
+            nb.read_setting(self.root, "NOVELAI_API_KEY")
+
     def test_warnings_block_sending_until_accepted(self):
         self.save("p01-01", request(text="1girl, solo, not smiling"))
         with redirect_stdout(StringIO()), patch.object(api, "execute_generation") as send:

@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
-  "selection_source": "ユーザーが6候補を選択後、2026-09-20に5候補を追加指定。2026-09-21に細く鋭い線のお絵描きを除外し、10候補へ連番化",
-  "default_ids": ["style-01", "style-02", "style-03", "style-04", "style-05", "style-06", "style-07", "style-08", "style-09", "style-10"],
+  "selection_source": "ユーザーが6候補を選択後、2026-09-20に5候補を追加指定。2026-09-21に細く鋭い線のお絵描きを除外し、10候補へ連番化。2026-10-06に1候補（style-11）を追加指定し、11候補へ",
+  "default_ids": ["style-01", "style-02", "style-03", "style-04", "style-05", "style-06", "style-07", "style-08", "style-09", "style-10", "style-11"],
   "active_style_id": null,
   "ask_when_unspecified": true,
   "artist_names_allowed": false,
-  "model": "nai-diffusion-5-full",
+  "model": "nai-diffusion-5-curated",
   "kit_sample_library_relative_path": "resources/novelai-style-samples/index.html",
   "sample_images_in_project_template": false,
   "generation_settings": {
@@ -71,6 +71,14 @@
       "negative_style": "",
       "sample_prompt_prefix": "2girls, multiple girls, ",
       "selection_source": "ユーザー追加指定⑤"
+    },
+    {
+      "id": "style-11", "name_ja": "鮮やかカラー・細線・大きな丸い目",
+      "style_prompt": "masterpiece, best quality, highly detailed,vivid colors, saturated,thin lines, clean lineart,digital art, clean coloring,large eyes, round eyes,",
+      "negative_style": "",
+      "sample_prompt_prefix": "2girls, multiple girls, ",
+      "selection_source": "ユーザー追加指定⑥（2026-10-06）",
+      "note_ja": "画風文は指定どおり（スクリプトの品質タグと重複する語を含む）。ネガティブはスクリプトの既定の除外プリセットを使う"
     }
   ]
 }

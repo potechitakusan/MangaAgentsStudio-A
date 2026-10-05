@@ -165,6 +165,67 @@ class NovelAIClientTests(unittest.TestCase):
         with self.assertRaises(api.ClientError):
             api.check_cost(self.args, request)
 
+    def test_omitted_seed_is_randomized_and_invalid_seed_is_rejected(self):
+        del self.request["parameters"]["seed"]
+        self.save_request()
+        request, _ = api.prepare_request(self.root, self.args.request)
+        self.assertIs(type(request["parameters"]["seed"]), int)
+        self.assertTrue(0 <= request["parameters"]["seed"] <= 4294967295)
+        self.request["parameters"]["seed"] = -1
+        self.save_request()
+        with self.assertRaises(api.ClientError):
+            api.prepare_request(self.root, self.args.request)
+
+    def test_subscription_is_checked_first_then_every_tenth_generation(self):
+        request, _ = api.prepare_request(self.root, self.args.request)
+        state = {"active": True, "tier": 3, "usage": {"percent": 90}}
+        reasons = []
+        with patch.object(api, "subscription", return_value=state) as network:
+            def generate_once(current):
+                result, check, signature = api.subscription_for_generation(self.root, "fixture-key", current)
+                api.write_check_state(self.root, result, check, signature, False)
+                reasons.append(check["method"])
+            generate_once(request)
+            self.assertEqual(network.call_count, 1)
+            for _ in range(api.CHECK_INTERVAL):
+                generate_once(request)
+            self.assertEqual(network.call_count, 1)
+            generate_once(request)
+            self.assertEqual(network.call_count, 2)
+        self.assertEqual(reasons, ["api"] + ["cached"] * api.CHECK_INTERVAL + ["api"])
+
+    def test_subscription_is_checked_again_when_conditions_or_state_change(self):
+        request, _ = api.prepare_request(self.root, self.args.request)
+        state = {"active": True, "tier": 3, "usage": {"percent": 90}}
+        signature = api.check_signature(request)
+        check = {"method": "api", "reason": "fixture", "checkedAt": "2026-10-05T00:00:00+00:00", "generationsSinceCheck": 0}
+
+        def calls(current, saved_state=state, needs_check=False):
+            api.write_check_state(self.root, saved_state, check, api.check_signature(current) if current is request else signature, needs_check)
+            with patch.object(api, "subscription", return_value=state) as network:
+                api.subscription_for_generation(self.root, "fixture-key", current)
+            return network.call_count
+
+        self.assertEqual(calls(request), 0)
+        self.assertEqual(calls(request, needs_check=True), 1)
+        changed = json.loads(json.dumps(request))
+        changed["parameters"]["steps"] = 20
+        self.assertEqual(calls(changed), 1)
+        v5 = json.loads(json.dumps(request))
+        v5["model"] = "nai-diffusion-5-full"
+        api.write_check_state(self.root, {"active": True, "tier": 3, "usage": {"percent": 90}}, check, api.check_signature(v5), False)
+        with patch.object(api, "subscription", return_value=state) as network:
+            api.subscription_for_generation(self.root, "fixture-key", v5)
+        self.assertEqual(network.call_count, 0)
+        api.write_check_state(self.root, {"active": True, "tier": 3, "usage": {"percent": api.LOW_USAGE_PERCENT}}, check, api.check_signature(v5), False)
+        with patch.object(api, "subscription", return_value=state) as network:
+            api.subscription_for_generation(self.root, "fixture-key", v5)
+        self.assertEqual(network.call_count, 1)
+        (self.root / api.CHECK_STATE).write_text("not json", encoding="utf-8")
+        with patch.object(api, "subscription", return_value=state) as network:
+            api.subscription_for_generation(self.root, "fixture-key", request)
+        self.assertEqual(network.call_count, 1)
+
     def test_subscription_omits_private_fields(self):
         response = {"active": True, "tier": 3, "plainTextEmail": "private",
                     "paymentProcessorData": {"private": "fixture"},
@@ -236,6 +297,18 @@ class NovelAIClientTests(unittest.TestCase):
         self.assertNotIn("fixture-key", record)
         self.assertIsNone(json.loads(record)["actualAnlasCost"])
         self.assertEqual((self.root / "output/test.png").read_bytes(), png)
+        # 実際に送ったJSONが候補PNGの隣に残り、キーを含まない
+        body = (self.root / "output/test.request-body.json").read_bytes()
+        sent = json.loads((self.root / "output/test.request.json").read_text(encoding="utf-8"))
+        self.assertEqual(json.loads(body)["input"], "cat")
+        self.assertEqual(sent["parameters"]["seed"], 1)
+        self.assertEqual(json.loads(record)["sentRequestFiles"]["body"], "output/test.request-body.json")
+        self.assertNotIn(b"fixture-key", body)
+        # 契約照会の状態はキーを含まず、完了後は次回の照会を省略できる状態に戻る
+        saved = json.loads((self.root / api.CHECK_STATE).read_text(encoding="utf-8"))
+        self.assertFalse(saved["needsCheck"])
+        self.assertNotIn("fixture-key", json.dumps(saved))
+        self.assertEqual(json.loads(record)["subscriptionCheck"]["method"], "api")
 
 
 if __name__ == "__main__":

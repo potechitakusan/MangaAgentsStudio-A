@@ -72,7 +72,8 @@ def positive_texts(request: dict) -> list[str]:
 
 def lint_prompt(request: dict) -> list[str]:
     """字コンテの意図が画像に出にくい書き方を警告する。"""
-    text = " , ".join(positive_texts(request))
+    # 品質タグの no text は公式が肯定側へ付ける語で、否定語の警告対象にしない。
+    text = re.sub(r"\bno text\b", "", " , ".join(positive_texts(request)), flags=re.I)
     warnings = []
     found = sorted({m.group(0).lower() for m in NEGATION.finditer(text)})
     if found:
@@ -101,6 +102,30 @@ def lint_prompt(request: dict) -> list[str]:
 
 
 CHARACTERS = "input/novelai/characters.json"
+# 補助設定。環境変数 → .env → .secrets の順に、ここへ挙げた名前の行だけを読む（APIキー等は読まない）。
+SETTING_NAMES = {"NOVELAI_QUALITY_TAGS", "NOVELAI_UC_PRESET", "NOVELAI_UC_PRESET_TEXT", "NOVELAI_CHECK_IDENTITY"}
+
+
+def read_setting(root: Path, name: str) -> str | None:
+    if name not in SETTING_NAMES:
+        raise BatchError(f"読み込める補助設定ではありません: {name}")
+    if name in os.environ:
+        return os.environ[name]
+    pattern = re.compile(r"^\s*(?:export\s+)?" + re.escape(name) + r"\s*=(.*)$")
+    for relative in VAR_FILES:
+        path = api.project_path(root, relative)
+        if not path.is_file():
+            continue
+        for line in path.read_text(encoding="utf-8-sig").splitlines():
+            match = pattern.match(line)
+            if match:
+                return parse_value(match.group(1))
+    return None
+
+
+def identity_check_enabled(root: Path) -> bool:
+    """識別特徴の点検は NOVELAI_CHECK_IDENTITY=1（true・yes・on）を指定した場合だけ行う。"""
+    return (read_setting(root, "NOVELAI_CHECK_IDENTITY") or "").strip().lower() in {"1", "true", "yes", "on"}
 
 
 def load_characters(root: Path) -> dict | None:
@@ -351,7 +376,9 @@ def generate(root: Path, args) -> None:
     plan = []
     warned = []
     cameras: dict[int | None, list[tuple[str, str | None]]] = {}
-    characters = load_characters(root)
+    characters = load_characters(root) if identity_check_enabled(root) else None
+    if characters is not None:
+        print("識別特徴の点検: 有効（NOVELAI_CHECK_IDENTITY）")
     for request_id in ids:
         request, used = resolved_request(root, request_id, variables)
         notes = lint_prompt(request) + lint_identity(request_id, request, characters)
