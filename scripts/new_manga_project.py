@@ -75,7 +75,7 @@ def collect_package(root: Path) -> dict[str, Path]:
     mappings = (
         ('templates/manga-project', '', {'.md', '.json', '.py'}, {'.gitignore', '.env.example', 'requirements-composition.txt'}, ('agent-modes',)),
         ('docs/knowledge', 'docs/knowledge', {'.md'}, set(), ('supervision',)),
-        ('skills', '.agents/skills', {'.md'}, set(), ()),
+        ('skills', '.agents/skills', {'.md', '.py'}, set(), ()),
         ('scripts/video', 'scripts/video', {'.py'}, set(), ()),
     )
     for source_relative, destination, extensions, special, skip in mappings:

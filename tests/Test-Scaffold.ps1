@@ -33,7 +33,13 @@ Check ($creationText.Contains($projectRoot) -and $creationText.Contains('この�
 $project = Get-Content -LiteralPath (Join-Path $projectRoot 'project.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 Check ($project.name -ceq $japaneseName) 'Japanese project name survives JSON round trip'
 Check ((Split-Path $projectRoot -Parent) -eq $testRoot) 'Project is a direct child of the selected parent'
-Check (@(Get-ChildItem -LiteralPath (Join-Path $projectRoot '.agents\skills') -Directory).Count -eq 10) '監修・プロセスチェッカー・外部コマ作画を含む10のスキルが同梱される'
+Check (@(Get-ChildItem -LiteralPath (Join-Path $projectRoot '.agents\skills') -Directory).Count -eq 11) '監修・プロセスチェッカー・外部コマ作画・NovelAI WebUIを含む11のスキルが同梱される'
+foreach ($webuiFile in @('SKILL.md', 'novelai_webui.py', 'lora_run.py', 'lora_apply.py')) {
+    $webuiCopy = Join-Path $projectRoot ('.agents/skills/novelai-batch-webui/' + $webuiFile)
+    $webuiSource = Join-Path $root ('skills/novelai-batch-webui/' + $webuiFile)
+    Check ((Test-Path -LiteralPath $webuiCopy -PathType Leaf) -and
+           (Get-FileHash -LiteralPath $webuiCopy).Hash -eq (Get-FileHash -LiteralPath $webuiSource).Hash) ('WebUIの配布内容が原本と一致する: ' + $webuiFile)
+}
 Check ((Test-Path -LiteralPath (Join-Path $projectRoot '.agents/skills/manga-process-checker/SKILL.md')) -and
        (Test-Path -LiteralPath (Join-Path $projectRoot 'scripts/process_checker.py')) -and
        (Test-Path -LiteralPath (Join-Path $projectRoot 'docs/knowledge/process-checker.md'))) 'プロセスチェッカーの手順・管理スクリプト・知識が配布される'

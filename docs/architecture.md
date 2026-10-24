@@ -11,6 +11,7 @@
 | `docs/knowledge/image-generation/` | モデル・版・実行環境別の画像入力と観察、匿名化した制作根拠の要約 | 同じ相対パスへコピー。作品の原画・ログは含めない |
 | `docs/knowledge/supervision/` | 場面ごとの監修知識・出典・利用手順 | 明示リストの文書とマニフェストを同梱 |
 | `skills/` | 役割別スキルの原本 | `.agents/skills/` へコピー |
+| `skills/novelai-batch-webui/` | NovelAI一括制作（`.env` の変数・要求JSONの編集、生成・採用・ページのビルド・プレビュー）を人間が画面で操作するローカルWebUI。処理は作品の `novelai_batch.py`・`novelai_api.py` を呼ぶ。LoRA適用の差し込み口 `lora_apply.py` は空の雛形 | `.agents/skills/` へコピー。Python標準ライブラリのみ。作品ごとの `lora_apply.py` の実装は配布元へ戻さない |
 | `templates/manga-project/` | 作品設定・記録の雛形、コマ割りテンプレート素材 | 作品ルートへコピー |
 | `templates/manga-project/docs/knowledge/novelai-composed-production.md` | NovelAIの画風選択・素材生成・組版の運用原本 | 雛形から `docs/knowledge/novelai-composed-production.md` へコピー |
 | `resources/novelai-style-samples/` | NovelAI画風候補のキット専用閲覧見本 | キットにのみ同梱。新規作品へコピーしない |
@@ -22,7 +23,7 @@
 | `scripts/process_checker.py` | 必須事項の登録・根拠管理・強い指示のAGENTS反映・任意のHooks | `scripts/` へコピー |
 | `templates/manga-project/scripts/novelai_api.py` | 作品単位のNovelAIキー読込・生成なしの契約照会・明示実行による１枚生成 | 雛形から `scripts/` へコピー。Python標準ライブラリのみ。認証情報は配布しない |
 | `templates/manga-project/scripts/novelai_compose.py` | NovelAI APIで生成する要求JSONの標準の組み立て。V5が既定、V4.5はユーザー指定時のみ。絵柄・背景・人物別の文・配置ピン・生成設定の引数から要求を保存する（通信なし）。i2i等の改造もこれを基にする | 雛形から `scripts/` へコピー。送信・費用確認は `novelai_batch.py`・`novelai_api.py` が行う。Python標準ライブラリのみ |
-| `templates/manga-project/scripts/novelai_batch.py` | コマ別の要求JSONのページ単位・全ページの順次生成、候補の採用、キャラ別プロンプト変数（`.env` の `NOVELAI_CHAR_*`）の展開、採用画像・配置・組版からのページPNG・PSDの組み直し。人が再実施できる形で残す | 雛形から `scripts/` へコピー。生成は `novelai_api.py`、組版は `typeset_manga.py`、PSDは `export_composed_psd.py` を使う |
+| `templates/manga-project/scripts/novelai_batch.py` | コマ別の要求JSONのページ単位・全ページの順次生成、候補の採用、結果不明の実行記録の確認後の `failed/` への移動、キャラ別プロンプト変数（`.env` の `NOVELAI_CHAR_*`）の展開、採用画像・配置・組版からのページPNG・PSDの組み直し。人が再実施できる形で残す | 雛形から `scripts/` へコピー。生成は `novelai_api.py`、組版は `typeset_manga.py`、PSDは `export_composed_psd.py` を使う |
 | `templates/manga-project/scripts/typeset_manga.py` | フキダシ・縦書きセリフ・画中の文字・コマ枠の透明レイヤー組版と、句読点・しっぽ・重なり・読み順等の点検。作画は変更しない | 雛形から `scripts/` へコピー。Pillowを使う。フォントは同梱せず作品の `assets/fonts/` またはOSのフォントを使う |
 | `templates/manga-project/config/novelai-request.example.json` | モデルとプロンプト未設定の生成要求例 | 同じ相対パスへコピー。採用後は作品側で要求JSONを作る |
 | `scripts/New-MangaProject.sh`・`scripts/new_manga_project.py` | BashからPython標準ライブラリで新規作品を作成。PowerShell不要 | しない |

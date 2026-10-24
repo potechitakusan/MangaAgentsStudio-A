@@ -83,7 +83,7 @@ if ($ProcessRequirementsFrom) {
 $mappings = @(
     @{ Source = 'templates\manga-project'; Target = ''; Extensions = @('.md', '.json', '.py'); Special = @('.gitignore', '.env.example', 'requirements-composition.txt') },
     @{ Source = 'docs\knowledge'; Target = 'docs\knowledge'; Extensions = @('.md'); Special = @() },
-    @{ Source = 'skills'; Target = '.agents\skills'; Extensions = @('.md'); Special = @() },
+    @{ Source = 'skills'; Target = '.agents\skills'; Extensions = @('.md', '.py'); Special = @() },
     @{ Source = 'scripts\video'; Target = 'scripts\video'; Extensions = @('.py'); Special = @() }
 )
 $package = [Collections.Generic.List[object]]::new()

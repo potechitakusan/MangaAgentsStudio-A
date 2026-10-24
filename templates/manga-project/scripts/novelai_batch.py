@@ -9,6 +9,7 @@
   generate  ページ単位・全ページ・指定IDの要求を１枚ずつ順に生成する（既定は送信しない確認）
   adopt     候補から採用画像を選ぶ
   adopt-latest 対象の各フォルダの最大番号のPNGをまとめて採用する（通信なし）
+  move-unknown 画像のない実行記録（結果不明）を確認後に failed/ へ移す（削除しない。通信なし）
   build     採用画像・コマ内の配置・組版指定からページPNG（指定時はPSD）を作り直す
 
 生成は novelai_api.py と同じ検証・費用確認・実行記録を使い、失敗時は止まって自動再送しない。
@@ -231,16 +232,65 @@ def candidates(root: Path, request_id: str) -> list[Path]:
                   key=lambda p: int(p.stem[1:])) if folder.is_dir() else []
 
 
+def run_records(root: Path, request_id: str) -> list[Path]:
+    folder = root / CANDIDATES_DIR / request_id
+    return [p for p in folder.glob("r*.novelai.json") if p.is_file() and re.fullmatch(r"r[0-9]{3,}\.novelai\.json", p.name)] if folder.is_dir() else []
+
+
+def unknown_records(root: Path, request_id: str) -> list[Path]:
+    """PNGのない実行記録（結果不明）。"""
+    return sorted((r for r in run_records(root, request_id) if not r.with_name(r.name.split(".")[0] + ".png").is_file()),
+                  key=lambda r: int(r.name.split(".")[0][1:]))
+
+
 def next_candidate(root: Path, request_id: str) -> int:
     """次の候補番号。PNGのない実行記録（結果不明）があれば、再送にならないよう止める。"""
-    folder = root / CANDIDATES_DIR / request_id
-    records = [p for p in folder.glob("r*.novelai.json") if p.is_file() and re.fullmatch(r"r[0-9]{3,}\.novelai\.json", p.name)] if folder.is_dir() else []
-    unknown = [r.name for r in records if not r.with_name(r.name.split(".")[0] + ".png").is_file()]
+    unknown = [r.name for r in unknown_records(root, request_id)]
     if unknown:
         raise BatchError(f"{request_id} に結果不明の実行記録があります: {', '.join(unknown)}。"
-                         "NovelAI側の結果と消費を確認し、記録を failed/ へ移してから再実行してください。")
-    numbers = [int(p.stem[1:]) for p in candidates(root, request_id)] + [int(r.name.split(".")[0][1:]) for r in records]
+                         "NovelAI側の結果と消費を確認し、記録を failed/ へ移してから再実行してください"
+                         f"（python -X utf8 scripts/novelai_batch.py move-unknown --ids {request_id}）。")
+    numbers = [int(p.stem[1:]) for p in candidates(root, request_id)] + [int(r.name.split(".")[0][1:]) for r in run_records(root, request_id)]
     return max(numbers or [0]) + 1
+
+
+def candidate_ids(root: Path, pages: list[int] | None, ids: list[str] | None, all_pages: bool) -> list[str]:
+    """候補フォルダの要求ID。要求JSONを消した・名前を変えたコマの記録も対象にする。"""
+    if ids:
+        bad = [i for i in ids if not REQUEST_ID.fullmatch(i)]
+        if bad:
+            raise BatchError("要求IDに使えない文字があります: " + ", ".join(bad))
+        return ids
+    folder = root / CANDIDATES_DIR
+    found = sorted(p.name for p in folder.iterdir() if p.is_dir() and REQUEST_ID.fullmatch(p.name)) if folder.is_dir() else []
+    return found if all_pages else [i for i in found if page_of(i) in (pages or [])]
+
+
+def move_unknown(root: Path, ids: list[str], number: int | None, confirmed: bool, note: str) -> list[tuple[str, int, Path | None]]:
+    """結果不明の実行記録を failed/<日時>-rNNN/ へ移す（削除しない）。confirmed がなければ対象を返すだけ。"""
+    found = []
+    for request_id in ids:
+        for record in unknown_records(root, request_id):
+            n = int(record.name.split(".")[0][1:])
+            if number is None or n == number:
+                found.append((request_id, n))
+    moved = []
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    for request_id, n in found:
+        if not confirmed:
+            moved.append((request_id, n, None))
+            continue
+        folder = root / CANDIDATES_DIR / request_id
+        files = [p for p in folder.glob(f"r{n:03d}.*") if p.is_file()]
+        target = folder / "failed" / f"{stamp}-r{n:03d}"
+        target.mkdir(parents=True)  # 同名の移動先があれば止める。
+        for path in files:
+            path.replace(target / path.name)
+        write_json(target / "moved.json", {"action": "move-unknown", "request_id": request_id, "kind": "novelai", "number": n,
+                                           "files": [p.name for p in files], "moved_at": datetime.now().isoformat(timespec="seconds"),
+                                           "note": note})
+        moved.append((request_id, n, target))
+    return moved
 
 
 def load_adopted(root: Path) -> dict:
@@ -664,6 +714,15 @@ def main(argv=None) -> int:
     target.add_argument("--ids", type=lambda s: [v for v in s.split(",") if v], help="要求IDをカンマ区切りで指定")
     target.add_argument("--all", action="store_true", help="全ページの要求（p01-… の形式）")
     latest.add_argument("--dry-run", action="store_true", help="採用対象を表示するだけで記録を変更しない")
+    unknown = commands.add_parser("move-unknown", help="結果不明の実行記録を failed/ へ移す（既定は対象の表示だけ）")
+    target = unknown.add_mutually_exclusive_group(required=True)
+    target.add_argument("--page", type=int, action="append", help="ページ番号。複数指定可")
+    target.add_argument("--ids", type=lambda s: [v for v in s.split(",") if v], help="要求IDをカンマ区切りで指定")
+    target.add_argument("--all", action="store_true", help="候補フォルダのある全要求")
+    unknown.add_argument("--candidate", type=int, help="記録の番号（r003.novelai.json なら 3）。省略時は対象の結果不明をすべて")
+    unknown.add_argument("--confirm-checked", action="store_true",
+                         help="NovelAI側の画像の履歴とAnlasの消費を確認し、画像ができていない（または不要）ことを確認済み")
+    unknown.add_argument("--note", default="", help="確認した内容（moved.json に残る）")
     make = commands.add_parser("build", help="ページPNG（指定時はPSD）を組み直す")
     make.add_argument("--page", type=int, action="append")
     make.add_argument("--all", action="store_true")
@@ -708,6 +767,18 @@ def main(argv=None) -> int:
             chosen = adopt_latest(root, ids, args.dry_run)
             for request_id, path in chosen.items():
                 print(f"{request_id}: {rel(root, path)}" + ("（確認のみ）" if args.dry_run else " を採用しました。"))
+        elif args.command == "move-unknown":
+            if args.ids == []:
+                raise BatchError("--ids に要求IDを指定してください。")
+            ids = candidate_ids(root, args.page, args.ids, args.all)
+            moved = move_unknown(root, ids, args.candidate, args.confirm_checked, args.note)
+            for request_id, number, target in moved:
+                print(f"{request_id}: r{number:03d}.novelai.json" + (f" → {rel(root, target)}" if target else "（結果不明。確認のみ）"))
+            if not moved:
+                print("結果不明の実行記録はありません。")
+            elif not args.confirm_checked:
+                print("NovelAIの画像の履歴とAnlasの消費を確認し、画像ができていない（または不要な）場合は --confirm-checked を付けて"
+                      " failed/ へ移してください。画像ができていた場合は、移さずにその画像を同じフォルダへ rNNN.png として保存します。")
         elif args.command == "build":
             pages = pages_from_manifests(root) if args.all else (args.page or [])
             if not pages:

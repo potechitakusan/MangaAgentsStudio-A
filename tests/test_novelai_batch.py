@@ -170,6 +170,28 @@ class BatchTests(unittest.TestCase):
         with self.assertRaises(nb.BatchError):
             nb.next_candidate(self.root, "p01-01")
 
+    def test_move_unknown_requires_confirmation_and_unblocks_regeneration(self):
+        folder = self.root / nb.CANDIDATES_DIR / "p01-01"
+        folder.mkdir(parents=True)
+        Image.new("RGB", (8, 8)).save(folder / "r001.png")
+        (folder / "r001.novelai.json").write_text("{}", encoding="utf-8")
+        (folder / "r002.novelai.json").write_text("{}", encoding="utf-8")
+        listed = nb.move_unknown(self.root, ["p01-01"], None, False, "")
+        self.assertEqual(listed, [("p01-01", 2, None)])
+        self.assertTrue((folder / "r002.novelai.json").is_file())
+        self.assertEqual(nb.candidate_ids(self.root, [1], None, False), ["p01-01"])
+        self.assertEqual(nb.candidate_ids(self.root, [2], None, False), [])
+        moved = nb.move_unknown(self.root, nb.candidate_ids(self.root, None, None, True), None, True, "履歴に画像なし")
+        target = moved[0][2]
+        self.assertEqual(target.parent, folder / "failed")
+        self.assertTrue((target / "r002.novelai.json").is_file())
+        self.assertFalse((folder / "r002.novelai.json").exists())
+        self.assertTrue((folder / "r001.png").is_file())
+        self.assertEqual(json.loads((target / "moved.json").read_text(encoding="utf-8"))["note"], "履歴に画像なし")
+        self.assertEqual(nb.next_candidate(self.root, "p01-01"), 2)
+        with self.assertRaises(nb.BatchError):
+            nb.candidate_ids(self.root, None, ["../x"], False)
+
     def test_generate_stops_at_first_failure(self):
         calls = []
 

@@ -37,7 +37,11 @@ class PortableScaffoldTests(unittest.TestCase):
         self.assertFalse((project / 'GEMINI.md').exists())
         self.assertFalse((project / 'AGENT-MODE.md').exists())
         self.assertFalse((project / 'agent-modes').exists())
-        self.assertEqual(len(list((project / '.agents/skills').iterdir())), 10)
+        self.assertEqual(len(list((project / '.agents/skills').iterdir())), 11)
+        for name in ('SKILL.md', 'novelai_webui.py', 'lora_run.py', 'lora_apply.py'):
+            relative = Path('novelai-batch-webui') / name
+            self.assertEqual((project / '.agents/skills' / relative).read_bytes(),
+                             (ROOT / 'skills' / relative).read_bytes())
         snapshot = json.loads((project / 'docs/distribution-snapshot.json').read_text())
         self.assertEqual(len(snapshot['files']), result['CopiedFiles'])
         for item in snapshot['files']:
