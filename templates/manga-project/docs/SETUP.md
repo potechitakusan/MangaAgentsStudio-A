@@ -34,7 +34,30 @@
 
 ## 3. 作画手段別の準備（使うものだけ設定）
 
-**PSDを書き出す場合の共通条件**：NovelAI／PixAIとも、同梱の `scripts/requirements-composition.txt` の固定依存版（`Pillow`・`numpy`・`psd-tools`）を使うPSD工程には **Python 3.12以上**が必要です。固定版 `numpy==2.5.3` の必要Python版は `>=3.12` です（[NumPy 2.5.3の配布情報](https://pypi.org/project/numpy/2.5.3/)、2026-10-25確認。適用範囲は同梱依存ファイルの固定版）。API通信やWebUIの起動自体はPython 3.10以上で利用できます。
+### 共通：PNG組版・PSD出力に必要なPython環境と依存パッケージの準備
+
+API通信や要求JSONの組み立て（テキストのみ）、WebUIの起動自体は **Python 3.10以上**の標準ライブラリだけで動きますが、以下の画像処理・組版・PSD工程には追加パッケージが必要です。
+
+- **PNG組版・マスク作成・i2i/インペイント寸法確認・WebP/JPEG応答のPNG変換**：Python 3.10以上 ＋ `Pillow`
+- **組版済みPSDの書き出しと再読込検証（`--write-psd`）**：**Python 3.12以上** ＋ 同梱の `scripts/requirements-composition.txt`（`Pillow==12.3.0`・`numpy==2.5.3`・`psd-tools==1.19.0`）。固定版 `numpy==2.5.3` の必要Python版は `>=3.12` です（[NumPy 2.5.3の配布情報](https://pypi.org/project/numpy/2.5.3/)、2026-10-25確認。適用範囲は同梱依存ファイルの固定版）。
+
+> **AIエージェントへ確認・準備を任せる場合の依頼文例：**
+> 「生成やAPI通信はせず、必要なPython環境と依存パッケージを確認して準備してください」
+
+自分で作品ルートのターミナルから確認・導入する場合は、以下を実行します（Linuxでは `python` を `python3` に読み替えてください。既存のPython環境を分けたい場合は仮想環境 `venv` 等を有効化してから実行します）。
+
+```powershell
+# 1. 現在のPythonバージョンと導入済みパッケージの確認（API通信なし）
+python --version
+python -c "import PIL; print('Pillow OK')"
+python -c "import PIL, numpy, psd_tools; print('PSD dependencies OK')"
+
+# 2A. PSD書き出し・再読込検証まで使う場合（Python 3.12以上・同梱の固定依存版を一括導入）
+python -m pip install -r scripts/requirements-composition.txt
+
+# 2B. PNG組版・マスク作成・画像変換のみ使う場合（Python 3.10以上）
+python -m pip install Pillow==12.3.0
+```
 
 ### A. Codex内蔵の画像生成（imagegen）を使う場合
 
