@@ -1,35 +1,99 @@
-# 最初の環境設定
+# 最初の環境設定（SETUP）
 
-作品での初回作業時はOPTIONの日本語推敲スキル設定を解決し、`scripts/Initialize-OptionalSkills.ps1` を実行する。有効時だけ作品の `.agents/skills/` へ導入する。Gitがない場合はインストールの可否を確認し、Gemini版は利用可能な環境があっても利用枠の消費許可を必ず得てから導入する。未回答・拒否では通常の制作を続ける。[初回導入の手順](knowledge/optional-skills.md)を参照。
+配布元のキットから作成されたこの作品フォルダで、最初に確認する設定と作画手段別の準備手順です。
 
-配布元のキットから、作成時に表示された絶対パスの作品フォルダへCodexを開き直してから設定する。やり方がわからない場合は、利用する環境（Windows／Mac、アプリ／VS Code）をCodexへ伝える。手順を求められた場合だけ、Codexが[開き直しの案内](knowledge/codex-operation.md#作品フォルダでcodexを開き直す)に沿って、利用環境に合う最新公式情報を調べて説明する。現在の作業フォルダにこの作品の `project.json` と `AGENTS.md` があることを確認する。
+---
 
-作品名はproject.jsonに記録される。config/review-profiles.jsonのdefaultsを作品に合わせ、必要なシーンをscenesへ追加する。解決例と意味はknowledge/review-workflow.md。
+## 1. 初回制作の確認とフォルダ構成
 
-input/に作品固有の入力、assets/characters/にキャラ参照、assets/references/に背景などの参照、workflows/にComfyUIワークフロー、output/に生成物を置く。指示・採否・検証結果はdocs/に残す。
+1. **作品フォルダでエージェントを開き直す**：配布元のキットから、作成時に表示された絶対パスの作品フォルダへCodex（または指定したAIエージェント）を開き直して新しい会話を始めます。現在の作業フォルダにこの作品の `project.json` と `AGENTS.md` があり、ローカルSkills（`.agents/skills/`）が認識されていることを確認します。開き直し方がわからない場合は、利用する環境（Windows／Mac、アプリ／VS Code）をCodexへ伝えると、[開き直しの案内](knowledge/codex-operation.md#作品フォルダでcodexを開き直す)に沿って最新公式情報を調べて説明します。
+2. **フォルダの役割**：
+   - `input/`：作品固有の入力データ、NovelAI / PixAI の要求JSON（`input/novelai/requests/`・`input/pixai/requests/`）、ページ構成（`input/pages/`）、組版指定（`input/typeset/`）
+   - `assets/characters/`：キャラクター参照画像、`assets/references/`：背景・小物などの参照、`assets/fonts/`：作品指定フォント（任意）
+   - `workflows/`：ComfyUIワークフロー（外部生成・動画試作を使う場合）
+   - `output/`：生成候補画像、ページPNG／PSDビルド出力、WebUIログ
+   - `docs/`：企画・字コンテ・ネーム・レビュー・進捗記録
 
-画像制作時にローカルのComfyUIへの相対パス・GPU・モデル・版・起動手順を確認し、秘密値を除いてdocs/experiments/へ記録する。既存環境の起動許可はその作品でのユーザー指示に従う。モデルやLoRAを自動インストールする初期処理はない。
+---
 
-動画で映画的演出を試す依頼には、任意機能のmanga-video-previsualization Skillと [動画試作の運用](knowledge/video-previsualization.md) を使う。動作確認済みの動画ワークフローを作品のworkflows/へ用意し、モデルと入力の対応を確認してから実行する。人物参照はassets/characters/、動画・音声はoutput/、条件・所要時間・採否はdocs/experiments/へ保存する。通常の漫画制作の前提作業にはしない。
+## 2. 設定ファイル（3分割）とAPIキーの保存先
 
-NovelAIは同梱の `scripts/novelai_api.py` でキーの自動読込・契約照会・１枚生成ができる。Python 3.10以上を使用し、追加パッケージは不要。設定と実行例は [NovelAI APIの接続手順](knowledge/novelai-api.md) を参照する。実値は環境変数 `NOVELAI_API_KEY` または作品の `.secrets/novelai.env` に用意し、`.env.example` へは書かない。まず `python -X utf8 scripts/novelai_api.py key-status` で読込元を確認し、`python -X utf8 scripts/novelai_api.py status` で生成なしの契約照会を行う。生成コマンドも `--execute` がなければ送信しない。NovelAI APIで生成する要求は、原則として同梱の `scripts/novelai_compose.py`（V5が既定、V4.5はユーザーが指定した場合だけ）で組み立てる。使い方は [NovelAI APIの接続手順](knowledge/novelai-api.md#compose-standard)。
+作品の設定ファイルは用途ごとに次の3つに分かれています（見本は `.env.example`・`.env.novelai.example`・`.env.pixai.example` で、見本ファイル自体は読み込まれません）。
 
-ファイルで設定する場合、`.secrets/novelai.env` には**トークンだけでなく、設定名と `=` も含めて**次の１行を書く。
+| ファイル・場所 | 役割・書く内容 | 読込対象・優先順位 |
+| --- | --- | --- |
+| **`.env`**<br>（初回推奨） | APIキー（`NOVELAI_API_KEY`、`PIXAI_API_KEY`）や接続先URL等の**共通設定** | キー読込の第4優先（`環境変数` → `.secrets/<service>.env` → `.secrets/.env` → `.env` の順） |
+| **`.secrets/novelai.env`**<br>**`.secrets/pixai.env`** | サービス別に分離したAPIキー専用ファイル（`.secrets/.env` も対応） | キー読込の第2優先（`.secrets/.env` は第3優先） |
+| **OSの環境変数** | `NOVELAI_API_KEY` / `PIXAI_API_KEY` | キー読込の第1優先（最優先） |
+| **`.env.novelai`** | NovelAI用のキャラクター・絵柄・背景のプロンプト変数と補助設定 | `novelai_compose.py`・`novelai_batch.py`・NovelAI WebUIが使用（APIキーは書かない。以前の版で `.env` に置いたNovelAI変数は `python -X utf8 scripts/novelai_batch.py env-migrate` で移行） |
+| **`.env.pixai`** | PixAI用のキャラクター・絵柄・背景・LoRAのプロンプト変数と補助設定 | `pixai_compose.py`・`pixai_batch.py`・PixAI WebUIが使用（APIキーは書かない） |
 
-```dotenv
-NOVELAI_API_KEY=実際のトークン
-```
+- **キー記入時の注意**：ファイルで設定する場合は、**トークンやキーの値だけでなく、左辺の設定名と `=` も含めて**1行で書きます。左辺の設定名は公開してよい名前で、秘密にするのは右辺の値です。**会話や公開ファイル、`.env.example` 等には実値を絶対に書かないでください。**
 
-左辺の `NOVELAI_API_KEY` は公開してよい設定名。秘密にするのは右辺のトークンで、「実際のトークン」の部分を自分のPersistent API tokenに置き換える。会話へ実値を貼る必要はない。作品側では「NovelAIを使いたい」「NovelAIの接続を確認して」と伝えれば、必要な案内を行う。ファイルなし・設定行なし・空の値・形式不正はそれぞれ表示し、通信失敗はキー設定の不備と分けて報告する。
+---
 
-実行前に公式仕様と利用可能な枠を確認する。有効なOpus契約なら [Anlasを消費しない生成条件](knowledge/ai-production.md#novelai-opus)を確認し、１回１枚・28ステップ以下（V5は初期値23、V4.5以前は28）を基準にする。生成寸法は使用ツールに合わせる共通の [ページ設定](knowledge/page-layout.md)に従う。採用寸法・モデルと追加機能を含めた0 Anlasの確認、V5の利用上限の残量確認も行う。契約照会の成功だけでは費用・残枠の確認完了と扱わない。接続確認用の [依頼プロンプト](knowledge/novelai-api.md#確認を依頼するプロンプト) も用意している。
+## 3. 作画手段別の準備（使うものだけ設定）
 
-NovelAIのキャラクター・絵柄・背景を自分で編集して再生成したい場合は [プロンプト編集のREADME](novelai-prompts/README.md) を読む。依頼があった場合だけ変数化し、`.env.novelai` の直接編集とテキストからの反映を選べる。
+**PSDを書き出す場合の共通条件**：NovelAI／PixAIとも、同梱の `scripts/requirements-composition.txt` の固定依存版（`Pillow`・`numpy`・`psd-tools`）を使うPSD工程には **Python 3.12以上**が必要です。固定版 `numpy==2.5.3` の必要Python版は `>=3.12` です（[NumPy 2.5.3の配布情報](https://pypi.org/project/numpy/2.5.3/)、2026-10-25確認。適用範囲は同梱依存ファイルの固定版）。API通信やWebUIの起動自体はPython 3.10以上で利用できます。
 
-設定ファイルは３つに分ける。`.env` はAPIキー・URLなどの共通設定、`.env.novelai` はNovelAI用、`.env.pixai` はPixAI用のプロンプト変数・補助設定（見本は `.env.example`・`.env.novelai.example`・`.env.pixai.example`）。APIキーは `.secrets/` や環境変数にも置ける。以前の版で `.env` にNovelAIの変数を置いた作品は `python -X utf8 scripts/novelai_batch.py env-migrate` で `.env.novelai` へ移す。
+### A. Codex内蔵の画像生成（imagegen）を使う場合
 
-PixAIは同梱の `scripts/pixai_api.py`・`scripts/pixai_compose.py`・`scripts/pixai_batch.py` で、キーの読込・認証確認・要求の組み立て・一括生成・採用・ページの組み直しができる。キーは [PixAIのAPI設定](https://pixai.art/profile/edit/api) で作り、環境変数 `PIXAI_API_KEY`、作品の `.env` または `.secrets/pixai.env` に `PIXAI_API_KEY=実際のキー` の形で用意する。`python -X utf8 scripts/pixai_api.py key-status`・`status`（画像生成なし）で確認する。生成はクレジットを使うため、利用者の明示の許可がある範囲だけ送る。設定・機能（LoRA・画風プリセット・mode・参照画像）は [PixAI APIの接続手順](knowledge/pixai-api.md) と [PixAIでの制作手順](knowledge/pixai-composed-production.md)、変数の編集は [PixAIのプロンプト編集のREADME](pixai-prompts/README.md)。
+APIキーの追加設定は不要です。現在のCodexセッションで画像生成ツールが使えるかを確認し、[コマ割りの手順](knowledge/panel-layout-policy.md)と[ページ設定](knowledge/page-layout.md)に沿って進めます。
 
-新しいCodexセッションで作品ルートを開き、AGENTS.mdとローカルSkillsが認識されていることを確認する。配布したSkillsはこのプロジェクトの共通知識と組み合わせて使う。
+### B. NovelAI APIを使う場合
 
-[ノウハウ一覧](MANGA-KNOWHOW.md)から必要な知識を選ぶ。まずPNGプレビューで確認・修正し、修正がなくなってからPSD作成へ進む。PSD作成の指示がなければ作るか聞いて回答を待ち、既に指示があれば再確認しない。後でPSDにできるよう分離素材とセリフ原文を保持する。PSD作成に進む際は作成・再読込の手段と、CLIP STUDIO PAINTで確認できる環境を調べ、PNGの確認結果・PSD作成指示・仕様を[引き継ぎ記録](production/PSD-HANDOFF.md)へ残す。依頼されたPSDは作成・検証して人間に引き渡す。人間が仕上げ・公開する。CBZは明示指定時だけ作成する。
+同梱の `scripts/novelai_api.py`・`scripts/novelai_compose.py`・`scripts/novelai_batch.py` で、キーの自動読込・契約照会・要求の組み立て・一括生成・採用・ページの組み直しができます（通信・生成自体はPython 3.10以上の標準ライブラリのみで動作し、組版・PNGの `build` には `Pillow` を使います。PSD出力は上記の共通条件に従い、Python 3.12以上と `Pillow`・`numpy`・`psd-tools` を用意します）。詳細は [NovelAI APIの接続手順](knowledge/novelai-api.md) と [NovelAIでの制作手順](knowledge/novelai-composed-production.md) を参照してください。
+
+1. **APIキーの用意**：作品の `.env` または `.secrets/novelai.env`（あるいは環境変数 `NOVELAI_API_KEY`）に、Persistent API tokenを次の1行で書きます。
+   ```dotenv
+   NOVELAI_API_KEY=実際のトークン
+   ```
+2. **生成なしの接続確認**：作品側で「NovelAIを使いたい」「NovelAIの接続を確認して」と伝えるか、次を実行します（ファイルなし・設定行なし・空の値・形式不正・通信失敗を区別して表示します）。
+   ```powershell
+   python -X utf8 scripts/novelai_api.py key-status
+   python -X utf8 scripts/novelai_api.py status
+   ```
+   `key-status` は外部通信のないローカル確認です。`status` はAPIキーを認証ヘッダーに使って契約を照会し、作品のプロンプトや画像は送りません。接続確認用の [依頼プロンプト](knowledge/novelai-api.md#確認を依頼するプロンプト) も用意しています。
+3. **要求の組み立てと費用確認**：要求JSONは原則として `scripts/novelai_compose.py`（V5が既定、V4.5はユーザー指定時のみ。使い方は [標準スクリプトの説明](knowledge/novelai-api.md#compose-standard)）で組み立てます。生成コマンドは `--execute` がなければ送信しません。有効なOpus契約なら [Anlasを消費しない生成条件](knowledge/ai-production.md#novelai-opus)を確認し、1回1枚・28ステップ以下（V5は初期値23、V4.5以前は28）・標準の [ページ設定](knowledge/page-layout.md)を基準にします。採用寸法・モデル・追加機能を含めた0 Anlasの確認とV5利用上限の残量確認を行い、有料（Anlas消費）生成は明示指示がある範囲だけ実行します（契約照会の成功だけでは費用・残枠の確認完了と扱いません）。
+4. **プロンプト変数編集とローカルWebUI**：キャラクター・絵柄・背景を自分で編集して再生成したい場合は [NovelAIプロンプト編集のREADME](novelai-prompts/README.md) を参照してください（依頼があった場合だけ変数化し、`.env.novelai` の直接編集とテキストからの反映を選べます）。要求JSONとページ構成の準備後は、作品ルートで `python -X utf8 .agents/skills/novelai-batch-webui/novelai_webui.py` を実行してブラウザー画面（既定ポート `8765`）からも操作できます（[NovelAI WebUIスキル](../.agents/skills/novelai-batch-webui/SKILL.md)）。
+
+### C. PixAI APIを使う場合
+
+同梱の `scripts/pixai_api.py`・`scripts/pixai_compose.py`・`scripts/pixai_batch.py` で、キーの読込・認証確認・要求の組み立て・一括生成・取得し直し（`fetch`）・採用・ページの組み直しができます。設定と機能（公式15モデル・LoRA・画風プリセット35種・mode・参照画像）は [PixAI APIの接続手順](knowledge/pixai-api.md) と [PixAIでの制作手順](knowledge/pixai-composed-production.md) を参照してください。
+
+通常のテキストからの要求作成や認証確認はPython 3.10以上の標準ライブラリで動作します。**i2i・インペイントの要求作成**では元画像・マスクの寸法確認に `Pillow` が必要です。WebP/JPEG応答のPNG変換、マスク作成、ページPNGビルドにも `Pillow` を使います。PSD出力は上記の共通条件に従います。
+
+1. **APIキーの用意**：キーは [PixAIのAPI設定](https://pixai.art/profile/edit/api) で作成し、作品の `.env` または `.secrets/pixai.env`（あるいは環境変数 `PIXAI_API_KEY`）に次の1行で書きます。
+   ```dotenv
+   PIXAI_API_KEY=実際のキー
+   ```
+2. **生成なしの接続確認**：
+   ```powershell
+   python -X utf8 scripts/pixai_api.py key-status
+   python -X utf8 scripts/pixai_api.py status
+   ```
+   `key-status` は外部通信のないローカル確認です。`status` はAPIキーを認証ヘッダーに使って認証を確認し、作品のプロンプトや画像は送りません。
+3. **クレジット消費の確認と生成**：PixAIの生成はクレジットを消費し、残高照会APIがないため、利用者の明示の許可がある範囲だけ `--confirm-credits` と `--cost-note` を付けて送信します（1タスク4枚候補 `batchSize: 4` は4枚分の生成になります）。途中で待機を中止してもPixAI側の作成済みタスクは続くため、再生成の前に `pixai_batch.py fetch` で取得し直します。
+4. **プロンプト変数編集とローカルWebUI**：変数の編集は [PixAIプロンプト編集のREADME](pixai-prompts/README.md) を参照してください。要求JSONとページ構成の準備後は、作品ルートで `python -X utf8 .agents/skills/pixai-batch-webui/pixai_webui.py` を実行してブラウザー画面（既定ポート `8775`）からも操作できます（[PixAI WebUIスキル](../.agents/skills/pixai-batch-webui/SKILL.md)）。
+
+### D. ローカルComfyUI・外部生成を使う場合
+
+画像制作時にローカルのComfyUIへの相対パス・GPU・モデル・版・起動手順を確認し、秘密値を除いて `docs/experiments/` へ記録します。既存環境の起動許可はその作品でのユーザー指示に従います（モデルやLoRAを自動インストールする初期処理はありません）。コマ別作画の手順は [外部生成によるコマ作画](knowledge/external-panel-i2i.md) を参照してください。
+
+---
+
+## 4. 任意機能の設定（必要な場合のみ）
+
+- **日本語推敲スキル（既定は無効）**：[OPTION.md](../OPTION.md) で日本語推敲スキルを有効にした作品では、初回作業時に `scripts/Initialize-OptionalSkills.ps1`（Linuxは `scripts/Initialize-OptionalSkills.sh`）を実行して `.agents/skills/` へ導入します。`humanizer-jp` でGitがない場合はインストールの可否を確認し、Geminiを使う `japanese-natural-writing` は利用可能な環境があっても**文章の送信と利用枠の消費許可**を必ず得てから導入します。未回答・拒否では通常の制作を続けます（[初回導入の手順](knowledge/optional-skills.md)）。
+- **レビュー重点の調整（任意）**：`config/review-profiles.json` の `defaults` を作品に合わせ、必要なシーンを `scenes` へ追加できます。解決例と意味は [レビュー運用](knowledge/review-workflow.md) を参照してください。
+- **動画での演出試作（任意依頼時のみ）**：動画で映画的演出を試す依頼がある場合に限り、`manga-video-previsualization` スキルと [動画試作の運用](knowledge/video-previsualization.md) を使います。動作確認済みの動画ワークフローを作品の `workflows/` へ用意し、モデルと入力の対応を確認してから実行します（人物参照は `assets/characters/`、動画・音声は `output/`、条件・所要時間・採否は `docs/experiments/` へ保存）。通常の漫画制作の前提作業にはしません。
+
+---
+
+## 5. PNG確認からPSD引き渡しまでの流れ
+
+[ノウハウ一覧](MANGA-KNOWHOW.md)から必要な知識を選んで制作を進めます。
+
+1. **PNGプレビューで確認・修正**：まずPNGプレビューを作成して確認・修正します。後でPSDにできるよう、分離して制作した素材とセリフ原文を保持します。
+2. **希望時のみPSD作成・検証**：PNGの修正がなくなってからPSD作成へ進みます。PSD作成の指示がなければ作るか聞いて回答を待ち、既に指示があれば再確認しません。PSD作成に進む際は作成・再読込の手段と、CLIP STUDIO PAINTで確認できる環境を調べ、PNGの確認結果・PSD作成指示・仕様を [引き継ぎ記録](production/PSD-HANDOFF.md) と [セリフ原文](production/DIALOGUE.md) へ残します（詳細は [PSD引き渡しルール](knowledge/psd-handoff.md)）。
+3. **仕上げ・公開**：依頼されたPSDは作成・検証して人間に引き渡し、原則として人間がCLIP STUDIO PAINTで仕上げ・公開します。CBZは明示指定時だけ作成します。

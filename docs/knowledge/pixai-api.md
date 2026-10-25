@@ -1,6 +1,6 @@
 # PixAI APIの接続手順
 
-対象は作品に同梱する `scripts/pixai_api.py`（１タスクの生成）・`scripts/pixai_compose.py`（要求の組み立て）・`scripts/pixai_batch.py`（コマ別の一括生成・採用・ページの組み直し）。Python 3.10以上の標準ライブラリだけで動く（WebP・JPEGの応答をPNGへ変換するときと build だけ Pillow を使う）。ブラウザーの起動・操作は行わない。作品の `project.json` が必要で、キットの雛形では実行しない。
+対象は作品に同梱する `scripts/pixai_api.py`（１タスクの生成）・`scripts/pixai_compose.py`（要求の組み立て）・`scripts/pixai_batch.py`（コマ別の一括生成・採用・ページの組み直し）。認証確認・通常のテキストからの要求作成・API通信はPython 3.10以上の標準ライブラリで動く。i2i・インペイント要求作成時の元画像・マスクの寸法確認、WebP・JPEG応答のPNG変換、ページPNGの build にはPillowを使う。同梱の `scripts/requirements-composition.txt` の固定依存版でPSDも出力する場合は、Python 3.12以上とPillow・numpy・psd-toolsが必要。ブラウザーの起動・操作は行わない。作品の `project.json` が必要で、キットの雛形では実行しない。
 
 作品側で「PixAIを使いたい」「PixAIの接続を確認して」と依頼されたら、Codexはこの手順で案内する。キーの設定が必要なときに次の記入例を示し、設定済みなら再入力を求めない。制作の手順（プロンプトの組み立て・LoRA・参照画像・採用・組版）は [PixAIでの制作手順](pixai-composed-production.md)。
 

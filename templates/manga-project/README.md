@@ -1,30 +1,59 @@
 # 漫画プロジェクト
 
-NovelAIの見た目を自分で変更したい場合は [キャラクター・絵柄・背景の編集と再生成](docs/novelai-prompts/README.md) を参照してください。プロンプトの変更例と、コマンドに慣れていない人向けの手順があります。
+ここは作成された個別作品のプロジェクトフォルダです。作成時に案内された絶対パスのこのフォルダをCodex（または指定したAIエージェント）で開き、**新しい会話**で漫画制作を始めます（配布元のキットからは開き直しが必要です）。
 
-CodexによるChrome・Edgeの起動・接続・操作と `chrome:control-chrome` の使用は禁止。画像の確認には画像表示ツールを使い、HTML等は必要に応じて案内されたパスをユーザーが開く。
+---
 
-キャラ・あらすじ・ページ数を伝えると、追加設定なしでWeb用漫画の全ページをPNGまで制作する。既定は右から左へ読む単ページ、白地。１ページ全体を生成する場合、使用ツールの生成画像の実寸に枠を合わせ、同じ寸法でPNGを書き出す。生成・枠配置・最終PNGの寸法はOPTIONで個別に指定できる。画像生成・編集に使える環境が必要。例：「キャラは○○と△△、あらすじは□□。8ページでインターネット公開用の漫画を作って」。PNGの修正確認はユーザーの回答を待つ。
+## 1. 最初の制作依頼（はじめ方）
 
-作品名と配布元は `project.json`。制作開始時に [OPTION.md](OPTION.md) を反映し、`docs/story/BRIEF.md` に狙いを書き、`docs/PLAN.md` と `docs/PROGRESS.md` を更新する。変更したい設定はOPTIONの「現在の設定」を編集するか会話で伝える。未記載はデフォルトを使い、開始後の編集は意図を確認してから反映する。印刷専用の設定は [PRINT-OPTION.md](PRINT-OPTION.md) に分けており、Web制作では記入不要。
+キャラクター・あらすじ・ページ数を伝えると、追加設定なしでWeb公開用漫画の全ページをPNGプレビューまで制作します（画像生成・編集に使える環境が1つ必要です）。
 
-コマ割りは原則テンプレートを使用し、演出上必要なページは理由を記録して独自配置にできる。imagegenでは、どちらの配置も番号付きレイアウト画像と各コマの内容を実際に渡し、ページ全体の一括生成を基本とする。生成後に計画との対応を確認する。「必須」「使用しない」や生成単位はOPTIONで変更できる。詳しくは [コマ割りの手順](docs/knowledge/panel-layout-policy.md) を参照。
+> **最初の依頼文例：**
+> 「女性2人が休日にゲームをする、最後にオチのある2ページ漫画を作ってください。まず利用できる画像生成手段を確認して、Web用PNGまで進めてください。PSDは不要です」
 
-余白や補助線は [基本枠の設定](docs/knowledge/page-layout.md)、文字設定は [セリフ原文と文字配置](docs/production/DIALOGUE.md) を参照。PSDの依頼例は「PNG確認後、絵・フキダシ・文字を分けたPSDも作って」。画像化された文字は文字列として再編集できるとは限らないため、台詞原文も渡す。
+- **記録ファイルはAIが更新**：作品名と配布元は `project.json` に記録されています。制作開始時にAIエージェントが [OPTION.md](OPTION.md) を確認し、`docs/story/BRIEF.md`・`docs/PLAN.md`・`docs/PROGRESS.md` を作成・更新するため、人間が最初にすべてのファイルを手で埋める必要はありません。
+- **好みを変えたいとき**：既定は右から左へ読む単ページ・白地です。変更したい項目がある場合だけ、[OPTION.md](OPTION.md) の「現在の設定」を編集するか会話で伝えてください（未記載はデフォルトを使用します）。
+- **開き直し手順がわからないとき**：利用する環境（Windows／Mac、アプリ／VS Code）をCodexへ伝えると、最新公式情報を調べて出典URL・確認日付きで案内します。手順がわかる場合は返信せず、そのままこのフォルダを開いて構いません（[開き直しの案内](docs/knowledge/codex-operation.md#作品フォルダでcodexを開き直す)）。この作品プロジェクトでは、キット内で例外制作するためのファイルは不要です。
 
-[日本語推敲スキル](docs/knowledge/optional-skills.md)はOPTIONで選んだときだけ使う。有効なら、この作品を開いたCodexの最初の作業時に自動導入する。`humanizer-jp` はGitを使用し、Gitがなければインストールしてよいか確認する。`japanese-natural-writing` はGeminiを使うため、環境があっても導入前に文章の送信・利用枠の消費を許可するか確認する。未回答・拒否の場合は導入を保留し、通常の漫画制作は続けられる。
+---
 
-制作後に次回から必須にしたい工程があれば、「字コンテ完成後の人物レビューを『指示』として登録して」などと伝える。[プロセスチェッカー](docs/knowledge/process-checker.md)が内容・条件・確認時点・根拠・引継ぎ範囲を相談する。「指示」は工程報告時に照合し、「強く指示」はAGENTS.mdにも反映、必要ならHooksを追加する。「おまかせ」ならCodexが詳細を決める。指示はこの作品に保存し、再開時に読む。新規配布時のリストは空で、空なら詳細な照合は行わない。次作品への引継ぎは元作品を明示した場合だけ行う。
+## 2. 作画手段別の準備と編集ガイド
 
-- 共通知識の入口: [制作運用](docs/knowledge/review-workflow.md)
-- 共通知識と利用Skillの対応: [汎用ノウハウ](docs/knowledge/review-workflow.md#common-knowledge)
-- 場面の笑い・魅力・感情・関係・展開の表現相談と画像レビュー: [場面ごとの監修](docs/knowledge/supervision/README.md)、[監修記録](docs/reviews/SUPERVISION.md)
-- 記録依頼がある場合のフィードバック: [フィードバック手順](docs/knowledge/feedback-workflow.md)
-- 環境設定: [セットアップ](docs/SETUP.md)
-- NovelAIのキー読込・接続確認・１枚生成: [APIの接続手順と依頼プロンプト](docs/knowledge/novelai-api.md)
-- 設定確認: `.\scripts\Resolve-ReviewProfile.ps1 -Preset 'daily'`
-- 同梱キットの利用条件: [MIT License](docs/toolkit-license.txt)。この条件は制作する漫画や持ち込む素材へ自動適用しない。
+使う作画手段に応じて、次の手順・ガイドを参照してください（すべてのサービスを設定する必要はありません）。
 
-作成時に案内された絶対パスのこの作品フォルダを開き、Codexの新しい会話で制作を開始する。配布元のキットからは開き直しが必要。やり方がわからない場合は、利用する環境（Windows／Mac、アプリ／VS Code）をCodexへ伝える。手順を求められた場合だけ、Codexは利用環境に合う最新の公式情報を調べ、出典URLと確認日を付けて説明する。手順がわかる場合は返信せず、そのままこの作品フォルダを開いてよい。[開き直しの案内](docs/knowledge/codex-operation.md#作品フォルダでcodexを開き直す)を参照する。この作品プロジェクトでは、キット内で例外制作するためのファイルは不要。
+| 作画手段 | 概要・文字と枠の扱い | 参照ガイド（利用者向け／手順書） |
+| --- | --- | --- |
+| **内蔵 `imagegen`**<br>（利用可能なCodex環境） | 番号付きレイアウト画像と各コマの内容を渡し、**文字・フキダシ込みでページ全体を一括生成**するのが基本。生成画像の実寸に枠と最終PNGを合わせる | [コマ割りの手順](docs/knowledge/panel-layout-policy.md)、[基本枠の設定](docs/knowledge/page-layout.md) |
+| **NovelAI API**<br>（コマ別生成＋組版） | 文字・枠なしの絵を生成し、後から `scripts/typeset_manga.py` 等で枠・フキダシ・縦書き文字を組版。APIキーは `.env` または `.secrets/novelai.env` に設定 | ・初回設定：[セットアップ](docs/SETUP.md)、[API接続手順](docs/knowledge/novelai-api.md)<br>・見た目変更：[キャラクター・絵柄・背景の編集と再生成](docs/novelai-prompts/README.md)<br>・画面操作：[NovelAI WebUI（ポート8765）](.agents/skills/novelai-batch-webui/SKILL.md)<br>・制作手順：[NovelAIでの制作手順](docs/knowledge/novelai-composed-production.md) |
+| **PixAI API**<br>（コマ別生成＋組版） | 公式15モデルやLoRA等で文字・枠なしの絵を生成し、後から枠・フキダシ・縦書き文字を組版。APIキーは `.env` または `.secrets/pixai.env` に設定（生成にはクレジット消費の明示許可が必要） | ・初回設定：[セットアップ](docs/SETUP.md)、[PixAI API接続手順](docs/knowledge/pixai-api.md)<br>・見た目変更：[キャラクター・絵柄・背景・LoRAの編集と再生成](docs/pixai-prompts/README.md)<br>・画面操作：[PixAI WebUI（ポート8775）](.agents/skills/pixai-batch-webui/SKILL.md)<br>・制作手順：[PixAIでの制作手順](docs/knowledge/pixai-composed-production.md) |
+| **外部生成・下絵参照i2i**<br>（ComfyUI / Qwen等） | 下絵やキャラ参照画像を渡してコマ別に作画し、後から枠・フキダシ・文字を組版 | [外部生成によるコマ作画](docs/knowledge/external-panel-i2i.md)、[Qwen-Image 2.1](docs/knowledge/image-generation/qwen-image-2.1.md) |
 
-収録内容は [漫画制作のノウハウ一覧](docs/MANGA-KNOWHOW.md)（技法78項目、漫画の基礎、演出・比較手順、記入雛形）から選べる。漫画の字コンテからネーム・作画へ進み、まずPNGプレビューで確認・修正する。修正がなくなったらPSD作成の指示を確認し、指示がなければ作るか聞いて回答を待つ。既に指示があれば再確認せず、[PSDの条件](docs/knowledge/psd-handoff.md)を満たす原稿を作成・検証して人間へ渡す。原則、人間がCLIP STUDIO PAINTで仕上げて外部公開する。CBZは明示指定時だけ作成する。映画・ドラマは必要な場面の補助として参照する。
+- **作品内に同梱されるファイルとキット側参照の区別**：共通知識・スキル・スクリプトはこの作品フォルダ内にコピーされていますが、**NovelAIの画風見本**（`resources/novelai-style-samples/index.html`）と**PixAIのモデル・画風見本**（`resources/pixai-model-samples/index.html`）は配布元キット側（`project.json` の `sourceKitRelativePath`）を参照します。
+
+---
+
+## 3. PNG確認・PSD引き渡し・印刷設定
+
+- **まずPNGプレビューで確認・修正**：字コンテからネーム・作画へ進み、最初にPNGプレビューで確認・修正します。PNGの修正確認はユーザーの回答を待ちます。
+- **希望時のみPSDを作成**：PNGに修正がなくなったらPSD作成の指示を確認し、指示がなければ作るか聞いて回答を待ちます。既に指示があれば再確認せず、[PSDの条件](docs/knowledge/psd-handoff.md)を満たす原稿を作成・検証して引き渡します（依頼例：「PNG確認後、絵・フキダシ・文字を分けたPSDも作って」）。
+- **PSDのレイヤーと文字の扱い**：PSDは制作時に実際に分けて保持できた素材（NovelAI / PixAI組版での未加工原画、マスク付き配置画像、フキダシ、画像化した文字レイヤーなど）を格納します。`imagegen` で絵と文字を1枚に一体生成した画像が自動でパーツ別レイヤーや編集可能なテキストになるわけではありません。CLIP STUDIO PAINT等で文字を打ち直せるよう、確定した台詞原文も [セリフ原文と文字配置](docs/production/DIALOGUE.md) に保存して渡します。
+- **仕上げ・公開・印刷設定**：原則として人間がCLIP STUDIO PAINTで仕上げて外部公開しますが、Web用PNGを受け取るだけの利用では必須ではありません。CBZは明示指定時だけ作成します。印刷専用の設定は [PRINT-OPTION.md](PRINT-OPTION.md) に分けており、Web制作では記入不要です。
+
+---
+
+## 4. 任意機能（必要な場合だけ利用）
+
+- **場面ごとの監修（16テーマ）**：場面の笑い・魅力・感情・関係・展開の表現相談とPNG確認後の改善提案は [場面ごとの監修](docs/knowledge/supervision/README.md) と [監修記録](docs/reviews/SUPERVISION.md) を使います。
+- **日本語推敲スキル**：[日本語推敲スキル](docs/knowledge/optional-skills.md)は [OPTION.md](OPTION.md) で選んだときだけ使います（既定は無効）。有効なら、この作品を開いた最初の作業時に自動導入します。`humanizer-jp` はGitを使用し、Gitがなければインストールしてよいか確認します。`japanese-natural-writing` はGeminiを使うため、環境があっても導入前に文章の送信・利用枠の消費を許可するか確認します。未回答・拒否の場合は導入を保留し、通常の漫画制作を続けられます。
+- **自分用の必須工程の登録（プロセスチェッカー）**：次回から必須にしたい工程があれば、「字コンテ完成後の人物レビューを『指示』として登録して」などと伝えます。[プロセスチェッカー](docs/knowledge/process-checker.md)が内容・条件・確認時点・根拠・引継ぎ範囲を相談します。「指示」は工程報告時に照合し、「強く指示」は `AGENTS.md` にも反映し、必要ならHooksを追加します（「おまかせ」ならCodexが詳細を決めます）。新規配布時のリストは空で、空なら詳細な照合は行いません。次作品への引継ぎは元作品を明示した場合だけ行います。
+- **フィードバック記録**：記録依頼がある場合のみ [フィードバック手順](docs/knowledge/feedback-workflow.md) に従って `docs/feedback/` に残します。
+
+---
+
+## 5. エージェント運用ルールと詳細資料
+
+- **ブラウザー操作の禁止**：Codex等によるChrome・Edgeの起動・接続・操作と `chrome:control-chrome` の使用は禁止です。画像の確認には画像表示ツールを使い、ローカルWebUIや見本HTML等は案内されたURL・パスを人間が開きます。
+- **制作ノウハウ一覧**：[漫画制作のノウハウ一覧](docs/MANGA-KNOWHOW.md)（技法78項目、漫画の基礎、演出・比較手順、記入雛形。映画・ドラマは必要な場面の補助として参照）
+- **共通知識と利用Skillの対応**：[制作運用](docs/knowledge/review-workflow.md)・[汎用ノウハウ](docs/knowledge/review-workflow.md#common-knowledge)
+- **レビュー設定の確認コマンド（任意）**：`.\scripts\Resolve-ReviewProfile.ps1 -Preset 'daily'`（Linuxは `bash scripts/Resolve-ReviewProfile.sh`）
+- **同梱キットの利用条件**：[MIT License](docs/toolkit-license.txt)（この条件は制作する漫画や持ち込む素材へ自動適用されません）
