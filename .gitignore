@@ -33,6 +33,11 @@
 !/resources/novelai-style-samples/index.html
 !/resources/novelai-style-samples/previews/
 !/resources/novelai-style-samples/previews/*.webp
+!/resources/pixai-model-samples/
+!/resources/pixai-model-samples/catalog.json
+!/resources/pixai-model-samples/index.html
+!/resources/pixai-model-samples/previews/
+!/resources/pixai-model-samples/previews/*.jpg
 /templates/*
 !/templates/manga-project/
 !/templates/manga-project/.gitignore
@@ -108,6 +113,8 @@ __pycache__/
 .env
 .env.*
 !/templates/manga-project/.env.example
+!/templates/manga-project/.env.novelai.example
+!/templates/manga-project/.env.pixai.example
 credentials.json
 secrets.json
 *.local.json

@@ -10,7 +10,7 @@ apply があり、check() が (True, …) を返すときだけONにできる。
     job.request_id     要求ID（例 p01-03）
     job.page           ページ番号（int、ページ外の要求は None）
     job.source_image   元にする画像（Path。採用中の画像または最新の候補。どちらもない場合は None）
-    job.request        要求JSON（.env の ${変数} を展開済みの dict。プロンプト・人物別本文・寸法・seed 等）
+    job.request        要求JSON（.env.novelai の ${変数} を展開済みの dict。プロンプト・人物別本文・寸法・seed 等）
     job.raw_request    要求JSON（展開前。${変数} のまま）
     job.output         書き出し先のPNG（Path。output/lora/<要求ID>/lNNN.png。このパスへ必ず保存する）
     job.work_dir       作業用フォルダ（Path。output/lora/<要求ID>/work/。中間ファイルを置いてよい）

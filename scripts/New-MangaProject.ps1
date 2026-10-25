@@ -81,7 +81,7 @@ if ($ProcessRequirementsFrom) {
     if ($LASTEXITCODE -ne 0) { throw '引継ぎ元の必須事項を確認できませんでした。新規作品はまだ作成していません。' }
 }
 $mappings = @(
-    @{ Source = 'templates\manga-project'; Target = ''; Extensions = @('.md', '.json', '.py'); Special = @('.gitignore', '.env.example', 'requirements-composition.txt') },
+    @{ Source = 'templates\manga-project'; Target = ''; Extensions = @('.md', '.json', '.py'); Special = @('.gitignore', '.env.example', '.env.novelai.example', '.env.pixai.example', 'requirements-composition.txt') },
     @{ Source = 'docs\knowledge'; Target = 'docs\knowledge'; Extensions = @('.md'); Special = @() },
     @{ Source = 'skills'; Target = '.agents\skills'; Extensions = @('.md', '.py'); Special = @() },
     @{ Source = 'scripts\video'; Target = 'scripts\video'; Extensions = @('.py'); Special = @() }
@@ -99,7 +99,7 @@ foreach ($mapping in $mappings) {
     foreach ($file in $files) {
         $relative = $file.FullName.Substring($sourceRoot.Length).TrimStart('\')
         if ($relative -match '(^|[\\/])(\.secrets|\.git|\.work|\.codex)([\\/]|$)' -or
-            ($file.Name -like '.env*' -and $file.Name -ne '.env.example') -or
+            ($file.Name -like '.env*' -and $file.Name -notin @('.env.example', '.env.novelai.example', '.env.pixai.example')) -or
             $file.Name -match '(?i)(secret|credential|api[-_]?key|token)') { throw "Secret-like package filename: $relative" }
         $panelAsset = $mapping.Source -eq 'templates\manga-project' -and (
             $relative -eq 'templates\panel-templates\index.html' -or

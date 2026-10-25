@@ -1,0 +1,14 @@
+{
+  "api": "v2",
+  "body": {
+    "modelVersionId": "1983308862240288769",
+    "prompt": "",
+    "negativePrompt": "text, speech bubble, panel border, watermark",
+    "aspectRatio": "2:3",
+    "size": "1k",
+    "mode": "standard",
+    "seed": 1,
+    "batchSize": 1,
+    "promptHelper": "disable"
+  }
+}

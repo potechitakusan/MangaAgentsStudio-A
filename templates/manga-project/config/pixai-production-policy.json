@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "adopted_on": "2026-10-25",
+  "workflow": "separate_images_then_composition",
+  "layout_owner": "Codex",
+  "pixai_task": "illustration_assets_only",
+  "default_model": "tsubaki2",
+  "default_api": "v2",
+  "prompt_helper": "disable",
+  "character_consistency": {
+    "first_choice": "consistent_appearance_prompt",
+    "lora_variable_prefix": "PIXAI_LORA_",
+    "reference_image": "ipAdapter_unverified",
+    "note_ja": "人物の一貫性は同じ外見文を各要求に書く方法を第一候補にする。LoRAの効果は未検証で、使う場合は人物試作で確かめる。変数化は利用者の依頼がある場合だけ行う。参照画像（IP-Adapter）・i2i・ControlNetは現行の公式文書にない項目で、利用者の了承後に１コマで試してから広げる"
+  },
+  "camera": {
+    "preferred": [
+      "from above",
+      "from below",
+      "from behind"
+    ],
+    "optional": [
+      "dutch angle",
+      "cinematic angle"
+    ],
+    "side_view_requires_intent": true
+  },
+  "composition": {
+    "roomy_source": true,
+    "allow_rotation": true,
+    "allow_cropped_view": true,
+    "preserve_full_source": true,
+    "match_panel_aspect": true,
+    "crop_must_keep_planned_content": true
+  },
+  "character_trial_before_panels": true,
+  "batch_size": {
+    "default": 1,
+    "use_4_for": ["two_or_more_characters", "inpaint", "rework_of_panel_with_candidates"],
+    "cost_note_ja": "Tsubaki.3 pro 1k で1枚4,000・4枚7,000クレジット（利用者がPixAIの利用履歴で確認、2026-10-25）。複雑なコマと作り直しは4枚から選ぶのを基本にする"
+  },
+  "panel_aspect_examples": [
+    "2:3",
+    "3:2",
+    "3:4",
+    "4:3",
+    "9:16",
+    "16:9",
+    "1:1",
+    "1:3",
+    "3:1"
+  ],
+  "panel_aspect_note_ja": "v2は縦横比と解像度（1k・1.5k）で寸法を決める。コマの形に近い比を選び、コマより広い範囲を生成して配置時にコマ枠・マスクで必要な部分を見せる",
+  "batch": {
+    "script": "scripts/pixai_batch.py",
+    "requests_dir": "input/pixai/requests",
+    "adopted": "input/pixai/adopted.json",
+    "candidates_dir": "output/pixai/candidates",
+    "pages_dir": "input/pages",
+    "build_dir": "output/build",
+    "character_variable_prefix": "PIXAI_CHAR_",
+    "variables_file": ".env.pixai"
+  },
+  "post_generation_check": {
+    "form": "docs/reviews/NAME-REVIEW.md",
+    "section_ja": "作画後の照合表",
+    "required_before_typesetting": true
+  },
+  "typesetting": {
+    "script": "scripts/typeset_manga.py",
+    "speech_balloon_tail": true,
+    "in_image_text_as_drawn_object": true,
+    "no_unrequested_title_or_page_number": true
+  },
+  "credits": {
+    "checked_on": "2026-10-25",
+    "balance_api": null,
+    "require_explicit_user_authorization": true,
+    "require_cost_note": true,
+    "unverified_parameters_require_flag": true,
+    "note_ja": "残高・消費を照会するAPIは公式文書にない。利用者がその範囲のクレジット消費を明示許可した場合だけ --confirm-credits を付ける"
+  },
+  "polling": {
+    "min_interval_seconds": 1.5,
+    "script_interval_seconds": [
+      3,
+      10
+    ],
+    "max_waiting_tasks": 10
+  },
+  "dialogue": {
+    "default_direction": "vertical",
+    "vertical_alignment": "top"
+  },
+  "psd": {
+    "full_source_layers": true,
+    "panel_masks": true,
+    "preview_and_approval_required": true,
+    "smart_objects": false
+  },
+  "implementation_note_ja": "運用設定。キット側の制作開始手順で読み込み、費用の許可を確認してから送信する。"
+}

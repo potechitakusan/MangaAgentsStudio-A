@@ -63,7 +63,7 @@ NovelAIで人物・物の画面内位置を誘導する機能。人物別プロ�
 6. **2人のコマ**：１つの文に２人分の外見を続けて詰めると、姿勢の指定が埋もれ、外見も混ざりやすい。まず１人ずつのコマに分けられないかを検討する（相手は画面外・肩越しなど）。２人を同時に描く場合は、姿勢と位置関係（`sitting side by side on the floor, knees up, girl on the right`）を外見より前に書き、外見は識別に必要な最小限にする。人物ごとに分けて書く機能（`v4_prompt` の `char_captions`）を使う場合は、使う前に公式スキーマで書式を確認する。
 7. **画角は字コンテから選ぶ**：`from above`・`from below`・`from behind` は候補であり、全コマの先頭に付ける決まりではない。何を見せるかに合わせて選び、画面内の目印（`rooftop edge at the top of the frame`、`courtyard far below`）や被写体の大きさ（`small in frame`、`upper body`）も書く。同じ画角が続く場合は意図を確認する。
 
-8. **識別の特徴を要求ごとに書く**：人物が出る要求には、その人物を見分ける特徴（髪の色と長さ、眼鏡の形、服の重ね順・内側の服、小物）を毎回同じ語で書く。前のコマに書いたから省く、ということをしない。2026-09-29の検証では、要求ごとに書き方が揺れたコマで髪色・眼鏡の形・内側の服がばらついた。特徴は人物試作で採用した見本に合わせて `input/novelai/characters.json` に登録し、要求ごとの登場人物と、そのコマで見える特徴を `cast` に書く。`generate` の識別特徴の自動点検（警告）は**既定では行わない**。`.env` または環境変数に `NOVELAI_CHECK_IDENTITY=1` を指定した場合だけ行う（作品「NAIプロンプト検証」でのユーザー指示、2026-10-05。点検を使わない場合も、特徴を毎回同じ語で書く）。
+8. **識別の特徴を要求ごとに書く**：人物が出る要求には、その人物を見分ける特徴（髪の色と長さ、眼鏡の形、服の重ね順・内側の服、小物）を毎回同じ語で書く。前のコマに書いたから省く、ということをしない。2026-09-29の検証では、要求ごとに書き方が揺れたコマで髪色・眼鏡の形・内側の服がばらついた。特徴は人物試作で採用した見本に合わせて `input/novelai/characters.json` に登録し、要求ごとの登場人物と、そのコマで見える特徴を `cast` に書く。`generate` の識別特徴の自動点検（警告）は**既定では行わない**。`.env.novelai` または環境変数に `NOVELAI_CHECK_IDENTITY=1` を指定した場合だけ行う（作品「NAIプロンプト検証」でのユーザー指示、2026-10-05。点検を使わない場合も、特徴を毎回同じ語で書く）。
 
 ```json
 {
@@ -83,7 +83,7 @@ NovelAIで人物・物の画面内位置を誘導する機能。人物別プロ�
 }
 ```
 
-`"all"` は全特徴、配列はそのコマで見える特徴だけ（手元のアップなら服の袖だけ等）。特徴の文字列は要求のプロンプトにそのまま含める（大文字・小文字は区別しない）。キャラ別プロンプトを `.env` の変数にしている場合は、展開後の文で点検する。
+`"all"` は全特徴、配列はそのコマで見える特徴だけ（手元のアップなら服の袖だけ等）。特徴の文字列は要求のプロンプトにそのまま含める（大文字・小文字は区別しない）。キャラ別プロンプトを `.env.novelai` の変数にしている場合は、展開後の文で点検する。
 
 9. **数値の年齢や man・woman を入れない**：`25 years old`、`40歳` のような数値の年齢は見た目に効きにくい。`man`・`woman` を書くと、`1girl`・`1boy` で指定した人物とは別の２人目が現れることがある（2026-09-29のユーザー指示）。人物は `1girl`・`1boy`・`solo` と外見の語で書く。`teenage`、`high school student`、`adult` のような年代・立場の語は使ってよい。大人びて・幼く見せる調整は、体格・顔立ち・服装の語も合わせて行う。
 
@@ -212,25 +212,25 @@ python -X utf8 scripts/novelai_compose.py --id p01-03 --seed 123 `
 - **順序**：ベースは「人数タグ（人物から自動、人物なしは `no humans`）→ `--scene` → `--background` → `--style` → 品質タグ」。人物別は「`girl`/`boy`/`other`（数字なし）→ 見た目 → ポーズ・行動」。除外は「プリセット → `--negative`」。入力の文は書き換えず（空白・読点を含め）そのまま連結する。出典：[タグの順序](https://docs.novelai.net/en/image/tags/)・[複数人物](https://docs.novelai.net/en/image/multiplecharacters/)・[品質タグ](https://docs.novelai.net/en/image/qualitytags/)・[除外プリセット](https://docs.novelai.net/en/image/undesiredcontent/)（確認日2026-10-05）。
 - **モデル**：`--model` で `nai-diffusion-5-curated`（既定）・`nai-diffusion-5-full`（指定時のみ）・`nai-diffusion-4-5-curated`（指定時のみ）。品質タグ・除外プリセット・Guidance（V5は7.0、V4.5は5.0）・送るパラメーターはモデルごとの画面の既定に合わせる。V4.5の人物は最大6人で、配置ピンは5×5マスの中心へ寄せる。V5の人物は最大22人。設定の根拠は実行時に表示する。**V5 Curated・V5 Full・V4.5 Curatedは、画面PNGと同Seed・同入力で画素まで一致を確認済み**（各1回。条件と限界は [画面と一致させる観察](novelai-api.md#compose-standard)）。V5 Fullの画面は除外の先頭に `nsfw, ` を付けるが、ユーザー指示によりスクリプトは足さない（画面と完全に同じにする場合は `--uc-preset-text` に `nsfw, …` を含む全文を渡す）。V4.5のlight・humanなど画面PNGで確認していないプリセットは `--uc-preset-text` で全文を指定する。
 - **品質タグ**：画面の品質タグを末尾に自動で付ける。入力（ベース・人物別）に同じタグがあれば付けず１個だけにする（重みつきの `-0.8::feet::` は重みごと同じ場合だけ重複扱い）。`--allow-duplicate-quality` で画面と同じ重複を再現できる。品質タグの `no text` は、`generate` の「肯定側の否定語」警告の対象にしない。
-- **.envで上書きできる設定**：読むのは次の4つだけで、APIキーの行は読まない。優先順は 引数 ＞ 環境変数・`.env`・`.secrets` ＞ 既定。`NOVELAI_QUALITY_TAGS`（品質タグの全文。空で付けない。引数 `--quality-tags`）、`NOVELAI_UC_PRESET`（`heavy`・`none`、V5 Curatedは `light`・`human` も。引数 `--uc-preset`）、`NOVELAI_UC_PRESET_TEXT`（除外プリセットの全文。引数 `--uc-preset-text`）、`NOVELAI_CHECK_IDENTITY`（`1` で識別特徴の点検を行う）。
+- **.env.novelaiで上書きできる設定**：読むのは次の4つだけで、APIキーの行は読まない。優先順は 引数 ＞ 環境変数・`.env.novelai` ＞ 既定。`NOVELAI_QUALITY_TAGS`（品質タグの全文。空で付けない。引数 `--quality-tags`）、`NOVELAI_UC_PRESET`（`heavy`・`none`、V5 Curatedは `light`・`human` も。引数 `--uc-preset`）、`NOVELAI_UC_PRESET_TEXT`（除外プリセットの全文。引数 `--uc-preset-text`）、`NOVELAI_CHECK_IDENTITY`（`1` で識別特徴の点検を行う）。
 - **人物**：`--charN-type`・`--charN-appearance`・`--charN-action`・`--charN-pos`・`--charN-negative`（Nは1から連続）。配列で渡すなら `--chars-json`。配置ピンは全員に指定した場合だけ使い、`use_coords` を真にする（`--coords on|off|auto`）。指定がなければ `use_coords: false`（AI’s Choice）。**`use_coords: false` でも `centers` の値は絵に影響した例がある**。画面と同じ絵を再現するときは `--coords off` と `--charN-pos` で画面の座標を渡す。画面PNGの `tag_hint_qt`・`tag_hint_uc_preset` は絵に影響しなかったため送らない。
-- **絵柄・背景・人物の文**：`.env` の `NOVELAI_STYLE_`・`NOVELAI_BACKGROUND_`・`NOVELAI_CHAR_` の値をそのまま引数へ渡す。このスクリプトは `.env` を読まず、`${変数名}` も展開せずエラーにする（変数を展開した要求は、次節の `novelai_batch.py` の仕組みで使う）。
+- **絵柄・背景・人物の文**：`.env.novelai` の `NOVELAI_STYLE_`・`NOVELAI_BACKGROUND_`・`NOVELAI_CHAR_` の値をそのまま引数へ渡す。このスクリプトはプロンプト変数の値を読まず、`${変数名}` も展開せずエラーにする（上記の補助設定だけを読む）（変数を展開した要求は、次節の `novelai_batch.py` の仕組みで使う）。
 - **生成設定の既定**：steps はV5が23、V4.5が28（`novelai_api.py` と同じ。画面と同じ絵を再現するときは画面の値を渡す）。k_euler_ancestral・karras・`prefer_brownian: true`・`deliberate_euler_ancestral_bug: false`。この2項目を省略するとAPIの既定が画面と違う値になる。寸法は `--width`・`--height`、なければ `config/page-layout.json` の `generationCanvas`、未設定なら画面の既定832×1216。Opusの無消費候補（1,048,576画素以下・28steps以下）を超えると注意を表示する。
 - **実際に送ったJSON**：送信のたびに、候補PNGの隣へ `r001.request-body.json`（送信バイトそのもの）と `r001.request.json`（同じ内容の整形版）を保存する。`.request.json` は要求JSONと同じ形式なので、`input/novelai/requests/` へコピーして手で調整し、再生成の元にできる。
 - 識別特徴の点検（`characters.json` の cast）を使う場合だけ、`--cast-from 既存の要求ID` で登場人物の登録を写す。
 
 <a id="character-variables"></a>
 
-### キャラクター・絵柄・背景を .env から読み込む（依頼があった場合）
+### キャラクター・絵柄・背景を .env.novelai から読み込む（依頼があった場合）
 
-人間が見た目を一括で変えて再生成できるように、キャラクター・絵柄・背景のプロンプトを作品ルートの `.env` の変数にし、要求JSONからは `${NOVELAI_CHAR_MIO}`・`${NOVELAI_STYLE_MAIN}`・`${NOVELAI_BACKGROUND_CLASSROOM}` のように参照できる。**人間から依頼があった場合だけ**行う。
+人間が見た目を一括で変えて再生成できるように、キャラクター・絵柄・背景のプロンプトを作品ルートの `.env.novelai` の変数にし、要求JSONからは `${NOVELAI_CHAR_MIO}`・`${NOVELAI_STYLE_MAIN}`・`${NOVELAI_BACKGROUND_CLASSROOM}` のように参照できる。**人間から依頼があった場合だけ**行う。
 
 1. 変数名の案（用途に応じて `NOVELAI_CHAR_`・`NOVELAI_STYLE_`・`NOVELAI_BACKGROUND_` ＋半角英大文字・数字・`_`）と、各変数に入れるプロンプトを示し、ユーザーに確認する。
-2. `python -X utf8 scripts/novelai_batch.py env-set NOVELAI_CHAR_MIO --value-file input/novelai/char-mio.txt` で `.env` へ書く。`.env` の他の行（APIキー）は表示・変更しない。
+2. `python -X utf8 scripts/novelai_batch.py env-set NOVELAI_CHAR_MIO --value-file input/novelai/char-mio.txt` で `.env.novelai` へ書く。`.env.novelai` の他の行は変更しない。APIキーは共通設定の `.env` 等にあり、表示・変更しない。
 3. `templatize NOVELAI_CHAR_MIO --dry-run` で置き換える箇所を確認し、`templatize NOVELAI_CHAR_MIO` で要求JSON内の同じ文を変数に置き換える。
 4. `vars` で変数名を確認し、変数名と使う要求を [NovelAI一括生成の記録](../production/NOVELAI-BATCH.md) に残す。
 
-以後、人間は `.env` の値を書き換えてから `generate` を再実施できる。生成時には変数を展開した要求が実行記録に残る。`NOVELAI_CHAR_*`・`NOVELAI_STYLE_*`・`NOVELAI_BACKGROUND_*` 以外の変数・APIキーは要求へ展開しない。同じ変数が環境変数・`.env`・`.secrets/novelai.env`・`.secrets/.env` の複数箇所にあると止まる。
+以後、人間は `.env.novelai` の値を書き換えてから `generate` を再実施できる。生成時には変数を展開した要求が実行記録に残る。`NOVELAI_CHAR_*`・`NOVELAI_STYLE_*`・`NOVELAI_BACKGROUND_*` 以外の変数・APIキーは要求へ展開しない。同じ変数が環境変数と `.env.novelai` の両方にあると止まる。以前の版で `.env`・`.secrets/` に置いた変数・補助設定が残っていると止まり、`python -X utf8 scripts/novelai_batch.py env-migrate` で `.env.novelai` へ移すよう案内する（APIキー等の他の行は残す。`--dry-run` で確認のみ）。移行先への保存が成功してから元の行を除く。途中で保存に失敗した場合は両方に同じ変数が残ることがあるため、移行先の値を確認してから重複を整理する。
 
 絵柄・背景はBase（`input` と `v4_prompt.caption.base_caption`）、人物の特徴は対応するCharacterへ割り当てる。人物別入力を使わない要求では本文へ統合する。変数を参照した要求だけが変更の対象なので、全コマで同じ背景にせず場面ごとに背景変数を分ける。`templatize` は要求JSON内の一致する文字列をすべて置き換えるため、`--dry-run` と差分の読み取りで対象を確認する。
 

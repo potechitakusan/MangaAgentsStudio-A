@@ -1,6 +1,6 @@
 ---
 name: novelai-batch-webui
-description: NovelAIで制作中の作品を、ブラウザーの画面から操作したいとき（.env のキャラクター・絵柄・背景の変数、要求JSONのプロンプト・配置ピンの編集、生成・候補の採用・ページのビルド・プレビュー）や、作品ごとの外部処理でLoRAを適用したいとき（lora_apply.py の実装）に使う。作品の novelai_batch.py・novelai_api.py をそのまま呼ぶローカルWebUIを起動して案内する。
+description: NovelAIで制作中の作品を、ブラウザーの画面から操作したいとき（.env.novelai のキャラクター・絵柄・背景の変数、要求JSONのプロンプト・配置ピンの編集、生成・候補の採用・ページのビルド・プレビュー）や、作品ごとの外部処理でLoRAを適用したいとき（lora_apply.py の実装）に使う。作品の novelai_batch.py・novelai_api.py をそのまま呼ぶローカルWebUIを起動して案内する。
 ---
 
 # NovelAI制作のWebUI
@@ -23,7 +23,7 @@ python -X utf8 .agents/skills/novelai-batch-webui/novelai_webui.py --port 8800 -
 | --- | --- | --- |
 | コマ | 要求の一覧（ページ別、採用画像のサムネイル）。場面共通の文（`input` と `base_caption` を同時に保存）、人物別本文、配置ピン（x・y、`use_coords`）、人物別の除外、除外文、幅・高さ・seed の編集。差し替え案（`p01-03b` 等）として複製。変数展開後の送信内容と語の点検の表示。候補の比較・拡大・採用・廃棄（`discarded/` へ移す）。ページ単位・全ページ・指定ページから指定ページまでの生成と、最新候補の一括採用（ページ単位・全ページ） | `generate`（`--max`）、`adopt`、`adopt-latest` |
 | ページ | 最新ビルドと注記入り確認画像、組版点検の件数。コマ内の focus・zoom・rotation の表、ページ構成と組版指定のJSON編集。ページ単位・全ページのそれぞれに「PNG」と「PSD」のビルドボタン（PSDのビルドは同じ版のPNGも作る） | `build`、`build --write-psd`（`--page`／`--all`） |
-| 変数 | `.env` の `NOVELAI_CHAR_`・`NOVELAI_STYLE_`・`NOVELAI_BACKGROUND_` の表示・編集・追加、使う要求の一覧、その要求の生成、templatize（確認／適用） | `env-set`、`templatize` |
+| 変数 | `.env.novelai` の `NOVELAI_CHAR_`・`NOVELAI_STYLE_`・`NOVELAI_BACKGROUND_` の表示・編集・追加、使う要求の一覧、その要求の生成、templatize（確認／適用）。以前の版で `.env`・`.secrets/` に置いた変数・補助設定が残っている場合は、その表示と `.env.novelai` へ移すボタン。左側に、プロンプトを一括で調整できるようにするためのAIエージェントへの依頼文の例を表示し、変数が１個もない場合は「変数を追加」の上に赤い太字でも表示する | `env-set`、`templatize`、`env-migrate` |
 | プレビュー | 各ページの最新ビルドをページ送り（右から左。← が次） | ― |
 | 実行ログ・接続 | 直前の操作のコマンドと出力（実行中も1.2秒ごとに更新。自動スクロールのチェックをONにすると更新のたびに一番下を表示）、実行中の操作の中止、**実行結果の整理**（下記）、キーの読込確認、契約照会、list。失敗したときの「ログを開く」で、この画面が表示される。右上の状態表示には生成の進み具合（例：3/39件目 p01-03）が出て、クリックするとログを開く | `key-status`、`status`、`list` |
 
@@ -62,7 +62,7 @@ python -X utf8 .agents/skills/novelai-batch-webui/novelai_webui.py --port 8800 -
 利用者から「ComfyUIでLoRAを使いたい」等の依頼があった場合だけ行う。
 
 1. 使う環境（ComfyUIのURL・ワークフロー、モデル、LoRAファイル名と強度、img2imgの強度、プロンプトの使い方）と費用・利用条件を利用者に確認する。有料サービスは明示の許可がある範囲だけ。
-2. `lora_apply.py` の docstring の約束（`job.source_image`・`job.request`（.env 展開済み）・`job.output` へ必ず保存・`job.log`・戻り値は記録に残る dict）に従って `apply(job)` を書く。`check(root)` には接続先・ファイルの有無の確認だけを書く（生成・課金をしない）。
+2. `lora_apply.py` の docstring の約束（`job.source_image`・`job.request`（.env.novelai 展開済み）・`job.output` へ必ず保存・`job.log`・戻り値は記録に残る dict）に従って `apply(job)` を書く。`check(root)` には接続先・ファイルの有無の確認だけを書く（生成・課金をしない）。
 3. 認証情報をファイル・ログ・記録に書かない（環境変数や `.secrets/` から読む）。元画像を上書きしない。
 4. 1コマで試し、結果画像を開いて確認してから `READY = True` にする。実装内容・既定値・確認結果を作品の `docs/production/` に記録する。
 5. 作品固有の実装（URL・LoRA名など）を配布元へ戻さない。配布元の `lora_apply.py` は空の雛形のまま保つ。
@@ -76,7 +76,7 @@ python -X utf8 .agents/skills/novelai-batch-webui/novelai_webui.py --port 8800 -
 - 127.0.0.1 でだけ待ち受け、起動時のトークンと Host を確かめる。他の端末へ公開しない。
 - JSONを保存するたびに、前の内容を `output/webui/history/` に残す。保存前に JSON の形（`input`・`parameters`、ページ構成の `schema_version`・`panels`）を確かめる。
 - 画面での編集も、作品の制作手順（要求プロンプトの組み立て、送信前の内容照合、作画後の照合表、組版後の点検、PNG確認・PSD作成の判断）を置き換えない。生成後は画像を開いて照合する。
-- 変数化（`.env` への取り込み）は、作品の手順どおり人間の依頼があった場合に、変数名と値を確認してから行う。
+- 変数化（`.env.novelai` への取り込み）は、作品の手順どおり人間の依頼があった場合に、変数名と値を確認してから行う。
 
 ## 前提と限界
 

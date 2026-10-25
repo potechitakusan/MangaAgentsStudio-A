@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "retrieved_on": "2026-10-25",
+  "source": "https://pixai.art/en/@pixai-official/artworks/models（PixAI公式アカウントのモデル一覧ページの埋め込みデータ）、https://platform.pixai.art/en/docs/references/models、実生成の確認（2026-10-25、全15モデルを v2 で各１枚。キットの resources/pixai-model-samples/）",
+  "note_ja": "PixAIの公式モデルのうち、画像生成に使うものだけを載せる（PixAI Edit・Reference Pro はAPI未対応のため除外）。id は API の modelVersionId（モデルページの版のURL末尾）。type はこのキットの点検用の分類（dit・sdxl）、mode・style・negativePrompt は送れるか（公式文書とモデルページの表示）。api は API での受理の確認状況。一覧にないモデルは scripts/pixai_models.py add で作品のこのファイルへ足す。",
+  "models": {
+    "tsubaki3": {
+      "label": "Tsubaki.3", "modelId": "2024383378759147749", "id": "2024383379556065549", "versionName": "v1",
+      "pixaiType": "MMDIT26B_MODEL", "type": "dit", "mode": true, "style": true, "negativePrompt": true, "commercialUse": true,
+      "modes_accepted": ["pro", "ultra"], "modes_rejected": ["standard", "lite"], "default_mode": "pro",
+      "api": "実生成で確認（v2、mode pro・ultra は受理、standard・lite は422。v1 のインペイント・i2i・inferenceProfile・modelStyle も受理。1k１枚 1分以上）", "checked_on": "2026-10-25",
+      "strengths_ja": "最新の公式DiT。色の制御・プロンプトへの追従。pro は１枚1分以上かかる"
+    },
+    "tsubaki3-flash": {
+      "label": "Tsubaki.3 Flash", "modelId": "2050048242267339137", "id": "2050048243034896798", "versionName": "v1",
+      "pixaiType": "MMDIT26B_MODEL", "type": "dit", "mode": true, "style": true, "negativePrompt": false, "commercialUse": true,
+      "modes_rejected": ["pro"],
+      "api": "実生成で確認（v2、mode なしで受理。mode pro は422。他の mode は未確認。1k１枚 約41秒）", "checked_on": "2026-10-25",
+      "strengths_ja": "Tsubaki.3 の高速版（8ステップ）。モデルページでは除外（negativePrompt）に非対応と表示"
+    },
+    "tsubaki2": {
+      "label": "Tsubaki.2", "modelId": "1982880136609467518", "id": "1983308862240288769", "versionName": "v1",
+      "pixaiType": "MMDIT26A_MODEL", "type": "dit", "mode": true, "style": true, "negativePrompt": true, "commercialUse": true,
+      "modes_accepted": ["lite", "standard", "pro", "ultra"], "default_mode": "standard", "controlnet": false, "inpaint": false,
+      "api": "実生成で確認（v2、mode lite・standard・pro・ultra を受理。v1 の IP-Adapter も受理。ControlNet は403、インペイントは400。1k１枚 約20秒）", "checked_on": "2026-10-25",
+      "strengths_ja": "公式の推奨。複数人物・照明・動きのあるポーズ・プロンプトへの追従。キットの既定"
+    },
+    "tsubaki": {
+      "label": "Tsubaki", "modelId": "1884107375027888751", "id": "1894092844569363483", "versionName": "v1.0",
+      "pixaiType": "DIT7B_MODEL", "type": "dit", "mode": false, "style": false, "negativePrompt": true, "commercialUse": true, "controlnet": false,
+      "api": "実生成で確認（v2、1k１枚 約72秒）", "checked_on": "2026-10-25",
+      "strengths_ja": "初代のDiT。複数人物・自然文のプロンプト。mode・画風プリセットは公式に Tsubaki.2・Tsubaki.3 系だけ"
+    },
+    "tsubaki-v1-1": {
+      "label": "Tsubaki v1.1", "modelId": "1935090614966005945", "id": "1935090615918113018", "versionName": "v1.1",
+      "pixaiType": "DIT7B_MODEL", "type": "dit", "mode": false, "style": false, "negativePrompt": true, "commercialUse": true, "controlnet": false,
+      "api": "実生成で確認（v2、1k１枚 約30秒）", "checked_on": "2026-10-25",
+      "strengths_ja": "Tsubaki の改良版。高解像度・複数人物"
+    },
+    "tsubaki-flash": {
+      "label": "Tsubaki Flash", "modelId": "1934789863877919615", "id": "1934789864939078594", "versionName": "v1",
+      "pixaiType": "DIT7B_MODEL", "type": "dit", "mode": false, "style": false, "negativePrompt": true, "commercialUse": true, "controlnet": false,
+      "api": "実生成で確認（v2、1k１枚 約41秒）", "checked_on": "2026-10-25",
+      "strengths_ja": "Tsubaki の高速版"
+    },
+    "serin": {
+      "label": "Serin", "modelId": "1911477338694141481", "id": "1914519679917387494", "versionName": "v2",
+      "pixaiType": "DIT7B_MODEL", "type": "dit", "mode": false, "style": false, "negativePrompt": true, "commercialUse": true, "controlnet": false,
+      "api": "実生成で確認（v2、1k１枚 約30秒）", "checked_on": "2026-10-25",
+      "strengths_ja": "韓国のウェブトゥーン・ファッション風"
+    },
+    "haruka2": {
+      "label": "Haruka v2", "modelId": "1861558737426484240", "id": "1861558740588989558", "versionName": "v2",
+      "pixaiType": "SDXL_MODEL", "type": "sdxl", "mode": false, "style": false, "negativePrompt": true, "commercialUse": true,
+      "api": "実生成で確認（v2・v1。v1 のインペイント・i2i・ControlNet（canny・depth・openpose）・latentCouple・Hires・ADetailer、v2 の sampling も受理。1k１枚 約51秒）", "checked_on": "2026-10-25",
+      "strengths_ja": "公式の推奨。安定した塗り・正確な手・高解像度。利用回数が最も多い"
+    },
+    "haruka": {
+      "label": "Haruka", "modelId": "1805666668619097261", "id": "1805666669332128958", "versionName": "v1",
+      "pixaiType": "SDXL_MODEL", "type": "sdxl", "mode": false, "style": false, "negativePrompt": true, "commercialUse": true,
+      "api": "実生成で確認（v2、1k１枚 約15秒）", "checked_on": "2026-10-25",
+      "strengths_ja": "Haruka v2 の前の版"
+    },
+    "hoshino2": {
+      "label": "Hoshino v2", "modelId": "1954632827019711809", "id": "1954632828118619567", "versionName": "v2",
+      "pixaiType": "SDXL_MODEL", "type": "sdxl", "mode": false, "style": false, "negativePrompt": true, "commercialUse": true,
+      "api": "実生成で確認（v2、1k１枚 約21秒）", "checked_on": "2026-10-25",
+      "strengths_ja": "公式の推奨。日本で人気の作風・レトロなアニメ調・正確な手"
+    },
+    "otome2": {
+      "label": "Otome v2", "modelId": "1856956427276171616", "id": "1856956435031440023", "versionName": "v2.1",
+      "pixaiType": "SDXL_MODEL", "type": "sdxl", "mode": false, "style": false, "negativePrompt": true, "commercialUse": true,
+      "api": "実生成で確認（v2、1k１枚 約41秒）", "checked_on": "2026-10-25",
+      "strengths_ja": "男性キャラクター向け"
+    },
+    "hinata2": {
+      "label": "Hinata v2", "modelId": "1869108554114044295", "id": "1869108561160475178", "versionName": "v1",
+      "pixaiType": "SDXL_MODEL", "type": "sdxl", "mode": false, "style": false, "negativePrompt": true, "commercialUse": true, "controlnet": false,
+      "api": "実生成で確認（v2、1k１枚 約30秒）", "checked_on": "2026-10-25",
+      "strengths_ja": "画風の再現・短いプロンプト向け"
+    },
+    "nagi": {
+      "label": "Nagi", "modelId": "1961253300562760878", "id": "1961253301321929990", "versionName": "v1",
+      "pixaiType": "SDXL_MODEL", "type": "sdxl", "mode": false, "style": false, "negativePrompt": true, "commercialUse": true,
+      "api": "実生成で確認（v2、1k１枚 約30秒）", "checked_on": "2026-10-25",
+      "strengths_ja": "画風の再現向け"
+    },
+    "crystalize": {
+      "label": "Crystalize", "modelId": "1964824607980730248", "id": "1964824608626653146", "versionName": "v1",
+      "pixaiType": "SDXL_MODEL", "type": "sdxl", "mode": false, "style": false, "negativePrompt": true, "commercialUse": true,
+      "api": "実生成で確認（v2、1k１枚 約71秒）", "checked_on": "2026-10-25",
+      "strengths_ja": "画風の再現向け"
+    },
+    "eternal": {
+      "label": "Eternal", "modelId": "1965302325046914604", "id": "1965302325944495788", "versionName": "v1",
+      "pixaiType": "SDXL_MODEL", "type": "sdxl", "mode": false, "style": false, "negativePrompt": true, "commercialUse": true,
+      "api": "実生成で確認（v2、1k１枚 約41秒）", "checked_on": "2026-10-25",
+      "strengths_ja": "画風の再現向け"
+    }
+  }
+}

@@ -6,14 +6,15 @@
   python -X utf8 .agents/skills/novelai-batch-webui/novelai_webui.py --port 8800 --root 作品ルート
 
 できること
-  - .env のキャラクター・絵柄・背景の変数（NOVELAI_CHAR_・NOVELAI_STYLE_・NOVELAI_BACKGROUND_）の表示・編集・追加、templatize
+  - .env.novelai のキャラクター・絵柄・背景の変数（NOVELAI_CHAR_・NOVELAI_STYLE_・NOVELAI_BACKGROUND_）の表示・編集・追加、templatize、
+    以前の版で .env に置いた変数の移動（env-migrate）
   - 要求JSON（input/novelai/requests/）のプロンプト・人物別本文・配置ピン・除外・寸法・seedの編集、差し替え案の複製、変数展開後の確認
   - 生成（送信なし確認／実行）、候補の比較と採用、最新候補の一括採用
   - ページ構成（input/pages/）・組版指定（input/typeset/）のJSON編集、build（PSDは指定時のみ）、ページ送りの確認
   - APIキーの読込確認（key-status）と契約照会（status）
 
 守ること
-  - 生成・採用・組み直し・.env の書き込みは、作品の scripts/novelai_batch.py・novelai_api.py をそのまま呼ぶ。
+  - 生成・採用・組み直し・.env.novelai の書き込みは、作品の scripts/novelai_batch.py・novelai_api.py をそのまま呼ぶ。
     費用確認・実行記録・自動再送しない扱いはスクリプト側のまま。WebUIは有料生成（--allow-anlas）を出さない。
   - APIキーは読まない・表示しない（変数は novelai_batch.read_variables が許可した接頭辞だけ）。
   - 127.0.0.1 だけで待ち受け、起動ごとのトークンがないAPI呼び出しを拒否する。ブラウザーは自動で開かない。
@@ -272,6 +273,8 @@ class Project:
             if not self.batch.VAR_NAME.fullmatch(name):
                 raise ValueError("変数名が不正です")
             return script + ["templatize", name] + (["--dry-run"] if body.get("dry_run") else [])
+        if action == "env-migrate":
+            return script + ["env-migrate"] + (["--dry-run"] if body.get("dry_run") else [])
         if action == "env-set":
             name, value = str(body.get("name", "")), str(body.get("value", ""))
             if not self.batch.VAR_NAME.fullmatch(name):
@@ -588,7 +591,7 @@ label.chk{display:flex;gap:.4rem;align-items:flex-start;margin:.3rem 0}
   <nav id="tabs">
     <button data-tab="panels" class="on">コマ（プロンプト・生成・採用）</button>
     <button data-tab="pages">ページ（構成・組版・ビルド）</button>
-    <button data-tab="vars">変数（.env）</button>
+    <button data-tab="vars">変数（.env.novelai）</button>
     <button data-tab="preview">プレビュー</button>
     <button data-tab="log">実行ログ・接続</button>
   </nav>
@@ -723,7 +726,7 @@ async function viewPanel() {
         info.adopted === p ? null : h('button', {title: 'discarded/ へ移す（削除しない）', onclick: () => discard(sel.panel, 'novelai', n)}, '廃棄'))); }));
   v.replaceChildren(
     h('div', {class: 'card'}, h('h3', {}, sel.panel + ' のプロンプト'),
-      h('div', {class: 'muted'}, '場面共通（input と base_caption に同じ内容を保存）。${変数名} は .env の値に展開されます。使える変数：' + (varsInfo.join('、') || 'なし')), base,
+      h('div', {class: 'muted'}, '場面共通（input と base_caption に同じ内容を保存）。${変数名} は .env.novelai の値に展開されます。使える変数：' + (varsInfo.join('、') || 'なし')), base,
       h('div', {class: 'chars'}, chars.map(c => c.el)),
       h('label', {class: 'chk'}, coords, '配置ピンを使う（use_coords）'),
       h('div', {class: 'muted'}, '除外（negative_prompt と v4_negative_prompt の base_caption）'), negative,
@@ -771,9 +774,14 @@ async function viewPage() { const v = $('#view'); if (!sel.page) { v.replaceChil
       h('div', {class: 'row'}, h('button', {onclick: () => save(false)}, '保存のみ'), h('button', {class: 'primary', onclick: () => save('png')}, '保存してPNGをビルド'), h('button', {onclick: () => confirm('PSDを作りますか？') && save('psd')}, '保存してPSDをビルド')))); }
 
 // ---------------------------------------------------------------- 変数
-function viewVars() { $('#side').replaceChildren(h('p', {class: 'muted'}, '.env のキャラクター・絵柄・背景の変数を編集します。APIキーは表示・変更しません。'));
+// 変数タブの案内（docs/novelai-prompts/README.md の Step 0 の依頼文例と同じ）。
+const VARS_GUIDE = 'このページでキャラの見た目や衣装、背景のプロンプトを一括で調整できるようにするには、作品フォルダでAIエージェントに次のように依頼してください。', VARS_EXAMPLE = '「既存のプロンプトをもとに、キャラクター・絵柄・背景を .env.novelai から自分で編集できるように準備してください。今回は画像の生成は行わず、準備だけお願いします。」';
+function viewVars() { $('#side').replaceChildren(h('p', {class: 'muted'}, '.env.novelai のキャラクター・絵柄・背景の変数を編集します（APIキー・URLの共通設定は .env）。APIキーは表示・変更しません。'),
+    h('div', {class: 'card'}, h('p', {}, VARS_GUIDE), h('p', {class: 'muted'}, VARS_EXAMPLE)));
   const v = $('#view'); const list = S.variables;
-  const blocks = list.map(x => { if (x.error) return h('p', {class: 'err'}, x.error); const t = h('textarea', {rows: 3}); t.value = x.value;
+  const blocks = list.map(x => { if (x.error) return h('div', {class: 'card'}, h('p', {class: 'err'}, x.error), x.error.includes('env-migrate') ? h('div', {class: 'row'},
+      h('button', {onclick: () => run('env-migrate', {dry_run: true})}, '移す行を確認'),
+      h('button', {class: 'primary', onclick: () => confirm('以前の場所（.env・.secrets）の変数・補助設定を .env.novelai へ移しますか？（APIキー等の他の行は残します）') && run('env-migrate')}, '.env.novelai へ移す（env-migrate）')) : null); const t = h('textarea', {rows: 3}); t.value = x.value;
     const used = S.requests.filter(r => r.vars.includes(x.name)).map(r => r.id);
     return h('div', {class: 'card'}, h('h3', {}, x.name + '（' + x.source + '）'), t, h('div', {class: 'muted'}, '使う要求：' + (used.join(', ') || 'なし')),
       h('div', {class: 'row'}, h('button', {class: 'primary', onclick: () => run('env-set', {name: x.name, value: t.value.replace(/\s*\n\s*/g, ' ')})}, '保存（env-set）'),
@@ -781,7 +789,8 @@ function viewVars() { $('#side').replaceChildren(h('p', {class: 'muted'}, '.env 
         h('button', {onclick: () => run('templatize', {name: x.name, dry_run: true})}, '置き換え箇所を確認'),
         h('button', {onclick: () => confirm('要求JSON内の同じ文を ${' + x.name + '} に置き換えますか？') && run('templatize', {name: x.name})}, '要求へ取り込む（templatize）'))); });
   const name = h('input', {placeholder: 'NOVELAI_CHAR_NAME', style: 'width:22em'}), val = h('textarea', {rows: 2});
-  v.replaceChildren(...blocks, h('div', {class: 'card'}, h('h3', {}, '変数を追加'), h('div', {class: 'muted'}, 'NOVELAI_CHAR_・NOVELAI_STYLE_・NOVELAI_BACKGROUND_ で始まる半角英大文字・数字・_。値は１行。追加後に「要求へ取り込む」で既存の要求の同じ文を変数参照にできます。'),
+  const empty = !list.some(x => !x.error) ? h('div', {class: 'err', style: 'font-weight:bold'}, h('p', {}, VARS_GUIDE), h('p', {}, VARS_EXAMPLE)) : null;
+  v.replaceChildren(...blocks, ...(empty ? [empty] : []), h('div', {class: 'card'}, h('h3', {}, '変数を追加'), h('div', {class: 'muted'}, 'NOVELAI_CHAR_・NOVELAI_STYLE_・NOVELAI_BACKGROUND_ で始まる半角英大文字・数字・_。値は１行。追加後に「要求へ取り込む」で既存の要求の同じ文を変数参照にできます。'),
     name, val, h('div', {class: 'row'}, h('button', {class: 'primary', onclick: () => run('env-set', {name: name.value.trim(), value: val.value.replace(/\s*\n\s*/g, ' ')})}, '追加（env-set）')))); }
 
 // ---------------------------------------------------------------- プレビュー

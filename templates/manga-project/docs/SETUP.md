@@ -24,7 +24,11 @@ NOVELAI_API_KEY=実際のトークン
 
 実行前に公式仕様と利用可能な枠を確認する。有効なOpus契約なら [Anlasを消費しない生成条件](knowledge/ai-production.md#novelai-opus)を確認し、１回１枚・28ステップ以下（V5は初期値23、V4.5以前は28）を基準にする。生成寸法は使用ツールに合わせる共通の [ページ設定](knowledge/page-layout.md)に従う。採用寸法・モデルと追加機能を含めた0 Anlasの確認、V5の利用上限の残量確認も行う。契約照会の成功だけでは費用・残枠の確認完了と扱わない。接続確認用の [依頼プロンプト](knowledge/novelai-api.md#確認を依頼するプロンプト) も用意している。
 
-NovelAIのキャラクター・絵柄・背景を自分で編集して再生成したい場合は [プロンプト編集のREADME](novelai-prompts/README.md) を読む。依頼があった場合だけ変数化し、`.env` の直接編集とテキストからの反映を選べる。
+NovelAIのキャラクター・絵柄・背景を自分で編集して再生成したい場合は [プロンプト編集のREADME](novelai-prompts/README.md) を読む。依頼があった場合だけ変数化し、`.env.novelai` の直接編集とテキストからの反映を選べる。
+
+設定ファイルは３つに分ける。`.env` はAPIキー・URLなどの共通設定、`.env.novelai` はNovelAI用、`.env.pixai` はPixAI用のプロンプト変数・補助設定（見本は `.env.example`・`.env.novelai.example`・`.env.pixai.example`）。APIキーは `.secrets/` や環境変数にも置ける。以前の版で `.env` にNovelAIの変数を置いた作品は `python -X utf8 scripts/novelai_batch.py env-migrate` で `.env.novelai` へ移す。
+
+PixAIは同梱の `scripts/pixai_api.py`・`scripts/pixai_compose.py`・`scripts/pixai_batch.py` で、キーの読込・認証確認・要求の組み立て・一括生成・採用・ページの組み直しができる。キーは [PixAIのAPI設定](https://pixai.art/profile/edit/api) で作り、環境変数 `PIXAI_API_KEY`、作品の `.env` または `.secrets/pixai.env` に `PIXAI_API_KEY=実際のキー` の形で用意する。`python -X utf8 scripts/pixai_api.py key-status`・`status`（画像生成なし）で確認する。生成はクレジットを使うため、利用者の明示の許可がある範囲だけ送る。設定・機能（LoRA・画風プリセット・mode・参照画像）は [PixAI APIの接続手順](knowledge/pixai-api.md) と [PixAIでの制作手順](knowledge/pixai-composed-production.md)、変数の編集は [PixAIのプロンプト編集のREADME](pixai-prompts/README.md)。
 
 新しいCodexセッションで作品ルートを開き、AGENTS.mdとローカルSkillsが認識されていることを確認する。配布したSkillsはこのプロジェクトの共通知識と組み合わせて使う。
 

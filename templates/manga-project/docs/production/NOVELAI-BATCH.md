@@ -53,4 +53,4 @@ NovelAIを使う作品で、人間がページ単位・全ページの生成を�
 | --- | --- | --- | --- |
 |  |  |  |  |
 
-値は作品ルートの `.env` にある。ここには値を写さず、変数名だけを書く。`NOVELAI_CHAR_*`・`NOVELAI_STYLE_*`・`NOVELAI_BACKGROUND_*` を使用できる。確認は `python -X utf8 scripts/novelai_batch.py vars`。編集・反映・再生成は [初心者向けREADME](../novelai-prompts/README.md)。
+値は作品ルートの `.env.novelai` にある（APIキー・URLは共通設定の `.env`）。ここには値を写さず、変数名だけを書く。`NOVELAI_CHAR_*`・`NOVELAI_STYLE_*`・`NOVELAI_BACKGROUND_*` を使用できる。確認は `python -X utf8 scripts/novelai_batch.py vars`。編集・反映・再生成は [初心者向けREADME](../novelai-prompts/README.md)。

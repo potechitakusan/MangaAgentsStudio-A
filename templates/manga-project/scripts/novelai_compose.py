@@ -17,7 +17,7 @@ novelai_batch.py generate / novelai_api.py generate を通す。追加機能の�
 モデルごとの画面の既定（品質タグ・除外プリセット・Guidance・送るパラメーター）は MODELS にある。
 品質タグは入力に同じタグがあれば付けず、１個だけにする（--allow-duplicate-quality で画面と同じ重複を残す）。
 
-上書き（優先順は 引数 > 環境変数/.env/.secrets > 既定。読む変数は下の4つだけで、APIキーの行は読まない）
+上書き（優先順は 引数 > 環境変数/.env.novelai > 既定。読む変数は下の4つだけで、APIキーの行は読まない）
   NOVELAI_QUALITY_TAGS      品質タグの全文（空で付けない）。引数 --quality-tags
   NOVELAI_UC_PRESET         除外プリセット名（heavy・light・human・none）。引数 --uc-preset
   NOVELAI_UC_PRESET_TEXT    除外プリセットの全文（空で付けない）。引数 --uc-preset-text
@@ -27,8 +27,8 @@ novelai_batch.py generate / novelai_api.py generate を通す。追加機能の�
   --charN-type girl|boy|other   --charN-appearance 見た目   --charN-action ポーズ・行動
   --charN-pos x,y（0〜1。配置ピン。既定は全員に指定した場合だけ有効。--coords on/off で切替）   --charN-negative 人物別の除外
 配列で渡す場合は --chars-json（上の項目名を持つオブジェクトの配列）。
-絵柄・背景・人物の文は .env の NOVELAI_STYLE_/NOVELAI_BACKGROUND_/NOVELAI_CHAR_ の値をそのまま渡す。
-このスクリプトはそれらの .env を読まず、${変数名} も展開しない。
+絵柄・背景・人物の文は .env.novelai の NOVELAI_STYLE_/NOVELAI_BACKGROUND_/NOVELAI_CHAR_ の値をそのまま渡す。
+このスクリプトはそれらの変数を読まず、${変数名} も展開しない。
 """
 from __future__ import annotations
 

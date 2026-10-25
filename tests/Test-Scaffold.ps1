@@ -33,13 +33,16 @@ Check ($creationText.Contains($projectRoot) -and $creationText.Contains('この�
 $project = Get-Content -LiteralPath (Join-Path $projectRoot 'project.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 Check ($project.name -ceq $japaneseName) 'Japanese project name survives JSON round trip'
 Check ((Split-Path $projectRoot -Parent) -eq $testRoot) 'Project is a direct child of the selected parent'
-Check (@(Get-ChildItem -LiteralPath (Join-Path $projectRoot '.agents\skills') -Directory).Count -eq 11) '監修・プロセスチェッカー・外部コマ作画・NovelAI WebUIを含む11のスキルが同梱される'
-foreach ($webuiFile in @('SKILL.md', 'novelai_webui.py', 'lora_run.py', 'lora_apply.py')) {
-    $webuiCopy = Join-Path $projectRoot ('.agents/skills/novelai-batch-webui/' + $webuiFile)
-    $webuiSource = Join-Path $root ('skills/novelai-batch-webui/' + $webuiFile)
+Check (@(Get-ChildItem -LiteralPath (Join-Path $projectRoot '.agents\skills') -Directory).Count -eq 12) '監修・プロセスチェッカー・外部コマ作画・NovelAI WebUI・PixAI WebUIを含む12のスキルが同梱される'
+foreach ($webuiFile in @('novelai-batch-webui/SKILL.md', 'novelai-batch-webui/novelai_webui.py', 'novelai-batch-webui/lora_run.py', 'novelai-batch-webui/lora_apply.py', 'pixai-batch-webui/SKILL.md', 'pixai-batch-webui/pixai_webui.py')) {
+    $webuiCopy = Join-Path $projectRoot ('.agents/skills/' + $webuiFile)
+    $webuiSource = Join-Path $root ('skills/' + $webuiFile)
     Check ((Test-Path -LiteralPath $webuiCopy -PathType Leaf) -and
            (Get-FileHash -LiteralPath $webuiCopy).Hash -eq (Get-FileHash -LiteralPath $webuiSource).Hash) ('WebUIの配布内容が原本と一致する: ' + $webuiFile)
 }
+$missingPixaiFiles = @(@('.env.example', '.env.novelai.example', '.env.pixai.example', 'scripts/pixai_api.py', 'scripts/pixai_batch.py', 'scripts/pixai_compose.py', 'scripts/pixai_models.py', 'scripts/pixai_mask.py', 'scripts/pixai_edit.py', 'config/pixai-models.json') |
+    Where-Object { -not (Test-Path -LiteralPath (Join-Path $projectRoot $_) -PathType Leaf) })
+Check ($missingPixaiFiles.Count -eq 0) '設定ファイルの３つの見本とPixAIのスクリプトが配布される'
 Check ((Test-Path -LiteralPath (Join-Path $projectRoot '.agents/skills/manga-process-checker/SKILL.md')) -and
        (Test-Path -LiteralPath (Join-Path $projectRoot 'scripts/process_checker.py')) -and
        (Test-Path -LiteralPath (Join-Path $projectRoot 'docs/knowledge/process-checker.md'))) 'プロセスチェッカーの手順・管理スクリプト・知識が配布される'

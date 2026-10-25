@@ -14,6 +14,7 @@ import sys
 import unicodedata
 
 ROOT = Path(__file__).absolute().parent.parent
+ENV_EXAMPLES = {'.env.example', '.env.novelai.example', '.env.pixai.example'}
 THEMES = 'tsukkomi|allure|stature|horror|conflict|grief|romance|trust|awkwardness|urgency|revelation|payoff|endearment|bargaining|reconciliation'
 KNOWLEDGE = re.compile(r'docs/knowledge/supervision/(?:(?:README|routing|sources)\.md|gag/(?:README|mechanisms|design-and-review|know-how)\.md|(?:' + THEMES + r')/README\.md)')
 PROJECT_SCRIPTS = ('Resolve-ReviewProfile.ps1', 'resolve_review_profile.py', 'Resolve-ReviewProfile.sh',
@@ -73,7 +74,7 @@ def collect_package(root: Path) -> dict[str, Path]:
         package[destination] = source
 
     mappings = (
-        ('templates/manga-project', '', {'.md', '.json', '.py'}, {'.gitignore', '.env.example', 'requirements-composition.txt'}, ('agent-modes',)),
+        ('templates/manga-project', '', {'.md', '.json', '.py'}, {'.gitignore', '.env.example', '.env.novelai.example', '.env.pixai.example', 'requirements-composition.txt'}, ('agent-modes',)),
         ('docs/knowledge', 'docs/knowledge', {'.md'}, set(), ('supervision',)),
         ('skills', '.agents/skills', {'.md', '.py'}, set(), ()),
         ('scripts/video', 'scripts/video', {'.py'}, set(), ()),
@@ -86,7 +87,7 @@ def collect_package(root: Path) -> dict[str, Path]:
             raise ValueError(f'配布元のフォルダが空です: {source_root}')
         for file in files:
             relative = file.relative_to(source_root).as_posix()
-            if any(part in {'.secrets', '.git', '.work', '.codex'} for part in file.relative_to(source_root).parts) or (file.name.startswith('.env') and file.name != '.env.example') or re.search(r'secret|credential|api[-_]?key|token', file.name, re.I):
+            if any(part in {'.secrets', '.git', '.work', '.codex'} for part in file.relative_to(source_root).parts) or (file.name.startswith('.env') and file.name not in ENV_EXAMPLES) or re.search(r'secret|credential|api[-_]?key|token', file.name, re.I):
                 raise ValueError(f'秘密情報を含む可能性のある配布名です: {relative}')
             asset = source_relative == 'templates/manga-project' and (
                 relative in {'templates/panel-templates/index.html', 'templates/onomatopoeia/index.html'}

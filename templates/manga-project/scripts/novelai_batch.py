@@ -3,8 +3,9 @@
 人が繰り返し実行して採用画像を選べるように、要求・候補・採用・ページ構成をすべてファイルに残す。
 
   list      要求・候補数・採用状況の一覧（通信なし）
-  vars      .env等のキャラクター・絵柄・背景の変数の一覧（通信なし）
-  env-set   プロンプト変数を .env へ書き込む（他の設定値は変えない）
+  vars      .env.novelai のキャラクター・絵柄・背景の変数の一覧（通信なし）
+  env-set   プロンプト変数を .env.novelai へ書き込む（他の設定値は変えない）
+  env-migrate 以前の版で .env 等に置いた変数・補助設定を .env.novelai へ移す
   templatize 要求JSON内の変数値と同じ文を ${変数名} に置き換える
   generate  ページ単位・全ページ・指定IDの要求を１枚ずつ順に生成する（既定は送信しない確認）
   adopt     候補から採用画像を選ぶ
@@ -37,7 +38,12 @@ ADOPTED = "input/novelai/adopted.json"
 CANDIDATES_DIR = "output/novelai/candidates"
 PAGES_DIR = "input/pages"
 BUILD_DIR = "output/build"
-VAR_FILES = (".env", ".secrets/novelai.env", ".secrets/.env")
+# 設定ファイルは３つに分ける：.env（APIキー・URL等の共通設定）、.env.novelai（NovelAI用のプロンプト変数・補助設定）、
+# .env.pixai（PixAI用。このスクリプトは読まない）。APIキーは従来どおり .secrets/ にも置ける（novelai_api.py の KEY_FILES）。
+VAR_FILE = ".env.novelai"
+VAR_FILES = (VAR_FILE,)
+# 以前の版で変数・補助設定を置いていた場所。ここに残っていれば黙って無視せず、env-migrate で移すよう止める。
+LEGACY_VAR_FILES = (".env", ".secrets/novelai.env", ".secrets/.env")
 VAR_NAME = re.compile(r"NOVELAI_(?:CHAR|STYLE|BACKGROUND)_[A-Z0-9_]+")
 VAR_ASSIGNMENT = re.compile(r"^\s*(?:export\s+)?(NOVELAI_(?:CHAR|STYLE|BACKGROUND)_[A-Z0-9_]+)\s*=(.*)$")
 VAR_HELP = "NOVELAI_CHAR_・NOVELAI_STYLE_・NOVELAI_BACKGROUND_ のいずれかで始まる半角英大文字・数字・_"
@@ -103,13 +109,72 @@ def lint_prompt(request: dict) -> list[str]:
 
 
 CHARACTERS = "input/novelai/characters.json"
-# 補助設定。環境変数 → .env → .secrets の順に、ここへ挙げた名前の行だけを読む（APIキー等は読まない）。
+# 補助設定。環境変数 → .env.novelai の順に、ここへ挙げた名前の行だけを読む（APIキー等は読まない）。
 SETTING_NAMES = {"NOVELAI_QUALITY_TAGS", "NOVELAI_UC_PRESET", "NOVELAI_UC_PRESET_TEXT", "NOVELAI_CHECK_IDENTITY"}
+SETTING_ASSIGNMENT = re.compile(r"^\s*(?:export\s+)?(" + "|".join(sorted(SETTING_NAMES)) + r")\s*=(.*)$")
+
+
+def legacy_lines(root: Path) -> list[tuple[str, int, str]]:
+    """以前の版の置き場所（.env・.secrets）に残っている変数・補助設定の行（ファイル、行番号、変数名）。値は返さない。"""
+    found = []
+    for relative in LEGACY_VAR_FILES:
+        path = api.project_path(root, relative)
+        if not path.is_file():
+            continue
+        for index, line in enumerate(path.read_text(encoding="utf-8-sig").splitlines()):
+            match = VAR_ASSIGNMENT.match(line) or SETTING_ASSIGNMENT.match(line)
+            if match:
+                found.append((relative, index, match.group(1)))
+    return found
+
+
+def check_legacy(root: Path) -> None:
+    found = legacy_lines(root)
+    if found:
+        raise BatchError(f"NovelAI用の変数・補助設定は {VAR_FILE} に置きます。以前の場所に残っています: "
+                         + ", ".join(f"{name}（{relative}）" for relative, _, name in found)
+                         + f"。`python -X utf8 scripts/novelai_batch.py env-migrate` で {VAR_FILE} へ移してください"
+                         "（APIキー等の他の行は変更しません）。")
+
+
+def env_migrate(root: Path, dry_run: bool) -> list[tuple[str, str]]:
+    """以前の場所の変数・補助設定の行を .env.novelai の末尾へ移し、元のファイルから除く。APIキー等の他の行は残す。"""
+    found = legacy_lines(root)
+    target = api.project_path(root, VAR_FILE)
+    current = target.read_text(encoding="utf-8-sig").splitlines() if target.is_file() else []
+    existing = {m.group(1) for line in current if (m := VAR_ASSIGNMENT.match(line) or SETTING_ASSIGNMENT.match(line))}
+    names = [name for _, _, name in found]
+    clash = sorted({n for n in names if n in existing or names.count(n) > 1})
+    if clash:
+        raise BatchError(f"同じ名前が {VAR_FILE} または複数の場所にあるため移しません。１か所にしてください: " + ", ".join(clash))
+    if dry_run or not found:
+        return [(relative, name) for relative, _, name in found]
+    lines_by_file: dict[str, set[int]] = {}
+    for relative, index, _ in found:
+        lines_by_file.setdefault(relative, set()).add(index)
+    moved_lines = []
+    source_updates = []
+    for relative, indexes in lines_by_file.items():
+        path = api.project_path(root, relative)
+        lines = path.read_text(encoding="utf-8-sig").splitlines()
+        moved_lines += [lines[i] for i in sorted(indexes)]
+        kept = [line for i, line in enumerate(lines) if i not in indexes]
+        source_updates.append((path, "\n".join(kept) + ("\n" if kept else "")))
+    # 移動先を確定してから元の行を除く。保存失敗・中断時も値のコピーを必ず残す。
+    temporary = target.with_name(target.name + ".tmp")
+    temporary.write_text("\n".join(current + moved_lines) + "\n", encoding="utf-8")
+    temporary.replace(target)
+    for path, kept in source_updates:
+        temporary = path.with_name(path.name + ".tmp")
+        temporary.write_text(kept, encoding="utf-8")
+        temporary.replace(path)
+    return [(relative, name) for relative, _, name in found]
 
 
 def read_setting(root: Path, name: str) -> str | None:
     if name not in SETTING_NAMES:
         raise BatchError(f"読み込める補助設定ではありません: {name}")
+    check_legacy(root)
     if name in os.environ:
         return os.environ[name]
     pattern = re.compile(r"^\s*(?:export\s+)?" + re.escape(name) + r"\s*=(.*)$")
@@ -315,7 +380,8 @@ def parse_value(raw: str) -> str:
 
 
 def read_variables(root: Path) -> dict[str, tuple[str, str]]:
-    """許可した３種類の変数だけを読み、APIキー等は展開・表示しない。"""
+    """許可した３種類の変数だけを環境変数と .env.novelai から読み、APIキー等は展開・表示しない。"""
+    check_legacy(root)
     found: dict[str, list[tuple[str, str]]] = {}
     for name, value in os.environ.items():
         if VAR_NAME.fullmatch(name):
@@ -341,7 +407,7 @@ def expand(value, variables: dict[str, tuple[str, str]], used: set[str]):
             if not VAR_NAME.fullmatch(name):
                 raise BatchError(f"使えない変数名です: ${{{name}}}。変数名は {VAR_HELP} にしてください。")
             if name not in variables:
-                raise BatchError(f"変数 {name} が .env 等にありません。`vars` で確認してください。")
+                raise BatchError(f"変数 {name} が {VAR_FILE} 等にありません。`vars` で確認してください。")
             used.add(name)
             return variables[name][0]
         return PLACEHOLDER.sub(replace, value)
@@ -365,12 +431,12 @@ def env_set(root: Path, name: str, value: str) -> str:
         raise BatchError("値は１行にしてください。")
     if '"' in value and "'" in value:
         raise BatchError("値に ' と \" の両方は使えません。")
-    elsewhere = [s for n, (_, s) in read_variables(root).items() if n == name and s != ".env"]
+    elsewhere = [s for n, (_, s) in read_variables(root).items() if n == name and s != VAR_FILE]
     if elsewhere:
         raise BatchError(f"{name} は {elsewhere[0]} にあります。そちらを編集するか、片方を削除してください。")
     quote = "'" if '"' in value else '"'
     new_line = f"{name}={quote}{value}{quote}"
-    path = api.project_path(root, ".env")
+    path = api.project_path(root, VAR_FILE)
     lines = path.read_text(encoding="utf-8-sig").splitlines() if path.is_file() else []
     pattern = re.compile(r"^\s*(?:export\s+)?" + re.escape(name) + r"\s*=")
     replaced = False
@@ -380,7 +446,7 @@ def env_set(root: Path, name: str, value: str) -> str:
             replaced = True
     if not replaced:
         lines.append(new_line)
-    temporary = path.with_suffix(".tmp")
+    temporary = path.with_name(path.name + ".tmp")
     temporary.write_text("\n".join(lines) + "\n", encoding="utf-8")
     temporary.replace(path)
     return "更新" if replaced else "追加"
@@ -680,11 +746,13 @@ def main(argv=None) -> int:
     listing.add_argument("--page", type=int, action="append")
     show = commands.add_parser("vars", help="キャラクター・絵柄・背景の変数の一覧")
     show.add_argument("--show-values", action="store_true", help="値（プロンプト本文）も表示する")
-    setter = commands.add_parser("env-set", help="キャラクター・絵柄・背景の変数を .env へ書く")
+    setter = commands.add_parser("env-set", help="キャラクター・絵柄・背景の変数を .env.novelai へ書く")
     setter.add_argument("name")
     group = setter.add_mutually_exclusive_group(required=True)
     group.add_argument("--value")
     group.add_argument("--value-file", help="値を書いたUTF-8テキスト（作品内の相対パス）")
+    migrate = commands.add_parser("env-migrate", help="以前の版で .env・.secrets に置いた変数・補助設定を .env.novelai へ移す")
+    migrate.add_argument("--dry-run", action="store_true", help="移す行の変数名を表示するだけで変更しない")
     templ = commands.add_parser("templatize", help="要求JSON内の変数値を ${変数名} に置き換える")
     templ.add_argument("name")
     templ.add_argument("--dry-run", action="store_true")
@@ -743,12 +811,18 @@ def main(argv=None) -> int:
         elif args.command == "vars":
             variables = read_variables(root)
             if not variables:
-                print("キャラクター・絵柄・背景のプロンプト変数はありません（NOVELAI_CHAR_・NOVELAI_STYLE_・NOVELAI_BACKGROUND_）。")
+                print(f"キャラクター・絵柄・背景のプロンプト変数はありません（{VAR_FILE} の NOVELAI_CHAR_・NOVELAI_STYLE_・NOVELAI_BACKGROUND_）。")
             for name, (value, source) in sorted(variables.items()):
                 print(f"{name}（{source}、{len(value)}字）" + (f": {value}" if args.show_values else ""))
         elif args.command == "env-set":
             value = args.value if args.value is not None else api.project_path(root, args.value_file).read_text(encoding="utf-8-sig").strip()
-            print(f"{args.name} を .env に{env_set(root, args.name, value)}しました（他の行は変更していません）。")
+            print(f"{args.name} を {VAR_FILE} に{env_set(root, args.name, value)}しました（他の行は変更していません）。")
+        elif args.command == "env-migrate":
+            moved = env_migrate(root, args.dry_run)
+            for relative, name in moved:
+                print(f"{name}: {relative} → {VAR_FILE}" + ("（確認のみ）" if args.dry_run else ""))
+            print(f"移す行はありません。変数・補助設定は {VAR_FILE} にあります。" if not moved else
+                  "APIキー等の他の行は元のファイルに残しています（値は表示していません）。")
         elif args.command == "templatize":
             result = templatize(root, args.name, args.dry_run)
             for request_id, count in result.items():

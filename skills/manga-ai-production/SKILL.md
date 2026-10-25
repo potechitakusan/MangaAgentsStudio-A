@@ -13,7 +13,22 @@ QwenやNovelAI等へ画像を条件として渡し、コマ別に作画する方
 
 ページ作画の生成前は `docs/knowledge/panel-layout-policy.md` を読み、テンプレートの採用ID、または演出上の独自配置とその理由をページ別記録へ残す。原則テンプレートを使用し、ユーザーの必須・不使用指定を優先する。imagegenでは番号付きレイアウト画像と各コマの内容を実際に画像入力・指示へ渡し、ページ全体の一括生成を基本とする。独自配置でも参照画像を用意し、必要時のコマ別生成は理由を記録する。枠・吹き出し・文字を含めた生成を一律禁止せず、生成後に計画・原文と照合して番号等の混入やずれを修正する。キャラ参照絵だけの生成にはページ配置を要求しない。NovelAI等は各環境の制作手順に従う。
 
-NovelAIを使うときは `docs/knowledge/ai-production.md` のOpus節を読む。OpusならAnlas消費なしを既定とし、寸法・Steps・１回の枚数・追加機能とV5の利用上限を確認する。採用寸法は `config/page-layout.json` と生成ツールへ反映し、枠・最終PNGは `docs/knowledge/page-layout.md` に従って生成実寸に合わせる。0 Anlasを確認できない生成を試験送信せず、有料利用は既に明示された指示の範囲でのみ行う。契約・Anlas・V5利用上限の照会APIは、最初の生成で呼び、以後は目安10回の生成ごとに1回にする（スクリプトが自動で数える。API呼び出しの増えすぎを避けるため。条件の変更・前回の未完了・V5の残量が少ない場合は毎回）。有料利用の許可と費用確認の指定は従来どおり。NovelAIのコマ素材は `docs/knowledge/novelai-composed-production.md` に従い、本番前に人物試作を１回生成して外見を照合し、コマの形に近い縦横比で生成する。コマより広い範囲を生成して最上段のコマ枠とマスクで必要な部分を見せ、拡大しすぎて字コンテの主対象・動作・画角を失わない。要求のプロンプトは `docs/knowledge/novelai-composed-production.md` の「要求プロンプトの組み立て」に従い、`generate` の警告を直してから送信する。NovelAIで組版してPNGプレビューを作ったら、`docs/knowledge/novelai-composed-production.md` の「PNGプレビューをページ送りで確認するHTML」に従い、ページ送り用のHTMLを作って提示する（ブラウザーは起動しない）。要求は１コマ１JSONで `input/novelai/requests/` に保存し、NovelAI APIで生成する要求は原則として `scripts/novelai_compose.py`（V5が既定、V4.5はユーザーが指定した場合だけ）で組み立てる。i2iや参照などの追加機能で改造が必要な場合は、これを元に改造して使う（送信・費用確認は `novelai_batch.py`・`novelai_api.py` を通す）。生成・採用・組み直しは `scripts/novelai_batch.py` で行い、人間が再実施できるコマンドを `docs/production/NOVELAI-BATCH.md` に残す。キャラクター・絵柄・背景の `.env` 変数化は人間の依頼がある場合だけ、変数名と内容を確認して行う。導入・編集は `docs/knowledge/novelai-composed-production.md` の変数化の節、利用者向けの変更例は `docs/novelai-prompts/README.md` を参照する。
+NovelAIを使うときは `docs/knowledge/ai-production.md` のOpus節を読む。OpusならAnlas消費なしを既定とし、寸法・Steps・１回の枚数・追加機能とV5の利用上限を確認する。採用寸法は `config/page-layout.json` と生成ツールへ反映し、枠・最終PNGは `docs/knowledge/page-layout.md` に従って生成実寸に合わせる。0 Anlasを確認できない生成を試験送信せず、有料利用は既に明示された指示の範囲でのみ行う。契約・Anlas・V5利用上限の照会APIは、最初の生成で呼び、以後は目安10回の生成ごとに1回にする（スクリプトが自動で数える。API呼び出しの増えすぎを避けるため。条件の変更・前回の未完了・V5の残量が少ない場合は毎回）。有料利用の許可と費用確認の指定は従来どおり。NovelAIのコマ素材は `docs/knowledge/novelai-composed-production.md` に従い、本番前に人物試作を１回生成して外見を照合し、コマの形に近い縦横比で生成する。コマより広い範囲を生成して最上段のコマ枠とマスクで必要な部分を見せ、拡大しすぎて字コンテの主対象・動作・画角を失わない。要求のプロンプトは `docs/knowledge/novelai-composed-production.md` の「要求プロンプトの組み立て」に従い、`generate` の警告を直してから送信する。NovelAIで組版してPNGプレビューを作ったら、`docs/knowledge/novelai-composed-production.md` の「PNGプレビューをページ送りで確認するHTML」に従い、ページ送り用のHTMLを作って提示する（ブラウザーは起動しない）。要求は１コマ１JSONで `input/novelai/requests/` に保存し、NovelAI APIで生成する要求は原則として `scripts/novelai_compose.py`（V5が既定、V4.5はユーザーが指定した場合だけ）で組み立てる。i2iや参照などの追加機能で改造が必要な場合は、これを元に改造して使う（送信・費用確認は `novelai_batch.py`・`novelai_api.py` を通す）。生成・採用・組み直しは `scripts/novelai_batch.py` で行い、人間が再実施できるコマンドを `docs/production/NOVELAI-BATCH.md` に残す。キャラクター・絵柄・背景の `.env.novelai` 変数化は人間の依頼がある場合だけ、変数名と内容を確認して行う。導入・編集は `docs/knowledge/novelai-composed-production.md` の変数化の節、利用者向けの変更例は `docs/novelai-prompts/README.md` を参照する。
+
+PixAIを使うときは `docs/knowledge/pixai-api.md` と `docs/knowledge/pixai-composed-production.md` を読む。クレジットの残高はAPIで照会できないため、利用者が範囲を明示許可した生成だけを送る。モデルは利用者にバージョンIDを調べさせない。名前・特徴で指定されたら、まず `config/pixai-models.json`（`python -X utf8 scripts/pixai_models.py list`。公式モデル15種）から選んで `--model <名前>` で使う。一覧にないモデルはモデルページのURLだけをもらい、`scripts/pixai_models.py add <名前> --url <URL>` で作品の一覧へ登録して、表示された利用条件（商用・オンライン共有）を利用者に伝える。読めない場合だけ、版のタブを押したURLを写してもらう。LoRAは使う前に `scripts/pixai_models.py lora --url <URL>` で元モデルと利用条件を作品に記録する（１回だけ）。PixAIには人物別の入力・配置ピンがないため、複数人物は主語と位置関係を１つのプロンプトに書く（`pixai_compose.py --layout`）。要求の作成・点検では同文書の「要求プロンプトの組み立て」「送信前の内容照合」に従う。
+
+### PixAIの機能の使い分け
+
+| 場面 | 使うもの | 要点 |
+| --- | --- | --- |
+| 新しいコマ | `scripts/pixai_compose.py` → `pixai_batch.py generate` | ２人以上のコマ・作り直しは `batchSize` 4 で4枚から選ぶ（Tsubaki.3 pro 1k で1枚4,000・4枚7,000クレジットの例）。１人の単純なコマの初回は1枚 |
+| 一部だけ違う（耳・小物・手・輪の消去） | `scripts/pixai_edit.py inpaint <ID> --add "<主語付きの直す内容>" --ellipse …` | 第一候補。元の要求の設定を引き継ぎ、マスクも作る。マスクは小さく、顔にかけない。描き足しは4枚中2枚程度なので4枚。Tsubaki.2 の画像は自動で Tsubaki.3 で直す |
+| 全体の雰囲気・季節を変える | `scripts/pixai_edit.py i2i <ID> --add "…" --strength 0.6` | 0.6 は構図を保った小さな変更、0.9 は大きな変更 |
+| ラフ・既存の絵の構図を写す | `pixai_compose.py --model haruka2 --controlnet canny:<画像>` | SDXLのモデルで canny・depth。openpose は普通の絵では効かない |
+| 左右の人物の描き分け | `--layout` → 外れたらインペイント | latentCouple は描き分けられたが人数が増えたため標準にしない |
+| 人物の一貫性 | 各要求で同じ外見文を使う（依頼があれば `.env.pixai` の変数にする） | LoRAの効果は未検証で、使う場合は人物試作で確かめる。IP-Adapter は受理されるが、２人分を入れると混ざった |
+
+i2i・インペイント・ControlNet・latentCouple・IP-Adapter は公式文書にない項目なので、利用者が使うことを了承した場合だけ `--allow-unverified` を付ける（受理と効果は2026-10-25に確認済み。予告なく変わる可能性がある）。画風プリセット `flat-anime-pastel` は頭の上に輪（既存作品を連想させる意匠）が出やすい。結果は描き直した範囲を元の解像度で元画像と並べて確かめてから採用する。モデル・画風プリセットの絵柄は、キット側の `resources/pixai-model-samples/index.html` の絶対パスを案内する。
 
 ### NovelAIのプロンプト組み立て・送信前確認
 

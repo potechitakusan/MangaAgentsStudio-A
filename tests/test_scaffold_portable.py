@@ -37,11 +37,16 @@ class PortableScaffoldTests(unittest.TestCase):
         self.assertFalse((project / 'GEMINI.md').exists())
         self.assertFalse((project / 'AGENT-MODE.md').exists())
         self.assertFalse((project / 'agent-modes').exists())
-        self.assertEqual(len(list((project / '.agents/skills').iterdir())), 11)
-        for name in ('SKILL.md', 'novelai_webui.py', 'lora_run.py', 'lora_apply.py'):
-            relative = Path('novelai-batch-webui') / name
+        self.assertEqual(len(list((project / '.agents/skills').iterdir())), 12)
+        for relative in [Path('novelai-batch-webui') / name for name in ('SKILL.md', 'novelai_webui.py', 'lora_run.py', 'lora_apply.py')] + \
+                [Path('pixai-batch-webui') / name for name in ('SKILL.md', 'pixai_webui.py')]:
             self.assertEqual((project / '.agents/skills' / relative).read_bytes(),
                              (ROOT / 'skills' / relative).read_bytes())
+        for name in ('.env.example', '.env.novelai.example', '.env.pixai.example', 'scripts/pixai_api.py', 'scripts/pixai_batch.py',
+                     'scripts/pixai_compose.py', 'scripts/pixai_models.py', 'scripts/pixai_mask.py', 'scripts/pixai_edit.py', 'config/pixai-models.json', 'docs/knowledge/pixai-api.md',
+                     'docs/knowledge/pixai-composed-production.md'):
+            self.assertTrue((project / name).is_file(), name)
+        self.assertFalse((project / '.env').exists())
         snapshot = json.loads((project / 'docs/distribution-snapshot.json').read_text())
         self.assertEqual(len(snapshot['files']), result['CopiedFiles'])
         for item in snapshot['files']:
