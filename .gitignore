@@ -115,6 +115,7 @@ __pycache__/
 !/templates/manga-project/.env.example
 !/templates/manga-project/.env.novelai.example
 !/templates/manga-project/.env.pixai.example
+!/templates/manga-project/Sample.env.txt
 credentials.json
 secrets.json
 *.local.json
