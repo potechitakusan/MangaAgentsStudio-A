@@ -81,7 +81,7 @@ if ($ProcessRequirementsFrom) {
     if ($LASTEXITCODE -ne 0) { throw '引継ぎ元の必須事項を確認できませんでした。新規作品はまだ作成していません。' }
 }
 $mappings = @(
-    @{ Source = 'templates\manga-project'; Target = ''; Extensions = @('.md', '.json', '.py'); Special = @('.gitignore', '.env.example', '.env.novelai.example', '.env.pixai.example', 'requirements-composition.txt') },
+    @{ Source = 'templates\manga-project'; Target = ''; Extensions = @('.md', '.json', '.py'); Special = @('.gitignore', '.env.example', '.env.novelai.example', '.env.pixai.example', 'requirements-composition.txt', 'Sample.env.txt') },
     @{ Source = 'docs\knowledge'; Target = 'docs\knowledge'; Extensions = @('.md'); Special = @() },
     @{ Source = 'skills'; Target = '.agents\skills'; Extensions = @('.md', '.py'); Special = @() },
     @{ Source = 'scripts\video'; Target = 'scripts\video'; Extensions = @('.py'); Special = @() }

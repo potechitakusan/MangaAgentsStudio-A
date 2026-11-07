@@ -74,7 +74,7 @@ def collect_package(root: Path) -> dict[str, Path]:
         package[destination] = source
 
     mappings = (
-        ('templates/manga-project', '', {'.md', '.json', '.py'}, {'.gitignore', '.env.example', '.env.novelai.example', '.env.pixai.example', 'requirements-composition.txt'}, ('agent-modes',)),
+        ('templates/manga-project', '', {'.md', '.json', '.py'}, {'.gitignore', '.env.example', '.env.novelai.example', '.env.pixai.example', 'requirements-composition.txt', 'Sample.env.txt'}, ('agent-modes',)),
         ('docs/knowledge', 'docs/knowledge', {'.md'}, set(), ('supervision',)),
         ('skills', '.agents/skills', {'.md', '.py'}, set(), ()),
         ('scripts/video', 'scripts/video', {'.py'}, set(), ()),
