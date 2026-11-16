@@ -146,7 +146,7 @@ function Initialize-OptionalSkills {
         }
         $consent = if (Test-Path -LiteralPath $consentPath) { Get-Content -LiteralPath $consentPath -Raw -Encoding UTF8 | ConvertFrom-Json } else { $null }
         if (-not $consent -or $consent.provider -cne $Provider -or $consent.revision -cne $source.revision -or [string]::IsNullOrWhiteSpace($consent.note)) {
-            return [pscustomobject]@{ status = 'needs_gemini_consent'; provider = $Provider; message = 'この作品の選択した文章をGeminiへ送り、利用枠を消費して推敲してよいか、導入前にユーザーへ確認してください。' }
+            return [pscustomobject]@{ status = 'needs_gemini_consent'; provider = $Provider; message = 'この作品の選択した文章を、ユーザー自身がAntigravityを直接操作してGeminiへ送り、利用枠を消費して推敲してよいか、導入前にユーザーへ確認してください。エージェントはagy等を起動しません。' }
         }
         if ($consent.decision -cne 'Granted') { return [pscustomobject]@{ status = 'gemini_declined'; provider = $Provider; message = 'Geminiの許可がありません。取得・導入・呼び出しを行わず、通常の制作を続けてください。' } }
     }

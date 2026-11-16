@@ -107,7 +107,7 @@ APIキーの追加設定は不要です。現在のCodexセッションで画像
 
 ## 4. 任意機能の設定（必要な場合のみ）
 
-- **日本語推敲スキル（既定は無効）**：[OPTION.md](../OPTION.md) で日本語推敲スキルを有効にした作品では、初回作業時に `scripts/Initialize-OptionalSkills.ps1`（Linuxは `scripts/Initialize-OptionalSkills.sh`）を実行して `.agents/skills/` へ導入します。`humanizer-jp` でGitがない場合はインストールの可否を確認し、Geminiを使う `japanese-natural-writing` は利用可能な環境があっても**文章の送信と利用枠の消費許可**を必ず得てから導入します。未回答・拒否では通常の制作を続けます（[初回導入の手順](knowledge/optional-skills.md)）。
+- **日本語推敲スキル（既定は無効）**：[OPTION.md](../OPTION.md) で日本語推敲スキルを有効にした作品では、初回作業時に `scripts/Initialize-OptionalSkills.ps1`（Linuxは `scripts/Initialize-OptionalSkills.sh`）を実行して `.agents/skills/` へ導入します。`humanizer-jp` でGitがない場合はインストールの可否を確認し、Geminiを使う `japanese-natural-writing` は利用可能な環境があっても**文章の送信と利用枠の消費許可**を必ず得てから導入します。Gemini側の推敲は、エージェントが `agy` 等を起動せず、ご自身でAntigravityを直接操作して実行していただきます（規約違反の可能性があるため）。未回答・拒否では通常の制作を続けます（[初回導入の手順](knowledge/optional-skills.md)）。
 - **レビュー重点の調整（任意）**：`config/review-profiles.json` の `defaults` を作品に合わせ、必要なシーンを `scenes` へ追加できます。解決例と意味は [レビュー運用](knowledge/review-workflow.md) を参照してください。
 - **動画での演出試作（任意依頼時のみ）**：動画で映画的演出を試す依頼がある場合に限り、`manga-video-previsualization` スキルと [動画試作の運用](knowledge/video-previsualization.md) を使います。動作確認済みの動画ワークフローを作品の `workflows/` へ用意し、モデルと入力の対応を確認してから実行します（人物参照は `assets/characters/`、動画・音声は `output/`、条件・所要時間・採否は `docs/experiments/` へ保存）。通常の漫画制作の前提作業にはしません。
 

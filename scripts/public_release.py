@@ -20,6 +20,7 @@ PANEL_ROOT = 'templates/manga-project/templates/panel-templates'
 NOVELAI_RESOURCE_ROOT = 'resources/novelai-style-samples'
 PIXAI_RESOURCE_ROOT = 'resources/pixai-model-samples'
 TEMPLATE_REQUIREMENTS = 'templates/manga-project/scripts/requirements-composition.txt'
+TEMPLATE_SAMPLE_ENV = 'templates/manga-project/Sample.env.txt'
 PNG_SIGNATURE = b'\x89PNG\r\n\x1a\n'
 PNG_IMAGE_CHUNKS = {b'IHDR', b'PLTE', b'IDAT', b'IEND', b'tRNS'}
 JPEG_JFIF_SEGMENT = b'\xff\xe0\x00\x10JFIF\x00\x01\x01\x00\x00\x01\x00\x01\x00\x00'
@@ -110,7 +111,7 @@ def public_files(root=ROOT):
                 )
                 panel_renderer = relative_path == 'scripts/render_panel_templates.cjs'
                 portable_shell = path.parent == root / 'scripts' and path.suffix == '.sh'
-                template_requirements = relative_path == TEMPLATE_REQUIREMENTS
+                template_requirements = relative_path in (TEMPLATE_REQUIREMENTS, TEMPLATE_SAMPLE_ENV)
                 if path.suffix not in EXTENSIONS and name not in SPECIAL_FILES and not example_image and not panel_asset and not novelai_resource and not onomatopoeia_asset and not panel_renderer and not portable_shell and not template_requirements:
                     raise ValueError(f'公開範囲に想定外のファイルがあります: {relative_path}')
                 if (name.startswith('.env') and name not in ENV_EXAMPLES) or '.secrets' in path.parts:

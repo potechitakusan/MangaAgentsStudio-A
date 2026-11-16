@@ -76,7 +76,7 @@ ChatGPT Work等でリポジトリURLを参照させる場合は、次のよう�
 | **APIキー確認・契約照会・要求JSON作成・WebUIの起動自体** | Python 3.10以上（`novelai_api.py`、`novelai_compose.py`、`pixai_api.py`、`pixai_compose.py`、各WebUIサーバー） | キー確認・契約照会・通常のテキストからの要求作成・WebUI起動は**追加パッケージ不要**。PixAIの**i2i・インペイント要求作成**（元画像・マスクの寸法確認）とWebP/JPEG応答のPNG変換には **`Pillow` が必要** |
 | **フキダシ・縦書き文字の組版、ページPNGビルド、マスク作成** | Python 3.10以上（`typeset_manga.py`、`novelai_batch.py build`、`pixai_batch.py build`、`pixai_mask.py`） | **`Pillow` が必要**（フォントは作品の `assets/fonts/` またはOS標準の日本語フォントを使用） |
 | **組版済みPSDの書き出しと再読込検証** | **Python 3.12以上**（同梱の固定依存版を使用する場合。`export_composed_psd.py`、各 `build --write-psd`） | **`Pillow`、`numpy`、`psd-tools` が必要**（作品の `scripts/requirements-composition.txt` に記載。固定版 `numpy==2.5.3` はPython 3.12以上が必要。出典は[作品側セットアップ](templates/manga-project/docs/SETUP.md)） |
-| **任意の日本語推敲スキル導入** | 作品の `OPTION.md` で有効にした場合のみ（既定は無効） | `humanizer-jp` は **Git** を使用。`japanese-natural-writing` は **Gemini（agy）環境**と利用枠消費の明示許可が必要 |
+| **任意の日本語推敲スキル導入** | 作品の `OPTION.md` で有効にした場合のみ（既定は無効） | `humanizer-jp` は **Git** を使用。`japanese-natural-writing` は利用枠消費の明示許可が必要で、**Gemini側はご自身でAntigravityを直接操作して実行**します（エージェントは `agy` を起動しません） |
 | **最終仕上げ（任意）** | **CLIP STUDIO PAINT**（人間が仕上げて公開する場合の基本想定） | **Web用PNGを受け取るだけなら必須ではありません。** レイヤー分けPSDを仕上げる場合に使用 |
 | **動画での演出試作（任意）** | 明示的に動画試作を依頼した場合のみ（通常の漫画制作では不使用） | Python 3.10以上、`ffmpeg`、`ffprobe`、ローカルComfyUI |
 
@@ -307,7 +307,7 @@ NovelAI（`novelai-batch-webui`）とPixAI（`pixai-batch-webui`）には、プ�
 | **Codex内蔵 `imagegen`** | コマ割りレイアウト画像、各コマの作画プロンプト | ChatGPT / Codexプランの画像生成利用枠（生成サイズ・品質・再生成回数により変動） |
 | **NovelAI API**<br>（`https://image.novelai.net`） | 要求JSONのプロンプト・除外文・モデル設定（i2i等を改造利用する場合は元画像） | ・**有効なOpus契約（`tier=3`）**で条件内（1回1枚・28ステップ以下［V5既定23／V4.5既定28］・標準寸法・追加有料機能なし）なら **0 Anlas**。<br>・ただし**Opusの0 Anlasと「未契約での無料利用」は異なります**（契約とV5利用上限の残量確認が必要）。<br>・Anlasを消費する有料生成は、**利用者の明示指示がある範囲だけ**端末から実行します（契約照会APIは初回と目安10回ごとに自動確認） |
 | **PixAI API**<br>（`https://api.pixai.art`） | 要求JSONのプロンプト・除外文・モデル／LoRA設定、i2i・マスク・参照指定時のアップロード画像 | ・**生成のたびにPixAIクレジットを消費**します。<br>・公式に残高・消費量の照会APIがないため、スクリプトやWebUIの費用確認チェック（`--confirm-credits`・`--cost-note`）は**無料判定や確定金額の自動計算ではなく、利用者自身が消費を許可した宣言**です。<br>・**1回4枚候補（`batchSize: 4`）**は1タスクで4枚生成するため、枚数とクレジット消費に影響します（既定の `auto` では既存候補があるコマの作り直しが4枚になります） |
-| **任意の日本語推敲スキル**<br>（`japanese-natural-writing`） | 推敲対象として指定したセリフ・ナレーション等の文章（Geminiへ送信） | **既定は無効。** 有効にした場合も、導入・呼び出し前に**文章の外部送信とGemini利用枠の消費許可**を必ず確認し、明示承諾がなければ導入・送信しません（もう一つの `humanizer-jp` はGitHubからスキルを初回取得するだけで、推敲時に外部APIへ文章を送りません） |
+| **任意の日本語推敲スキル**<br>（`japanese-natural-writing`） | 推敲対象として指定したセリフ・ナレーション等の文章（**ご自身がAntigravityへ入力した場合に**Geminiへ送信） | **既定は無効。** 有効にした場合も、導入前に**文章の外部送信とGemini利用枠の消費許可**を必ず確認し、明示承諾がなければ導入しません。**Antigravity CLI（`agy`）等はCodex・Claude Code等のエージェントから起動せず、ご自身でAntigravityを直接操作して実行していただきます**（規約違反の可能性があるため。手順は[推敲スキルの手順](docs/knowledge/optional-skills.md)）（もう一つの `humanizer-jp` はGitHubからスキルを初回取得するだけで、推敲時に外部APIへ文章を送りません） |
 
 ### 2. 設定ファイルとAPIキーの保存先・読込優先順位
 
@@ -444,7 +444,7 @@ python -X utf8 .agents/skills/novelai-batch-webui/novelai_webui.py
 
 以下の依頼例は、作品プロジェクトを作成し、そのフォルダでCodexを開いてから使ってください。基本はキャラ・あらすじ・ページ数を伝えれば、Web公開用の漫画制作を進められます。設定ファイルをすべて埋める必要はなく、希望は会話でも指定できます。
 
-**【ご注意】Gemini（agy）による日本語推敲やNovelAI APIの利用を選んだ場合は、対象の文章・生成指示などを外部サービスへ送信し、各サービスの利用枠や料金が発生することがあります。利用するサービス・送信対象・費用条件を確認してください。Geminiの利用枠消費は導入前に確認し、NovelAIでAnlasを消費する生成は明示された指示の範囲で行う方針です。これらのオプションは、期待する表現や品質向上を保証するものではありません。**
+**【ご注意】Gemini（Antigravity）による日本語推敲やNovelAI APIの利用を選んだ場合は、対象の文章・生成指示などを外部サービスへ送信し、各サービスの利用枠や料金が発生することがあります。利用するサービス・送信対象・費用条件を確認してください。Geminiの利用枠消費は導入前に確認し、NovelAIでAnlasを消費する生成は明示された指示の範囲で行う方針です。これらのオプションは、期待する表現や品質向上を保証するものではありません。**
 
 1. **場面に合わせた監修（supervision）機能の追加**
 

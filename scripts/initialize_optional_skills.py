@@ -169,7 +169,7 @@ def initialize_optional_skills(project_root, provider='', gemini_consent='Unspec
                                      note=consent_note, recordedAt=datetime.now().astimezone().isoformat()), consent_path)
         consent = read_json(consent_path) if consent_path.exists() else None
         if not consent or consent.get('provider') != provider or consent.get('revision') != source['revision'] or not str(consent.get('note') or '').strip():
-            return result('needs_gemini_consent', 'この作品の選択した文章をGeminiへ送り、利用枠を消費して推敲してよいか、導入前にユーザーへ確認してください。')
+            return result('needs_gemini_consent', 'この作品の選択した文章を、ユーザー自身がAntigravityを直接操作してGeminiへ送り、利用枠を消費して推敲してよいか、導入前にユーザーへ確認してください。エージェントはagy等を起動しません。')
         if consent.get('decision') != 'Granted':
             return result('gemini_declined', 'Geminiの許可がありません。取得・導入・呼び出しを行わず、通常の制作を続けてください。')
     if target.exists():
