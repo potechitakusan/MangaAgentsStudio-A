@@ -164,7 +164,7 @@ python -X utf8 scripts/novelai_compose.py --id p01-01 --scene '一人の全身�
 
 送信なし確認には追加の参照料金を表示する。実行時は通常の `generate` と同じく、明示許可の範囲で `--allow-anlas` と、生成本体・追加料金の確認根拠を記した `--cost-note` を使う。原画に加え、Base64を含む実際の送信内容も実行記録に残る。
 
-2026-11-25に、V5 Curatedで絵柄・キャラ・衣装を組み合わせた生成の保存済み送信内容とPNGを照合した。この確認範囲は作品の生成例に限り、V5 Fullでの精密参照や実際のAnlas消費量の検証は残る。[制作根拠E6](image-generation/production-evidence.md#e6)・[V5の衣装参照の制作手順](novelai-composed-production.md#costume-references)
+2026-11-25に、V5 Curatedで絵柄・キャラ・衣装を組み合わせた生成の保存済み送信内容とPNGを照合した。この確認範囲は作品の生成例に限り、V5 Fullでの精密参照や実際のAnlas消費量の検証は残る。[制作根拠E6](image-generation/production-evidence.md#e6)・[V5の衣装参照の制作手順](novelai-composed-production.md#costume-references)・[V5の精密参照を使うかの確認と制作手順](novelai-composed-production.md#precise-references)
 
 ## 確認後に生成する
 

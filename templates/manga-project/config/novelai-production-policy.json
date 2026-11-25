@@ -12,6 +12,7 @@
   },
   "composition": {"roomy_source": true, "allow_rotation": true, "allow_cropped_view": true, "preserve_full_source": true, "allow_character_breakout": true, "match_panel_aspect": true, "crop_must_keep_planned_content": true},
   "character_trial_before_panels": true,
+  "v5_precise_reference": {"types": ["character", "outfit", "style"], "default": "ask_once_for_all_types", "use_only_with_explicit_permission": true, "no_answer": "do_not_use", "do_not_block_on_answer": true, "additional_anlas_per_reference_image": 5, "checked_on": "2026-11-25"},
   "panel_canvas_examples": [{"width": 832, "height": 1216}, {"width": 1216, "height": 832}, {"width": 1024, "height": 1024}, {"width": 704, "height": 1344}, {"width": 1344, "height": 704}],
   "panel_canvas_note_ja": "コマ別素材の寸法は要求JSONに書く。コマより広い範囲を生成し、配置時にコマ枠・マスクで必要な部分を見せる。例は無消費候補の画素数内の選択肢で、強制しない",
   "batch": {"script": "scripts/novelai_batch.py", "requests_dir": "input/novelai/requests", "adopted": "input/novelai/adopted.json", "candidates_dir": "output/novelai/candidates", "pages_dir": "input/pages", "build_dir": "output/build", "character_variable_prefix": "NOVELAI_CHAR_"},
