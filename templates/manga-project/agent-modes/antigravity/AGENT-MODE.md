@@ -13,8 +13,11 @@
 ## 作画・組版
 
 - Codexのimagegenが利用できる前提を置かない。作画前に、このセッションで利用可能な生成・編集・画像表示機能、採用モデル、入力方式を確認する。Geminiというモデル名だけで画像生成機能があると判断しない。
-- 既定はNovelAIによるコマ別の素材生成と別組版。`docs/knowledge/novelai-composed-production.md`、`config/novelai-production-policy.json`、`scripts/novelai_batch.py` に従う。キー・画風・費用・使用枠の確認、人物試作、要求JSON、採用候補、作画後の照合、ページ組み直しを省略しない。
-- ユーザーが別の生成環境や素材を指定した場合はその手順に従う。imagegen専用のページ一括生成・画像内文字生成の規則を他の環境へ一律適用せず、文字・吹き出しは共通方針どおり作画後に別に載せる。
+- 作画は、作品で採用した生成環境の手順に従う。ユーザーの指定か、作品の記録（`docs/PLAN.md`・`docs/PROGRESS.md` 等）にある採用済みの環境を使う。指定も記録もない場合の既定はNovelAI。
+  - NovelAI：コマ別の素材生成と別組版。`docs/knowledge/novelai-composed-production.md`、`config/novelai-production-policy.json`、`scripts/novelai_batch.py` に従う。
+  - PixAI：コマ別の素材生成と別組版。`docs/knowledge/pixai-composed-production.md`、`config/pixai-production-policy.json`、`scripts/pixai_compose.py`・`scripts/pixai_batch.py` に従う。NovelAIの手順・スクリプトと混ぜない。
+  - どの環境でも、キー・画風・費用・使用枠の確認、人物試作、要求JSON、採用候補、作画後の照合、ページ組み直しを省略しない。
+- ユーザーがそれ以外の生成環境や素材を指定した場合はその手順に従う。imagegen専用のページ一括生成・画像内文字生成の規則を他の環境へ一律適用せず、文字・吹き出しは共通方針どおり作画後に別に載せる。
 - 生成手段や必要な設定がそろわない場合は作画を保留し、必要な設定を案内する。企画・字コンテ・ネーム等は進めてよい。コードで描いた絵を代替の完成原稿にしない。
 - 画像編集が利用できない場合は再生成・配置変更・計画の見直しで対応し、未解決の問題はPNG提示時に伝える。
 

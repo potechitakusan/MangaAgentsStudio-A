@@ -78,7 +78,7 @@
     "require_explicit_user_authorization": true,
     "require_cost_note": true,
     "unverified_parameters_require_flag": true,
-    "note_ja": "残高・消費を照会するAPIは公式文書にない。利用者がその範囲のクレジット消費を明示許可した場合だけ --confirm-credits を付ける"
+    "note_ja": "残高を照会するAPIは公式文書にない。利用者がその範囲のクレジット消費を明示許可した場合だけ --confirm-credits を付ける"
   },
   "polling": {
     "min_interval_seconds": 1.5,

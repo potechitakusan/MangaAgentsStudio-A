@@ -11,7 +11,7 @@
 | `docs/knowledge/image-generation/` | モデル・版・実行環境別の画像入力と観察、匿名化した制作根拠の要約 | 同じ相対パスへコピー。作品の原画・ログは含めない |
 | `docs/knowledge/supervision/` | 場面ごとの監修知識・出典・利用手順 | 明示リストの文書とマニフェストを同梱 |
 | `skills/` | 役割別スキルの原本 | `.agents/skills/` へコピー |
-| `skills/novelai-batch-webui/` | NovelAI一括制作（`.env.novelai` の変数・要求JSONの編集、生成・採用・ページのビルド・プレビュー）を人間が画面で操作するローカルWebUI。処理は作品の `novelai_batch.py`・`novelai_api.py` を呼ぶ。LoRA適用の差し込み口 `lora_apply.py` は空の雛形 | `.agents/skills/` へコピー。Python標準ライブラリのみ。作品ごとの `lora_apply.py` の実装は配布元へ戻さない |
+| `skills/novelai-batch-webui/` | NovelAI一括制作（`.env.novelai` の変数・要求JSONの編集、生成・採用・ページのビルド・プレビュー）を人間が画面で操作するローカルWebUI。処理は作品の `novelai_batch.py`・`novelai_api.py` を呼ぶ。LoRA適用の差し込み口 `lora_apply.py` は空の雛形 | `.agents/skills/` へコピー。WebUI自体はPython標準ライブラリのみ。作品ごとの `lora_apply.py` の実装は配布元へ戻さない |
 | `skills/pixai-batch-webui/` | PixAI一括制作（`.env.pixai` の変数・要求JSONの編集、生成・取得し直し・採用・ページのビルド・プレビュー）を人間が画面で操作するローカルWebUI。処理は作品の `pixai_batch.py`・`pixai_api.py` を呼ぶ。NovelAI用のWebUIとは独立し、互いを参照しない | `.agents/skills/` へコピー |
 | `templates/manga-project/` | 作品設定・記録の雛形、コマ割りテンプレート素材 | 作品ルートへコピー |
 | `templates/manga-project/docs/knowledge/novelai-composed-production.md` | NovelAIの画風選択・素材生成・組版の運用原本 | 雛形から `docs/knowledge/novelai-composed-production.md` へコピー |
@@ -25,8 +25,8 @@
 | `templates/manga-project/config/optional-skills.json` | 任意の推敲スキルの取得先・固定版・ファイルハッシュ | 同じ相対パスへコピー。第三者の本文は含めない |
 | `templates/manga-project/config/process-requirements.json` | 個人の必須事項の空の雛形 | 空配列だけを配布。明示された作品からの引継ぎは作成時に別処理 |
 | `scripts/process_checker.py` | 必須事項の登録・根拠管理・強い指示のAGENTS反映・任意のHooks | `scripts/` へコピー |
-| `templates/manga-project/scripts/novelai_api.py` | 作品単位のNovelAIキー読込・生成なしの契約照会・明示実行による１枚生成 | 雛形から `scripts/` へコピー。Python標準ライブラリのみ。認証情報は配布しない |
-| `templates/manga-project/scripts/novelai_compose.py` | NovelAI APIで生成する要求JSONの標準の組み立て。V5が既定、V4.5はユーザー指定時のみ。絵柄・背景・人物別の文・配置ピン・生成設定の引数から要求を保存する（通信なし）。i2i等の改造もこれを基にする | 雛形から `scripts/` へコピー。送信・費用確認は `novelai_batch.py`・`novelai_api.py` が行う。Python標準ライブラリのみ |
+| `templates/manga-project/scripts/novelai_api.py` | 作品単位のNovelAIキー読込・生成なしの契約照会・明示実行による１枚生成、V5の精密参照の送信形式への変換 | 雛形から `scripts/` へコピー。Python標準ライブラリで動き、精密参照の画像変換だけPillowを使う。認証情報は配布しない |
+| `templates/manga-project/scripts/novelai_compose.py` | NovelAI APIで生成する要求JSONの標準の組み立て。V5が既定、V4.5はユーザー指定時のみ。絵柄・背景・人物別の文・配置ピン・V5の精密参照・生成設定の引数から要求を保存する（通信なし）。i2i等の改造もこれを基にする | 雛形から `scripts/` へコピー。送信・費用確認は `novelai_batch.py`・`novelai_api.py` が行う。Python標準ライブラリで動き、精密参照を指定した要求の確認にはPillowを使う |
 | `templates/manga-project/scripts/novelai_batch.py` | コマ別の要求JSONのページ単位・全ページの順次生成、候補の採用、結果不明の実行記録の確認後の `failed/` への移動、キャラ別プロンプト変数（`.env.novelai` の `NOVELAI_CHAR_*`）の展開、採用画像・配置・組版からのページPNG・PSDの組み直し。人が再実施できる形で残す | 雛形から `scripts/` へコピー。生成は `novelai_api.py`、組版は `typeset_manga.py`、PSDは `export_composed_psd.py` を使う |
 | `templates/manga-project/scripts/pixai_api.py`・`pixai_compose.py`・`pixai_batch.py`・`pixai_models.py`・`pixai_mask.py`・`pixai_edit.py` | PixAIのキー読込・認証確認・１タスク生成（完了待ち・画像保存・taskIdでの取得し直し）、要求JSONの組み立て（LoRA・画風プリセット・mode・v1のi2i・ControlNet・参照画像）、コマ別の一括生成・採用・ページの組み直し、モデルの一覧の表示とモデルページのURLからの登録・LoRAの元モデルの記録（キーを送らない。作品の `config/pixai-loras.json` に１回だけ記録し、送信前の点検に使う）、インペイント用マスクの作成、生成済みのコマからのインペイント・i2iの要求の作成（元の要求の設定を引き継ぐ）。NovelAIのスクリプトとは独立し、互いをimportしない | 雛形から `scripts/` へコピー。認証確認・通常のテキスト要求作成・API通信はPython 3.10以上の標準ライブラリで動く。i2i・インペイント要求の画像寸法確認、マスク作成、PNG変換・ビルドはPillowを使う。固定依存版でのPSD出力はPython 3.12以上とPillow・numpy・psd-toolsが必要。認証情報は配布しない |
 | `templates/manga-project/config/pixai-models.json` | PixAIの公式モデル15種のバージョンID・種類・送れる項目・利用条件・API確認状況（出典・取得日を内部に記載）。`pixai_api.py` が読む | 作品の `config/` へコピー。作品側で `pixai_models.py add` が追記する |

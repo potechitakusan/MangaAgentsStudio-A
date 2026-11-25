@@ -18,7 +18,7 @@
 | 手段 | 公式資料で確認した範囲 | 制作上の採用案・未検証事項 |
 | --- | --- | --- |
 | 固定プロンプトとseed | NovelAIは設定変更の比較にseedを使えるが、同じseedでも服の指定変更で他の部分も変わり得る [A04] | まず比較条件を揃える。seedをキャラIDとして扱わない |
-| キャラ参照画像 | NovelAI Precise Referenceは人物、絵柄、その両方を参照する機能。確認時はV4.5限定でVibe Transferと非互換 [A03] | 最初は単独人物で検証。複数キャラ参照の混合を二人の描き分けと取り違えない |
+| キャラ参照画像 | NovelAIの精密参照はキャラ・絵柄を指定でき、V5では衣装も個別に指定できる [A03] | 最初は単独人物で試し、別の衣装を着せるときはキャラ参照と衣装参照を分ける |
 | Qwen-Image-Edit-2511 | 開発元は人物同一性と複数人物の編集改善を報告 [A01] | 承認済みキャラシートから別角度・別ポーズへ編集する候補。漫画絵への効果は実測する。Qwen-Image 2.1の記録とは区別する |
 | LoRA | 一部の追加重みを訓練して適応する方法。モデル全体の学習より学習対象を抑える [A05] | 参照編集で頻出する破綻を確認してからキャラLoRA／絵柄LoRAを検討。学習枚数・時間・必要VRAMを一律に決めない |
 | ControlNet | エッジ、奥行き、ポーズ等の条件画像で構造を誘導する [A07] | 演技の大きな動作、立ち位置、手足の構造向け。対応するモデル系統と前処理を揃える |
@@ -81,7 +81,7 @@ V5の既定が23ステップで、28ステップでは利用上限の消費が�
    - この頻度の変更は**照会APIの呼び出し回数**だけの話で、有料利用の許可、0 Anlasの確認、`--confirm-zero-anlas`・`--allow-anlas`・`--cost-note` の指定、自動再送の禁止は変えない。
 4. 生成したPNGの実寸を確認し、採用寸法・Steps・枚数・モデル・0 Anlasの確認方法と日付を作品の通常の制作記録へ残す。実際に確認できなかった消費量を「実測0」と記録しない。API・外部クライアントではその環境の仕様と費用確認手段を調べ、UIと同じ無料条件が適用されると未確認のまま断定しない。
 
-**追加料金に関する確認事実:** [Precise Reference](https://docs.novelai.net/en/image/precisereference/)は参照数に応じた追加Anlas、[Vibe Transfer](https://docs.novelai.net/en/image/vibetransfer/)はV4以降で初回・再エンコードや４件を超える参照に料金がある。参照画像やコマ枠を画像として入力する工程、Enhance・Upscale・Inpaint等の編集も、サイズとStepsだけで無料扱いにせず各機能の費用を確認する。参照機能を使わない場合は固定キャラ記述と生成後の目視で一貫性を確認する。
+**追加料金に関する確認事実:** V5の精密参照は参照画像1枚につき追加5 Anlas。[Vibe Transfer](https://docs.novelai.net/en/image/vibetransfer/)はV4以降で初回・再エンコードや４件を超える参照に料金がある。参照画像やコマ枠を画像として入力する工程、Enhance・Upscale・Inpaint等の編集も、サイズとStepsだけで無料扱いにせず各機能の費用を確認する。参照機能を使わない場合は固定キャラ記述と生成後の目視で一貫性を確認する。[V5の精密参照と費用](novelai-api.md#v5-precise-reference)
 
 **未検証:** 利用者の契約状態、APIでの実消費、生成品質・文字の可読性。この調査ではログイン・生成・Anlas消費を伴う動作確認は行っていない。上表は公式条件に合わせた制作上の初期値で、品質を保証する推奨値ではない。仕様変更や表示との食い違いがあれば、その時点の公式条件を再確認する。
 
@@ -171,7 +171,7 @@ Diffusers公式も、同一seedだけで完全再現は保証しないと説明�
 
 - A01: [Qwen公式モデルカード](https://huggingface.co/Qwen/Qwen-Image-Edit-2511) — 2511の名称・機能・例。
 - A02: [ComfyUI公式2511ワークフロー](https://docs.comfy.org/tutorials/image/qwen/qwen-image-edit-2511) — モデル構成・ファイル名。
-- A03: [NovelAI Precise Reference](https://docs.novelai.net/en/image/precisereference/) — 参照機能・制約・シート。
+- A03: [NovelAI Precise Reference](https://docs.novelai.net/en/image/precisereference/)（V4.5の参照シートと制約）、[V5の公式発表](https://journal.novelai.net/precise-reference-v5-jp/)（2026-11-25確認。衣装参照・V5の強度・組み合わせ・料金）。
 - A04: [NovelAI Seed](https://docs.novelai.net/en/image/seed/) — seedの用途・再現性の限界。
 - A05: [Diffusers LoRA](https://huggingface.co/docs/diffusers/training/lora) — LoRAの学習原理と例。Qwen学習の動作保証には使わない。
 - A06: [ComfyUI img2img](https://docs.comfy.org/tutorials/basic/image-to-image) — 基本img2imgの変更強度。

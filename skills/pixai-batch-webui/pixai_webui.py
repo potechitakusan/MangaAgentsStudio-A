@@ -8,7 +8,7 @@
 できること
   - .env.pixai のキャラクター・絵柄・背景・LoRAの変数（PIXAI_CHAR_・PIXAI_STYLE_・PIXAI_BACKGROUND_・PIXAI_LORA_）の
     表示・編集・追加、templatize
-  - 要求JSON（input/pixai/requests/）の編集。v2 はプロンプト・除外・縦横比・解像度・mode・画風プリセット・LoRA（最大5件）・
+  - 要求JSON（input/pixai/requests/）の編集。v2 はプロンプト・除外・縦横比・解像度・mode・画風プリセット・LoRA（会員でない場合3件・会員15件まで）・
     seed・枚数・promptHelper を画面の項目で、v1 は parameters をJSONで。差し替え案の複製、変数展開後の確認
   - 生成（送信なし確認／実行）、完了待ちが途切れた記録の取得し直し（fetch）、候補の比較と採用、最新候補の一括採用
   - ページ構成（input/pages/）・組版指定（input/typeset/）のJSON編集、build（PSDは指定時のみ）、ページ送りの確認
@@ -563,7 +563,7 @@ label.chk{display:flex;gap:.4rem;align-items:flex-start;margin:.3rem 0}
 <dialog id="gen">
   <form method="dialog" id="genform">
     <h3 id="gentitle">生成</h3>
-    <p class="muted">送信は作品の pixai_batch.py generate が行います。PixAIのクレジットの残高・消費はAPIで照会できないため、スクリプトは無料を判定しません。確認していない項目にチェックを付けないでください。</p>
+    <p class="muted">送信は作品の pixai_batch.py generate が行います。PixAIのクレジットの残高はAPIで照会できないため、スクリプトは無料を判定しません。確認していない項目にチェックを付けないでください。</p>
     <div class="row">１コマの枚数：<select name="batch_size"><option value="auto">自動（作り直しのコマは4枚、初回は要求のとおり）</option><option value="4">4枚から選ぶ（1枚の約1.75倍のクレジット）</option><option value="1">1枚</option></select></div>
     <div class="row">seed：<select name="seed"><option value="auto">auto（初回は要求のseed、以後は乱数）</option><option value="request">request（要求のseedで固定）</option><option value="random">random</option></select></div>
     <div class="row">１回の上限件数（--max、タスク数）：<input type="number" name="max" min="1" max="1000" value="30" style="width:7em"><span class="muted">既定30件。１タスク4枚の要求は4枚分のクレジットを使う。送信間隔（既定3秒）と失敗時に止まる扱いは同じ</span></div>
@@ -644,7 +644,7 @@ function v2Editor(raw) { const O = S.options, B = raw.body, kind = O.model_types
   const sampling = h('textarea', {rows: 1}); sampling.value = B.sampling ? JSON.stringify(B.sampling) : '';
   const size_ = h('span', {class: 'muted'}); const showSize = () => { const r = O.resolutions[aspect.value]; size_.textContent = r ? `→ ${r[O.sizes.indexOf(size.value)].join('×')}px` : ''; }; aspect.onchange = size.onchange = showSize; showSize();
   const loraBox = h('div'), loras = [];
-  function addLora(item = {}) { if (loras.length >= 5) return alert('LoRAは最大5件です（公式）。');
+  function addLora(item = {}) { if (loras.length >= 15) return alert('LoRAは最大15件です（会員の上限。会員でない場合は3件まで。公式）。');
     const id = h('input', {placeholder: 'バージョンID または ${PIXAI_LORA_…}', style: 'width:20em'}), w = h('input', {type: 'number', step: '0.05', min: 0, max: 1, style: 'width:6em'}), t = h('input', {placeholder: 'トリガー語（省略可）', style: 'width:18em'});
     id.value = item.modelId || ''; w.value = item.weight ?? 1; t.value = item.triggerWords || '';
     const row = {id, w, t}; row.el = h('div', {class: 'lora row'}, 'LoRA', id, '重み', w, t, h('button', {onclick: () => { loras.splice(loras.indexOf(row), 1); row.el.remove(); }}, '削除'));
@@ -664,7 +664,7 @@ function v2Editor(raw) { const O = S.options, B = raw.body, kind = O.model_types
     h('div', {class: 'row'}, 'モデル（modelVersionId）', model, h('span', {class: 'muted'}, (O.models[B.modelVersionId] || '既知でないモデル') + (kind ? '' : '・種類不明'))),
     h('div', {class: 'row'}, '縦横比', aspect, '解像度', size, size_, kind === 'sdxl' ? null : ['mode', mode]),
     kind === 'sdxl' ? h('div', {class: 'muted'}, 'mode・画風プリセットはTsubaki系だけで使えます。') : h('div', {class: 'row'}, '画風', styleKind, styleKey, styleCustom),
-    h('div', {class: 'muted'}, 'LoRA（最大5件。IDはモデルページのURLの最後の数字。重み0〜1）'), loraBox, h('button', {onclick: () => addLora()}, 'LoRAを追加'),
+    h('div', {class: 'muted'}, 'LoRA（会員でない場合3件・会員15件まで。IDはモデルページのURLの最後の数字。重み0〜1）'), loraBox, h('button', {onclick: () => addLora()}, 'LoRAを追加'),
     h('div', {class: 'row'}, 'seed', seed, '枚数', batch, 'promptHelper', helper),
     kind === 'dit' ? null : h('div', {}, h('div', {class: 'muted'}, 'sampling（SDXLのみ。例 {"method": "DPM++ 2M Karras", "steps": 25, "cfgScale": 6}。空で指定なし）'), sampling));
   return {el, collect}; }
@@ -805,7 +805,7 @@ function viewLog() { const before = $('#view pre.output'), kept = before ? befor
   $('#side').replaceChildren(h('p', {class: 'muted'}, '実行したコマンドと出力。ログは output/webui-pixai/logs/ にも保存されます。'),
     h('div', {class: 'card'}, h('h3', {}, 'APIの接続'), h('div', {class: 'row'}, h('button', {onclick: () => run('key-status')}, 'キーの読込確認（通信なし）')),
       h('div', {class: 'row'}, h('button', {onclick: () => confirm('接続確認のAPIを1回呼びます（画像生成・クレジット消費なし）。よろしいですか？') && run('status')}, '接続確認（status）')),
-      h('div', {class: 'muted'}, 'クレジットの残高・消費はAPIで照会できません。PixAIの画面で確認してください。'), h('div', {class: 'row'}, h('button', {onclick: () => run('list')}, '一覧（list）'))),
+      h('div', {class: 'muted'}, 'クレジットの残高はAPIで照会できません。PixAIの画面で確認してください。'), h('div', {class: 'row'}, h('button', {onclick: () => run('list')}, '一覧（list）'))),
     lastJob && lastJob.state === 'running' ? h('div', {class: 'card'}, h('h3', {}, '実行中の操作'), h('div', {class: 'muted'}, '止まらない場合だけ使います。完了待ちの途中で中止すると、作成済みのタスクはPixAI側で続き、記録は画像なしで残ります（右の「実行結果の整理」で取得し直します）。'),
       h('button', {onclick: async () => { if (confirm('実行中の操作を中止しますか？')) try { showJob(await api('/api/job/stop', {})); } catch (e) { alert(e.message); } }}, '中止')) : null);
   // 整理の欄は入力を保つため、ログの更新では作り直さない

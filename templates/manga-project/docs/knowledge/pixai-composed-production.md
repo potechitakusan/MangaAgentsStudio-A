@@ -15,8 +15,8 @@ PixAIで漫画制作を始めるときに読む。APIの仕様・費用確認・
 
 | 機能 | 使いどころ | 状態 |
 | --- | --- | --- |
-| **キャラクターLoRA**（v2 の `loras`、最大5件） | 作品の人物の顔・髪・服を全コマで揃える。PixAIのモデルマーケットで公開・作成したキャラクターLoRAのバージョンIDを `.env.pixai` の `PIXAI_LORA_…` に置き、要求から `${PIXAI_LORA_MIO}` で参照する。重みは0〜1（既定1）。トリガー語は省略時にモデルの既定が使われる。使う前に `python -X utf8 scripts/pixai_models.py lora --url <LoRAのページ>` で元モデル・利用条件を作品の `config/pixai-loras.json` に記録する（１回だけ。記録済みは取り直さない）。送信前の確認で、生成モデルと元モデルの種類が違えば注意を表示する | 公式文書で確認。効果は未検証 |
-| **画風LoRA** | 作品全体の線・塗りを揃える。キャラクターLoRAと合わせて最大5件 | 同上 |
+| **キャラクターLoRA**（v2 の `loras`。会員でない場合3件、会員15件まで。超えると `403 LORA_NUM_EXCEEDED`） | 作品の人物の顔・髪・服を全コマで揃える。PixAIのモデルマーケットで公開・作成したキャラクターLoRAのバージョンIDを `.env.pixai` の `PIXAI_LORA_…` に置き、要求から `${PIXAI_LORA_MIO}` で参照する。重みは0〜1（既定1）。トリガー語は省略時にモデルの既定が使われる。使う前に `python -X utf8 scripts/pixai_models.py lora --url <LoRAのページ>` で元モデル・利用条件を作品の `config/pixai-loras.json` に記録する（１回だけ。記録済みは取り直さない）。送信前の確認で、生成モデルと元モデルの種類が違えば注意を表示する | 公式文書で確認。効果は未検証 |
+| **画風LoRA** | 作品全体の線・塗りを揃える。キャラクターLoRAと合わせて上の件数まで | 同上 |
 | **画風プリセット**（`style`） | Tsubaki.2・Tsubaki.3 系で、線・塗りの方向を１語で切り替える（`hard-line-monochrome-accent`、`pencil-sketch`、`retro-tv-anime` 等） | 公式文書で確認。SDXLでは無視 |
 | **mode**（lite・standard・pro・ultra） | Tsubaki.2・Tsubaki.3 系の品質と速さの段階。Tsubaki.2 は4種とも受理（pro・ultra は塗りが柔らかい暖色になる）。Tsubaki.3 は pro・ultra だけ（standard・lite は拒否）。費用の差は未確認 | 公式文書・[実生成](pixai-api.md#unverified-results)で確認 |
 | **縦横比 11種・1.5k** | 横長・縦長のコマに合わせた素材。1:3・3:1 は縦長・横長の帯状のコマに使える | 公式文書で確認 |
@@ -229,7 +229,7 @@ python -X utf8 scripts/pixai_compose.py --id p01-04 --model haruka2 --char1-appe
 - **順序**：「人数タグ（人物から自動。１人なら `solo`、人物なしは `no humans`）→ `--layout`（複数人物の姿勢と位置関係）→ 人物（２人以上なら `girl`・`boy` を各人物の先頭に置く）→ `--scene` → `--background` → `--style` → 品質タグ」。入力の文は書き換えずに連結する。
 - **品質タグ**：既定は `masterpiece, best quality`（公式の例文の語。効果の比較は未検証）。入力に同じタグがあれば付けない。`--quality-tags`・`--no-quality-tags`・`PIXAI_QUALITY_TAGS` で変える。
 - **除外**：`PIXAI_NEGATIVE_PROMPT`（`--negative-base`。どちらもなければ `text, speech bubble, panel border, watermark`。空文字で付けない）→ `--negative`。v1 では公式文書にない項目になるため、既定の除外は付けず、`--negative-base`・`--negative` を指定したときだけ送る。
-- **LoRA**：`--lora ID[:重み[:トリガー語]]` を繰り返す（v2は最大5件、v1は最大3件）。IDは数字か `${PIXAI_LORA_…}`。v1 にはトリガー語の項目がないため、トリガー語はプロンプトへ足す。
+- **LoRA**：`--lora ID[:重み[:トリガー語]]` を繰り返す（v2は会員でない場合3件・会員15件まで、v1は最大3件）。IDは数字か `${PIXAI_LORA_…}`。v1 にはトリガー語の項目がないため、トリガー語はプロンプトへ足す。
 - **v1 になる引数**：`--upscale`・`--adetailer`（公式）、`--i2i`（＋`--strength`・`--mask`）・`--controlnet 種類:画像[:重み]`・`--reference 画像`（公式文書にない項目。[確認結果](pixai-api.md#unverified-results)）。生成済みのコマを直すときは `pixai_edit.py` を使う。v1 は `width`・`height`（512〜1280）で寸法を決めるため、`--size 1.5k` と 1:3・3:1 は使えない。v1 の除外（`negativePrompts`）・seed は公式文書にない項目になる（受理と seed の効果は確認済み）。
 - **.env.pixai で上書きできる設定**：読むのは `PIXAI_MODEL`・`PIXAI_QUALITY_TAGS`・`PIXAI_NEGATIVE_PROMPT`・`PIXAI_PROMPT_HELPER`・`PIXAI_CHECK_IDENTITY` の5つだけで、APIキーの行は読まない。優先順は 引数 ＞ 環境変数・`.env.pixai` ＞ 既定。
 - **絵柄・背景・人物の文**：`.env.pixai` の `PIXAI_STYLE_`・`PIXAI_BACKGROUND_`・`PIXAI_CHAR_` の値をそのまま引数へ渡す。このスクリプトは変数を読まず、`${変数名}` は（`--lora` を除き）エラーにする。
@@ -266,7 +266,7 @@ python -X utf8 scripts/pixai_compose.py --id p01-04 --model haruka2 --char1-appe
 
 ## 費用の確認
 
-PixAIの生成はクレジットを使う（会員プランの付与分・購入分）。**残高・消費量を照会するAPIは公式文書にない**ため、スクリプトは無料を判定しない。
+PixAIの生成はクレジットを使う（会員プランの付与分・購入分）。**残高を照会するAPIは公式文書にない**ため、スクリプトは無料を判定しない。
 
 1. 生成の範囲（タスク数・1タスクの枚数・モデル・mode・解像度・LoRA・Hires・ADetailer・参照画像）を利用者に示す。
 2. 利用者が**その範囲のクレジット消費を明示的に許可した場合だけ** `--confirm-credits` を付け、`--cost-note` に確認した残高・許可範囲・日時を書く。キーの設定、接続確認や生成の依頼だけでは有料利用の許可とみなさない。

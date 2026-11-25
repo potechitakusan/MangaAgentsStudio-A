@@ -11,9 +11,12 @@
 ## 作画手段
 
 - Claudeには内蔵の画像生成がない。imagegen に関する規則（番号付きレイアウト画像を渡すページ一括生成、imagegenによる局所修正・完成前編集、`OPTION.md` の「imagegenの生成単位」）は適用しない。imagegenを使ったと記録しない。
-- 作画の既定は、NovelAIによるコマ別の素材生成と組版（`docs/knowledge/novelai-composed-production.md`、`scripts/novelai_batch.py`）。要求JSON・人物試作・プロンプトの点検・作画後の照合表・`build` による組み直しは、同文書と `AGENTS.md` のとおり。
-- ユーザーが別の外部生成環境（ComfyUI等）や、ユーザー自身が用意した素材の利用を指定した場合は、その環境の手順に従う。存在しない道具・APIを、あるものとして扱わない。
-- 作画手段がない、またはNovelAIのキーや画風が未設定の場合は、作画に進まずに止まり、必要な設定と選択肢をユーザーに伝えて相談する。企画・字コンテ・ネームなど、作画に依存しない作業は進めてよい。生成機能のない代替（コードで描いた絵など）で完成原稿を作らない。
+- 作画は、作品で採用した生成環境の手順に従う。ユーザーの指定か、作品の記録（`docs/PLAN.md`・`docs/PROGRESS.md` 等）にある採用済みの環境を使う。
+  - NovelAI：コマ別の素材生成と組版（`docs/knowledge/novelai-composed-production.md`、`scripts/novelai_batch.py`）。
+  - PixAI：コマ別の素材生成と組版（`docs/knowledge/pixai-composed-production.md`、`scripts/pixai_compose.py`・`scripts/pixai_batch.py`）。NovelAIの手順・スクリプトと混ぜない。
+  - 外部生成環境（ComfyUI等）やユーザー自身が用意した素材：その環境の手順に従う。存在しない道具・APIを、あるものとして扱わない。
+- 指定も記録もない場合の既定はNovelAI。要求JSON・人物試作・プロンプトの点検・作画後の照合表・`build` による組み直しは、採用した環境の制作手順と `AGENTS.md` のとおり。
+- 作画手段がない、または採用した環境のキーや画風が未設定の場合は、作画に進まずに止まり、必要な設定と選択肢をユーザーに伝えて相談する。企画・字コンテ・ネームなど、作画に依存しない作業は進めてよい。生成機能のない代替（コードで描いた絵など）で完成原稿を作らない。
 - 局所修正に使える画像編集機能がない場合は、再生成・配置の変更・計画の見直しで直す。直せない問題は、PNGの提示時に未解決として伝える。
 
 ## 画像の確認
@@ -23,5 +26,5 @@
 
 ## 実行環境
 
-- NovelAIへの通信（`scripts/novelai_api.py`・`scripts/novelai_batch.py`）は、Claude Codeの権限設定によって確認や拒否の対象になり得る。拒否された場合は、設定を勝手に変えず、許可が必要なことをユーザーに伝える。通信の失敗だけを理由にAPIキーの修正を勧めない。
+- 生成環境への通信（NovelAIは `scripts/novelai_api.py`・`scripts/novelai_batch.py`、PixAIは `scripts/pixai_api.py`・`scripts/pixai_batch.py` 等）は、Claude Codeの権限設定によって確認や拒否の対象になり得る。拒否された場合は、設定を勝手に変えず、許可が必要なことをユーザーに伝える。通信の失敗だけを理由にAPIキーの修正を勧めない。
 - ブラウザーの起動・操作を禁止する `AGENTS.md` の規則は、Claudeにも同じく適用する。

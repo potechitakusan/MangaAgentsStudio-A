@@ -5,7 +5,8 @@
 保存した要求JSONは手で編集してよい。引数で組み立てずに、JSONを直接書いて generate しても同じ。
 
 NovelAI APIで生成する要求の標準の組み立て手段。モデルはV5（既定は nai-diffusion-5-curated）、V4.5はユーザーが指定した場合だけ使う。
-i2i・参照などの追加機能が必要な場合は、このスクリプトを元に改造して使う（要求JSONの形式を保ち、送信は
+V5の精密参照は --reference 種類 画像の相対パス 強度 で指定する。複数回指定できる。
+i2iなどの追加機能が必要な場合は、このスクリプトを元に改造して使う（要求JSONの形式を保ち、送信は
 novelai_batch.py generate / novelai_api.py generate を通す。追加機能の仕様・費用は docs/knowledge/novelai-api.md で先に確認する）。
 
 プロンプトの順序（公式: 人数 → 人物 → その他、品質タグは末尾）
@@ -319,6 +320,14 @@ def compose(opts: argparse.Namespace, raw_chars: list[dict], quality: str, uc_pr
                   sampler=opts.sampler, noise_schedule=opts.noise_schedule,
                   seed=opts.seed if opts.seed is not None else secrets.randbelow(4294967296),
                   negative_prompt=negative, v4_prompt=v4_prompt, v4_negative_prompt=v4_negative)
+    if getattr(opts, "reference", None):
+        params["precise_references"] = []
+        for kind, path, strength in opts.reference:
+            try:
+                value = float(strength)
+            except ValueError:
+                raise ComposeError("--reference の強度は0〜5の数値で指定してください。") from None
+            params["precise_references"].append({"type": kind, "path": path, "strength": value})
     request = {"action": "generate", "input": base, "model": opts.model, "parameters": params}
     info = {"quality_added": added, "quality_skipped": skipped, "notes": notes + (order_notes(characters, profile["grid"]) if pinned else []),
             "characters": caption_texts, "pinned": pinned, "profile": profile}
@@ -330,6 +339,8 @@ def parse_args(argv: list[str]):
     parser.add_argument("--id", required=True, help="要求ID。p01-03 の形式（input/novelai/requests/<ID>.json）")
     parser.add_argument("--model", default=DEFAULT_MODEL, choices=sorted(MODELS))
     parser.add_argument("--style", default="", help="絵柄（画風）。NOVELAI_STYLE_… の値")
+    parser.add_argument("--reference", action="append", nargs=3, metavar=("種類", "画像", "強度"),
+                        help="V5精密参照。種類は style・character・outfit 等。画像は作品内の相対パス。複数指定可")
     parser.add_argument("--background", default="", help="背景・場所・時間・光。NOVELAI_BACKGROUND_… の値")
     parser.add_argument("--scene", default="", help="構図・画角・全体の状況（upper body, eye level など）")
     parser.add_argument("--count-tags", help="人数タグを手で指定する（既定は人物から自動。人物なしは no humans）")
@@ -405,6 +416,10 @@ def main(argv=None) -> int:
         print(f"寸法の出所: {size_source}")
         print(f"設定: {p['width']}×{p['height']}px / {p['steps']} steps / scale {p['scale']} / seed {p['seed']}"
               f" / 配置ピン {'あり' if info['pinned'] else 'なし（AI’s Choice）'}")
+        for reference in p.get("precise_references", ()):
+            print(f"精密参照: {reference['type']} / 強度 {reference['strength']:g} / {reference['path']}")
+        if opts.reference and (opts.dry_run or (opts.no_check and not opts.execute)):
+            api.prepare_request_data(root, request)
         if p["width"] * p["height"] > 1048576:
             info["notes"].append("1,048,576画素を超える。Opusの無消費候補の範囲外")
         for note in info["notes"]:

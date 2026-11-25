@@ -69,7 +69,7 @@ python -X utf8 .agents/skills/novelai-batch-webui/novelai_webui.py --port 8800 -
 
 ## 守ること
 
-- **生成の費用確認は省略しない。** 「生成する」には、0 Anlasを確認したチェックと確認内容（`--cost-note`）が必須。V5の利用上限のチェックはV5のとき付ける。WebUIは有料生成（`--allow-anlas`）を提供しない。有料利用は利用者の明示指示のもとで端末から行う。チェックは確認済みの宣言で、WebUIやスクリプトが無料を保証するものではない。
+- **生成の費用確認は省略しない。** 「生成する」には、0 Anlasを確認したチェックと確認内容（`--cost-note`）が必須。V5の利用上限のチェックはV5のとき付ける。WebUIは有料生成（`--allow-anlas`）を提供しない。V5の精密参照（`precise_references`）を含む要求は、編集と送信なし確認はできるが、生成は止まる。有料利用は利用者の明示指示のもとで端末から行う。チェックは確認済みの宣言で、WebUIやスクリプトが無料を保証するものではない。
 - 生成画面のチェック（0 Anlas・V5の利用上限・警告の確認）と上限件数は、**起動ごとのトークン（URL）単位でブラウザーに記憶する**。サーバーを起動し直して新しいURLで開くと、古いトークンの記憶は消える。記憶したチェックも確認済みの宣言なので、条件（モデル・寸法・steps・追加機能）を変えた場合や利用上限が少ない場合は外して確認し直す。
 - 1回の上限件数は既定30件（`novelai_batch.py` の既定）。全ページなど30件を超える対象は、生成画面の「１回の上限件数」（`--max`、1～1000）を増やす。送信間隔（既定3秒）・失敗時に止まって自動再送しない扱い・結果不明の記録の扱いは `novelai_batch.py` のまま。同時に１つの操作だけ実行する。
 - APIキーは読まない・表示しない（変数は `novelai_batch.read_variables` が許可した接頭辞だけを扱う）。画像は `output/`・`input/`・`templates/onomatopoeia/` の画像だけを返す。
@@ -80,6 +80,6 @@ python -X utf8 .agents/skills/novelai-batch-webui/novelai_webui.py --port 8800 -
 
 ## 前提と限界
 
-- Python 3.10以上の標準ライブラリだけで動く。build は作品の既存要件（Pillow）を使う。
+- Python 3.10以上の標準ライブラリだけで動く。build と、精密参照を含む要求の確認は作品の既存要件（Pillow）を使う。
 - 対応するのは配布版0.5系の `novelai_batch.py`（`read_variables`・`request_files`・`candidates`・`load_adopted`・`resolved_request`・`lint_prompt` 等の関数と、list・vars・env-set・templatize・generate・adopt・adopt-latest・build の各コマンド）。関数名が変わった版では起動時にエラーになる。
 - 要求JSONの人物を追加・削除する編集、`v4_prompt` がない要求の人物別入力、steps・モデルの変更は画面に出していない（JSONを直接編集するか `novelai_compose.py` で組み立て直す）。

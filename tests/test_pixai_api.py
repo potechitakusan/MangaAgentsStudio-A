@@ -94,7 +94,7 @@ class PixaiApiTests(unittest.TestCase):
         self.assertIsInstance(body["seed"], int)
         self.assertEqual(unverified, [])
         bad = [{"modelId": "1"}, {"callbackUrl": "https://example.com"}, {"aspectRatio": "2:5"}, {"batchSize": 2},
-               {"loras": [{"modelId": "123456", "weight": 1.5}]}, {"loras": [{"modelId": "123456"}] * 6},
+               {"loras": [{"modelId": "123456", "weight": 1.5}]}, {"loras": [{"modelId": "123456"}] * 16},
                {"style": {"type": "preset", "key": "unknown"}}, {"sampling": {"steps": 0}}]
         for extra in bad:
             with self.subTest(extra=extra), self.assertRaises(api.ClientError):
@@ -103,6 +103,10 @@ class PixaiApiTests(unittest.TestCase):
             api.prepare_request_data(self.root, v2(modelVersionId=api.MODELS["haruka2"]["id"], mode="pro"))
         _, notes, _ = api.prepare_request_data(self.root, v2(modelVersionId=api.MODELS["haruka2"]["id"], style={"type": "preset", "key": "chibi"}))
         self.assertTrue(any("無視" in n for n in notes))
+        _, notes, _ = api.prepare_request_data(self.root, v2(loras=[{"modelId": "123456"}] * 3))
+        self.assertFalse(any("LORA_NUM_EXCEEDED" in n for n in notes))
+        _, notes, _ = api.prepare_request_data(self.root, v2(loras=[{"modelId": "123456"}] * 15))  # 会員の上限は通り、注意を出す
+        self.assertTrue(any("LORA_NUM_EXCEEDED" in n for n in notes))
 
     def test_tsubaki3_modes_and_unknown_dit_note(self):
         tsubaki3 = api.MODELS["tsubaki3"]["id"]

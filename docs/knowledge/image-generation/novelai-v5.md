@@ -1,10 +1,10 @@
 # NovelAI V5のコマ素材生成で観察した知見
 
-## 対象のモデルと入力
+要求の書き方・一括生成・照合は [NovelAIでの制作手順](../novelai-composed-production.md)、接続・費用は [NovelAI API](../novelai-api.md) を参照する。
 
-対象は `nai-diffusion-5-full`、23 steps、`k_euler_ancestral`、scale 5、1回1枚の通常t2i。参照画像・初期画像は使っていない。画風は `year 2025` と品質語 `masterpiece, best quality, highly detailed, anime style, very aesthetic` を固定したカラー日常漫画。根拠は [E4](production-evidence.md#e4)・[E5](production-evidence.md#e5)。整理日：2026-09-30。
+## V5 Fullの通常t2i（N1〜N5）
 
-要求の書き方・一括生成・照合の手順は [NovelAIでの制作手順](../novelai-composed-production.md)、接続・費用は [NovelAI API](../novelai-api.md) を正本にする。以下はV5 Fullのこの条件での症状・操作・限界であり、V4.5以前・Curated・画像入力へ確認済みの事実として移さない。
+対象は `nai-diffusion-5-full`、23 steps、`k_euler_ancestral`、scale 5、1回1枚の通常t2i。参照画像・初期画像は使っていない。画風は `year 2025` と品質語 `masterpiece, best quality, highly detailed, anime style, very aesthetic` を固定したカラー日常漫画。N1〜N5の観察はこの条件に限る。整理日 2026-09-30。[制作根拠E4](production-evidence.md#e4)・[制作根拠E5](production-evidence.md#e5)
 
 <a id="n1"></a>
 
@@ -42,6 +42,16 @@
 
 E4・E5は品質語と `year 2025` を固定しており、各語の効果や優劣は分からない。E4の前に同じ作品で行った探索（資料NAI-R03、各条件1枚）で `high complexity` の有無だけを変えた例では、髪・服の陰影が増えた一方、顔の傾き・手の位置・ボタンの数まで変わった。一般則ではなく、一貫性が必要なコマで試す前に比較する候補とする。公式に説明された専用タグと、自然言語として加えた語（`highly detailed`、`anime style` 等）も区別する。
 
+## V5 Curatedの衣装参照（N6）
+
+<a id="n6"></a>
+
+### N6　別々に参照を添付しても衣装の特徴が混ざる
+
+V5 Curatedで二人の着用コマを作った例では、衣装参照を1着ずつに分けて色と胸飾りを描き分けられた段階でも、片方だけにある襟の線やバックルが両方に出た。衣装強度と本文・除外文を調整した候補では、襟と腰の違いが出た一方、裾の形に似通った部分が残った。
+
+別のコマでは、参照と強度、Seed、その他の生成条件を保ったまま、場面共通の本文でリボンの色と胸飾りの形・素材を具体化し、花形に出た飾りが指定の形になった。人物が着ている服と吊るした衣装の置き場所・特徴を本文で書き分けて、吊るした衣装の襟が指定に近づいた例もある。いずれも各条件1枚の観察で、個々の語や参照分割だけの効果は未検証。整理日 2026-11-25。[制作根拠E6](production-evidence.md#e6)・[V5の衣装参照の制作手順](../novelai-composed-production.md#costume-references)
+
 ## 次の検証
 
-重要な少数例でのSeedの追加、別の人物・場面・画角への移植、2か所を同時に削る条件、品質語だけを変える比較、人間の独立した評価、前後のコマを読んだときの理解の評価は未実施。画像入力を使う方式の確認はNAI-VERIFY-01に残す。
+N1〜N5では、重要な少数例でのSeedの追加、別の人物・場面・画角への移植、2か所を同時に削る条件、品質語だけを変える比較、人間の独立した評価、前後のコマを読んだときの理解の評価が残る。N6では、別の衣装やSeedでの再現、参照の分割・強度・記述を個別に変えた比較が残る。初期画像i2iやV5 Fullでの精密参照を含む実APIの確認はNAI-VERIFY-01で扱う。

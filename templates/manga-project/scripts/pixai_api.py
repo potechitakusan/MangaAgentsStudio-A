@@ -9,13 +9,13 @@ PNG以外の応答（WebP・JPEG）をPNGへ変換するときだけ Pillow を�
   python -X utf8 scripts/pixai_api.py upload --file <画像> --execute # 参照・i2i用の画像をアップロードして mediaId を得る
 
 公式仕様（docs/knowledge/pixai-api.md に出典・確認日）
-  POST /v2/image/create   現行の生成API。modelVersionId・prompt・aspectRatio・size・mode・style・loras（最大5）等
+  POST /v2/image/create   現行の生成API。modelVersionId・prompt・aspectRatio・size・mode・style・loras（会員でない場合3件、会員15件まで）等
   POST /v1/task           旧形式。parameters の中に prompts・modelId・width・height・lora・upscale・enableADetailer 等
   GET  /v1/task/{taskId}  状態（waiting・running・completed・failed・cancelled）と outputs.mediaIds・mediaUrls
   GET  /v1/media/{id}     メディアの情報（urls の PUBLIC 等）
   POST /v1/media/upload   画像の本体をそのまま送り、mediaId を得る
 ポーリングは1.5秒に1回以下（公式）。このスクリプトは3秒から始めて間隔を広げる。生成画像は無期限には保存されないため、完了後すぐ保存する。
-クレジットの残高・消費を照会するAPIは公式文書にない。送信には利用者の明示の許可（--confirm-credits）と確認内容（--cost-note）が必要。
+クレジットの残高を照会するAPIは公式文書にない（タスクごとの消費は v2 の GET /v2/task/{id} の paidQuota に出るが、このスクリプトは未対応）。送信には利用者の明示の許可（--confirm-credits）と確認内容（--cost-note）が必要。
 """
 
 from __future__ import annotations
@@ -100,6 +100,8 @@ def lora_notes(root: Path, model_id: str, lora_ids: list[str]) -> list[str]:
         if record.get("commercialUse") is False:
             notes.append(f"LoRA {label} は商用利用が許可されていない（公開・販売の条件を利用者が確認する）")
     return notes
+# v2 の loras の件数。出典: platform.pixai.art/openapi.json（2.0.0）・llms-full.txt（2026-11-22確認）。
+LORA_MAX_FREE, LORA_MAX_MEMBER = 3, 15
 SAMPLERS = ("Euler a", "Euler", "LMS", "Heun", "DPM2 Karras", "DPM2 a Karras", "DDIM", "DPM++ 2M Karras",
             "DPM++ 2S a Karras", "DPM++ SDE Karras", "DPM++ 2M SDE Karras", "Restart")
 # 出典: platform.pixai.art/en/docs/references/supported-resolutions（2026-10-25確認）。
@@ -524,8 +526,11 @@ def prepare_v2(root: Path, request: dict) -> list[str]:
     if body.get("negativePrompt") and not supports(body["modelVersionId"], kind, "negativePrompt"):
         notes.append("このモデルのページでは除外（negativePrompt）に非対応と表示されている。効かない可能性がある")
     loras = body.get("loras", [])
-    if not isinstance(loras, list) or len(loras) > 5:
-        raise ClientError("loras は最大5件の配列にしてください。")
+    if not isinstance(loras, list) or len(loras) > LORA_MAX_MEMBER:
+        raise ClientError(f"loras は最大{LORA_MAX_MEMBER}件の配列にしてください（会員の上限。会員でない場合は{LORA_MAX_FREE}件まで）。")
+    if len(loras) > LORA_MAX_FREE:
+        notes.append(f"LoRAが{len(loras)}件。会員でない場合は{LORA_MAX_FREE}件までで、超えると 403 LORA_NUM_EXCEEDED（公式）。"
+                     "会員かどうかはスクリプトで判定できないため、利用者の契約を確かめる")
     for index, item in enumerate(loras, 1):
         if not isinstance(item, dict) or set(item) - {"modelId", "weight", "triggerWords"}:
             raise ClientError(f"loras の{index}件目は modelId・weight・triggerWords だけにしてください。")
@@ -794,7 +799,7 @@ def check_cost(args, request: dict, unverified: list[str]) -> None:
         raise ClientError("実行には--cost-noteで今回の設定に対する費用確認の根拠（クレジット・会員プラン・許可の範囲）を指定してください。")
     if not args.confirm_credits:
         raise ClientError("費用未確認です。PixAIのクレジット消費をユーザーが明示許可した場合だけ --confirm-credits を付けてください。"
-                          "残高・消費を照会するAPIは公式文書にないため、スクリプトは無料を判定できません。")
+                          "残高を照会するAPIは公式文書にないため、スクリプトは無料を判定できません。")
     if unverified and not args.allow_unverified:
         raise ClientError("現行の公式文書にない項目があります: " + ", ".join(unverified)
                           + "。公式クライアントの型にある項目で、効果・費用は未確認です。試す場合だけ --allow-unverified を付けてください。")
@@ -1020,7 +1025,7 @@ def run(args, root: Path) -> None:
         print("キー読込済み（値は非表示）: " + source)
         if args.command == "status":
             print(auth_check(key))
-            print("クレジットの残高・消費を照会するAPIは公式文書にありません。PixAIの画面で確認してください。")
+            print("クレジットの残高を照会するAPIは公式文書にありません。PixAIの画面で確認してください。")
         return
     if args.command == "fetch":
         for path in fetch(root, args.record):

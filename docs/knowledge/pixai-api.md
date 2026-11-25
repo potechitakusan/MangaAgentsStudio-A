@@ -38,20 +38,30 @@ python -X utf8 scripts/pixai_api.py status
 
 `key-status` は通信しない。`status` は存在しないタスクID（`GET /v1/task/0`）を１回照会し、404なら「認証は通った」、401なら「キーが無効」と判定する（2026-10-25に実キーで確認：有効なキーは `404 not found`、無効なキーは `401 Invalid token`）。画像生成・クレジット消費はしない。
 
-**クレジットの残高・消費を照会するAPIは公式文書にない。** 契約・残高はPixAIの画面で確認する。スクリプトは無料を判定できないため、送信には利用者の明示の許可が必要（下記）。
+**クレジットの残高を照会するAPIは公式文書にない。** 契約・残高はPixAIの画面で確認する。タスクごとの消費は v2 の `GET /v2/task/{id}` の `paidQuota` に出る（2026-11-22の公式文書。キットのスクリプトは未対応）が、送信前に残高や無料かどうかは分からない。スクリプトは無料を判定できないため、送信には利用者の明示の許可が必要（下記）。
 
 ## 公式仕様（確認した事実）
 
-出典：[PixAI API Documentation](https://platform.pixai.art/en/docs)（[llms-full.txt](https://platform.pixai.art/llms-full.txt) と各ページのTypeScript定義）。取得日：2026-10-25。
+出典：[PixAI API Documentation](https://platform.pixai.art/en/docs)（[llms-full.txt](https://platform.pixai.art/llms-full.txt) と各ページのTypeScript定義）、[OpenAPI仕様](https://platform.pixai.art/openapi.json)（`info.version` 2.0.0。v2 の18経路だけを収録）。取得日：2026-10-25、v2 の項目・制限・保存・費用は2026-11-22に再取得して照合した。v1 の項目・推奨モデル・権利の行は2026-10-25の確認のまま（2026-11-22の文書にも v1 の各経路が非推奨の表示なしで載っていることは確認）。
+
+キットのスクリプトが送る経路は `POST /v2/image/create` と、v1 の `POST /v1/task`・`GET /v1/task/{id}`・`GET /v1/media/{id}`・`POST /v1/media/upload` だけ。表の「キット未対応」の項目は公式文書で確認しただけで、送信は試していない。
 
 | 項目 | 内容 |
 | --- | --- |
-| 接続先・認証 | `https://api.pixai.art`、全要求に `Authorization: Bearer <key>` |
-| v2 生成 | `POST /v2/image/create`。必須は `modelVersionId`・`prompt`。任意：`negativePrompt`、`aspectRatio`（`1:1`・`2:3`・`3:2`・`3:4`・`4:3`・`3:5`・`5:3`・`9:16`・`16:9`・`1:3`・`3:1`、既定 `1:1`）、`size`（`1k`・`1.5k`、既定 `1k`）、`mode`（`lite`・`standard`・`pro`・`ultra`。Tsubaki.2・Tsubaki.3 だけ。他のモデルでは `400 INVALID_ARGUMENT`）、`style`（`{"type": "preset", "key": …}` 35種 か `{"type": "custom", "custom": …}`。Tsubaki.2・Tsubaki.3 系だけ、他では無視）、`loras`（最大5件。`modelId`＝LoRAのバージョンID、`weight` 0〜1・既定1、`triggerWords` 省略時はモデルの既定）、`seed`、`batchSize`（1か4、既定1）、`sampling`（`method`・`steps` 1〜100・`cfgScale`。SDXL・SD v1 だけ）、`promptHelper`（`enable`・`disable`、**既定は enable**＝送信前にプロンプトを書き換える）、`callbackUrl`。`modelId` は非推奨 |
+| 接続先・認証 | `https://api.pixai.art`（v2 の基準URLは `https://api.pixai.art/v2`）、全要求に `Authorization: Bearer <key>`。モデル照会・インペイントの制限・色のパレットの一覧はキーなしでも使える |
+| v2 生成 | `POST /v2/image/create`。必須は `modelVersionId`・`prompt`。任意：`negativePrompt`、`aspectRatio`（`1:1`・`2:3`・`3:2`・`3:4`・`4:3`・`3:5`・`5:3`・`9:16`・`16:9`・`1:3`・`3:1`、既定 `1:1`）、`size`（`1k`・`1.5k`、既定 `1k`）、`mode`（`lite`・`standard`・`pro`・`ultra`。Tsubaki.2・Tsubaki.3 だけ。他のモデルでは `400 INVALID_ARGUMENT`）、`style`（`{"type": "preset", "key": …}` 35種 か `{"type": "custom", "custom": …}`。Tsubaki.2・Tsubaki.3 系だけ、他では無視）、`loras`（**会員でない場合3件、会員15件まで**。超えると `403 LORA_NUM_EXCEEDED`。`modelId`＝LoRAのバージョンID、`weight` 0〜1・既定1、`triggerWords` 省略時はモデルの既定）、`seed`、`batchSize`（1か4、既定1）、`sampling`（`method`・`steps` 1〜100・`cfgScale`。SDXL・SD v1 だけ）、`promptHelper`（`enable`・`disable`、**既定は enable**＝送信前にプロンプトを書き換える）、`callbackUrl`。`modelId` は非推奨。`prompt` は Tsubaki.2・Tsubaki.3 で10,000字、ほかのモデルで4,096字まで（`negativePrompt` は4,096字まで） |
+| v2 参照画像（キット未対応） | `POST /v2/image/create` の `contextImages`：media ID を0～3件（完了したタスクの `outputs.mediaIds` か、v2 の画像登録で得たID）。**Tsubaki.3（`2024383379556065549`）だけ**。ほかのモデルは `400 BAD_REQUEST`。各辺4000px未満。プロンプトでは `contextImages` の順に `image1`・`image2`・`image3` と呼ぶ。参照と同じ縦横比で頼む（縦長の参照で `3:2` を頼むと、幅の半分以上が空白の帯になった例を公式が示している）。公式の例に「Consistent Characters」がある |
+| v2 色のパレット（キット未対応） | `POST /v2/image/create` の `colorPalette`。`GET /v2/color-palettes/presets` のプリセットを丸ごと送り、`"source": "preset"` を足す。**Tsubaki.3 だけ**、ほかのモデルは `400 BAD_REQUEST` |
+| v2 タスク照会（キット未対応） | `GET /v2/task/{id}`。`status` は `waiting`・`running`・`completed`・`cancelled`・`failed`。画像は `outputs.mediaIds`・`outputs.mediaUrls`（取得できない画像は `null`）。`paidQuota` にそのタスクで消費したクレジットが出る。作成直後は一瞬 `404` を返すことがあり、公式は照会を続けるよう案内している |
+| v2 画像登録（キット未対応） | `POST /v2/media/image/upload-url` → 返った `uploadUrl` へ画像の本体を `PUT`（multipartは不可）→ `POST /v2/media/image/register`（`externalId`）の応答の `id` が media ID。登録直後は `width`・`height` が0のことがある |
+| v2 インペイント（キット未対応） | `POST /v2/gen-task/inpaint`（`modelPreset` は必須、例は `"v1"`）。寸法の制限は `GET /v2/gen-task/inpaint/constraints`（512〜2048px、32px刻み、4,194,304画素まで）。キットの `pixai_edit.py` は、公式文書にない v1 の項目（下記）を使っている |
+| モデル・LoRAの照会（キット未対応） | `GET /v2/generation-model/search`・`/v2/generation-model/{id}`・`/v2/generation-model/{modelId}/versions`・`/v2/generation-model-version/{id}`・`/v2/generation-model/{modelVersionId}/size-config`。キーなしでも使える（キーなしの検索は表示の制限が強い）。キットの `pixai_models.py` は、公式APIではないモデルページの埋め込みデータを読んでいる |
+| 費用 | タスクの作成時に課金し、失敗したタスクは返金する。残高不足は `403 INSUFFICIENT_BALANCE`。残高を照会するAPIはない |
+| LoRAの学習 | 公式APIに学習・データセットの経路はない（OpenAPI仕様の18経路に含まれない） |
 | v1 生成 | `POST /v1/task`。`{"parameters": {…}, "callbackUrl"}`。`parameters` の公式項目：`prompts`（4096字以内。丸括弧の強調に対応、角括弧・波括弧は非対応）、`modelId`、`width`・`height`（512〜1280）、`lora`（`{バージョンID: 重み}`、maxProperties 3。説明文には「最大10」ともある）、`batchSize`（1〜4）、`inferenceProfile`、`modelStyle`（`key`・`custom`・`styleKeyRef`）、`enableTile`（元画像があり upscale > 1 のとき）、`upscale`（Hires Fix。長辺2048px以内に抑える）、`upscaleSampler`、`enableADetailer`（顔の修正）、`promptHelper`（`{"enable": bool}`）。このページはドキュメントの目次から外れている（URLは有効） |
 | タスク | `GET /v1/task/{taskId}`。`status` は `waiting`・`running`・`completed`・`failed`・`cancelled`。完了時 `outputs.mediaIds`・`outputs.mediaUrls`（取得できない画像は `null`）。`mediaSafetyLevel`・`textSafetyLevel`（`nsfw`・`safe`。ない場合も安全を意味しない） |
 | メディア | `GET /v1/media/{mediaId}`（`urls` の `PUBLIC`・`THUMBNAIL` 等）、`GET /v1/media/{mediaId}/image`（302で画像へ）、`POST /v1/media/upload`（画像・動画の本体をそのまま送る。`Content-Type` と正確な `Content-Length` が必要。multipartは不可。応答の `id` が mediaId） |
-| 制限 | `waiting` のタスクは同時に10件まで（`running` は数えない）。要求の頻度の制限はないが、ポーリングは1.5秒に1回以下、再試行は指数バックオフ。動画生成、PixAI Reference Pro・PixAI Edit・PixAI Edit Lite は未対応（開発中） |
+| 制限 | `waiting` のタスクは同時に10件まで（`running` は数えない）。要求の頻度の制限はないが、ポーリングは1.5秒に1回以下、再試行は指数バックオフ。PixAI Reference Pro・PixAI Edit・PixAI Edit Lite はAPIでは未対応（開発中）。動画生成は2026-11-22の文書で `POST /v2/frame-video/create`（画像から動画。会員だけ）・`POST /v2/reference-video/create` が追加された（キット未対応） |
 | 保存 | 生成画像は無期限には保存されない。完了後すぐ取得する。API生成は非公開で、公開の生成履歴に出ない |
 | 解像度（v2） | 下表。すべて16の倍数。`1.5k` は長辺1536px |
 | モデル | 推奨：Tsubaki.2（DiT、`1983308862240288769`。プロンプト理解・人体・複数人物の描写が強い）、Haruka v2（SDXL、`1861558740588989558`。安定・手が正確）、Hoshino v2（SDXL、`1954632828118619567`。日本で人気の作風）。サンプラーは3モデルとも Euler a・Euler・LMS・Heun・DPM2 Karras・DPM2 a Karras・DDIM・DPM++ 2M Karras・DPM++ 2S a Karras・DPM++ SDE Karras・DPM++ 2M SDE Karras・Restart。他のモデル・LoRAは `https://pixai.art/model/<モデルID>/<バージョンID>` の最後の数字を使う。Tsubaki.3 は一覧にないが、v2 生成の説明は `mode`・`style` の対象に挙げる。キットは公式モデル15種を収録している（下の「モデルの一覧と追加」） |
@@ -73,7 +83,7 @@ python -X utf8 scripts/pixai_api.py status
 
 ### 公式文書にない項目
 
-[公式JavaScriptクライアント](https://github.com/pixai-art/pixai-client-js)（`src/parameters.types.ts`、2026-10-25取得）の v1 の型には、現行の公式文書にない次の項目がある。予告なく使えなくなる可能性があるため、`pixai_api.py` はこれらを送る要求に `--allow-unverified` を求め、実行記録の `unverifiedParameters` に残す。受理と効果は下の「[公式文書にない項目の確認結果](#unverified-results)」。
+[公式JavaScriptクライアント](https://github.com/pixai-art/pixai-client-js)（`src/parameters.types.ts`、2026-10-25取得）の v1 の型には、現行の公式文書にない次の項目がある。インペイントと参照画像には、2026-11-22の公式文書で上の表の v2 の公式経路ができた（キット未対応）。予告なく使えなくなる可能性があるため、`pixai_api.py` はこれらを送る要求に `--allow-unverified` を求め、実行記録の `unverifiedParameters` に残す。受理と効果は下の「[公式文書にない項目の確認結果](#unverified-results)」。
 
 - `negativePrompts`、`seed`、`samplingSteps`、`samplingMethod`、`cfgScale`、`clipSkip`、`vaeModelId`
 - i2i：`mediaId` または `mediaUrl`（元画像）、`strength`（変化量）、`maskMediaId`・`maskMediaUrl`（インペイント）

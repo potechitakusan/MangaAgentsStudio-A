@@ -1,6 +1,6 @@
 # NovelAI APIの接続手順
 
-対象は作品に同梱する `scripts/novelai_api.py`。Python 3.10以上の標準ライブラリだけで動く。ブラウザーの起動・操作は行わない。作品の `project.json` が必要で、キットの雛形では実行しない。
+対象は作品に同梱する `scripts/novelai_api.py`。Python 3.10以上。V5の精密参照をローカル画像から組み立てる場合は、漫画の組版と同じPillowの環境を使う。ブラウザーの起動・操作は行わない。作品の `project.json` が必要で、キットの雛形では実行しない。
 
 作品側で「NovelAIを使いたい」「NovelAIの接続を確認して」と依頼されたら、Codexはこの手順で案内する。利用者に細かな確認用プロンプトを書くことを要求しない。キーの設定が必要なときに次の記入例を示し、設定済みなら再入力を求めない。
 
@@ -136,6 +136,36 @@ NovelAIで画面内の人物・物の位置を指定する場合だけ使う。U
 
 出典・取得日：2026-10-04、[NovelAI公式画像APIスキーマ](https://image.novelai.net/docs/doc.json) の `image.V4ConditionInput`・`image.V4ExternalCharacterCaption`・`image.Coordinates`。確認したのは書式とローカル実装の読み取りで、API送信・生成効果・座標解釈・費用は未検証。生成前には従来どおり全設定の費用と利用枠を確認する。
 
+<a id="v5-precise-reference"></a>
+
+## V5の精密参照
+
+2026-11-25確認。V5 CuratedとV5 Fullは絵柄・キャラ・衣装を、各種複数枚まで同じ生成に組み合わせられる。V5の強度は0〜5で、「再現度」の設定は廃止。V5のインペイントでの精密参照は未対応。追加料金は1回1枚の生成なら参照画像1枚につき5 Anlas。3種類を1枚ずつ使う場合は1コマあたり追加15 Anlas。生成本体の料金と残量は今回の設定に合わせて別途確認する。[NovelAI公式発表](https://journal.novelai.net/precise-reference-v5-jp/)
+
+作品ルートから次のように要求を作れる。繰り返した `--reference` の順序で送る。画像パスは作品ルートからの相対パス。下の強度は指定例で、採用値は試作の絵を見て決める。
+
+```powershell
+python -X utf8 scripts/novelai_compose.py --id p01-01 --scene '一人の全身が見える目線の高さの構図、文字なし' --char1-type girl --reference style input/novelai/references/style.png 1.5 --reference character input/novelai/references/character.png 1 --reference outfit input/novelai/references/outfit.png 1
+```
+
+要求JSONを直接編集する場合は `parameters.precise_references` へ同じ内容を書く。各要素の `strength` を省略すると1になる。絵柄とキャラを1枚から取る場合は `character-and-style`、キャラ参照元の衣装を優先する場合は `character-same-outfit` または `character-and-style-same-outfit` を使う。別に指定した衣装を着せるときは `character` と `outfit` の組み合わせから試す。
+
+```json
+{
+  "precise_references": [
+    {"type": "style", "path": "input/novelai/references/style.png", "strength": 1.5},
+    {"type": "character", "path": "input/novelai/references/character.png", "strength": 1},
+    {"type": "outfit", "path": "input/novelai/references/outfit.png", "strength": 1}
+  ]
+}
+```
+
+送信時はPNGをBase64にし、`director_reference_images`、同順の `director_reference_descriptions`（`caption.base_caption` に `style`・`character`・`costume` など）、`director_reference_strength_values`、`director_reference_information_extracted`（各1）、`director_reference_secondary_strength_values`（各0）へ展開する。Curatedでは約1メガ画素の対応寸法へ中央で切り抜き、Fullでは元の画像寸法を使う。公開Swaggerに残る寸法・強度・再現度の説明はV4.5向け。V5の送信値と画像処理は2026-11-25に公式画像画面の配信コードと照合した。Pillowによる画像変換と公式画面の画素単位の一致は未確認。[公開APIスキーマ](https://image.novelai.net/docs/doc.json)・[公式クライアントの要求組み立て](https://novelai.net/_next/static/chunks/09aajvaad_e63.js?dpl=b2fe159-45513015385-1)・[公式クライアントのモデル設定](https://novelai.net/_next/static/chunks/22-cczt97ry1s.js?dpl=b2fe159-45513015385-1)・[公式クライアントの画像整形](https://novelai.net/_next/static/chunks/2s4lj3fycctfh.js?dpl=b2fe159-45513015385-1)
+
+送信なし確認には追加の参照料金を表示する。実行時は通常の `generate` と同じく、明示許可の範囲で `--allow-anlas` と、生成本体・追加料金の確認根拠を記した `--cost-note` を使う。原画に加え、Base64を含む実際の送信内容も実行記録に残る。
+
+2026-11-25に、V5 Curatedで絵柄・キャラ・衣装を組み合わせた生成の保存済み送信内容とPNGを照合した。この確認範囲は作品の生成例に限り、V5 Fullでの精密参照や実際のAnlas消費量の検証は残る。[制作根拠E6](image-generation/production-evidence.md#e6)・[V5の衣装参照の制作手順](novelai-composed-production.md#costume-references)
+
 ## 確認後に生成する
 
 有効なOpus契約で、**今回の要求の全設定が0 Anlasであることを実際に確認した場合だけ** `--confirm-zero-anlas` を付ける。これは人または確認手段から得た結果の宣言であり、サーバーへ無課金を強制する機能ではない。[Opusの条件](ai-production.md#novelai-opus)に従い、APIでの適用を確認できない場合も止める。
@@ -148,7 +178,7 @@ V5では今回の要求を実行できる利用上限を確認した上で `--co
 
 無消費扱いでは28steps以下・1,048,576画素以下・１枚・テキスト生成を候補範囲とし、参照・アップスケール・未知のパラメーターを拒否する（`novelai_compose.py` が画面と同じ値で送る `controlnet_strength: 1.0` だけは通常の生成として扱う）。この範囲内というだけで0 Anlasを保証しない。費用が不明なら送信しない。
 
-ユーザーが**今回の設定でAnlasを消費することを明示指示した場合だけ** `--confirm-zero-anlas` の代わりに `--allow-anlas` を使い、`--cost-note` に確認した費用と許可範囲を記す。キーの設定、接続確認や生成の依頼だけでは有料利用の許可とみなさない。各実行に `--allow-anlas` と `--cost-note` を付けて記録する。API料金の自動見積り・支払上限の強制・参照素材の自動エンコードは未実装。参照機能等は公式形式に整えた要求と費用確認が別途必要。
+ユーザーが**今回の設定でAnlasを消費することを明示指示した場合だけ** `--confirm-zero-anlas` の代わりに `--allow-anlas` を使い、`--cost-note` に確認した費用と許可範囲を記す。キーの設定、接続確認や生成の依頼だけでは有料利用の許可とみなさない。各実行に `--allow-anlas` と `--cost-note` を付けて記録する。生成総額の自動見積り・支払上限の強制は未実装。
 
 保存先は作品の `output/` 内のPNGだけ。生成要求・費用確認の根拠・確認日時・要求SHA-256・６文字の照会ID・生成実寸を隣の `.novelai.json` へ記録する。キーは記録しない。生成要求と元PNGは作品の制作資料であり、公開時は従来どおりメタ情報を除去する。元PNGの実寸と希望寸法を区別し、[枠配置・最終PNG](page-layout.md)へ反映する。Anlasの実消費を自動測定していないため、`actualAnlasCost` は `null` とする。
 
@@ -186,7 +216,7 @@ input/novelai-request.jsonとページ設定を整え、送信なしの要求確
 
 確認日：2026-09-21。確認事実は [NovelAI公式画像APIスキーマ](https://image.novelai.net/docs/doc.json) に記載されたPersistent API token認証、`/user/subscription`、`/ai/generate-image`、生成パラメーター、JSON/base64・ZIP応答、照会IDの形式。スキーマの `basePath` は `/`、hostは未指定のため、この実装ではスキーマ提供元の `https://image.novelai.net` に接続先を固定する。リダイレクトへ認証ヘッダーを転送しない。
 
-既定値・保存規則・費用確認フラグはキットの実装方針。実際の契約での接続、各モデルの生成、APIでの0 Anlas適用、V5残枠、生成品質は未検証。公式スキーマの取得と実APIでの動作確認を区別し、確認結果は作品の通常の進捗記録へ残す。
+既定値・保存規則・費用確認フラグはキットの実装方針。実APIでの作例とその範囲は [V5の精密参照](#v5-precise-reference) および [コマ別画像生成の制作根拠](image-generation/production-evidence.md#e4) を参照する。APIでの0 Anlas適用やV5残枠を含む体系的な確認は下記の検証に残し、各作品での確認結果は通常の進捗記録へ残す。
 
 ### 残る検証の単位
 

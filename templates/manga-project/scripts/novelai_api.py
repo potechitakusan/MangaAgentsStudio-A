@@ -1,4 +1,4 @@
-"""NovelAIのキー読込・契約照会・１枚生成。Python 3.10以上、追加依存なし。"""
+"""NovelAIのキー読込・契約照会・１枚生成。Python 3.10以上。精密参照の画像処理にはPillowを使う。"""
 
 from __future__ import annotations
 
@@ -43,6 +43,16 @@ PLAIN_PARAMETERS = {
     "image_format", "prompt", "tag_hint_qt", "tag_hint_uc_preset",
     "tag_hint_transparent_background", "straight_alpha",
 }
+PRECISE_REFERENCE_MODELS = {"nai-diffusion-5-curated", "nai-diffusion-5-full"}
+PRECISE_REFERENCE_TYPES = {
+    "style": "style",
+    "character": "character",
+    "outfit": "costume",
+    "character-and-style": "character&style_anyoutfit",
+    "character-same-outfit": "character_mainoutfit",
+    "character-and-style-same-outfit": "character&style",
+}
+PRECISE_REFERENCE_ANLAS = 5
 
 
 class ClientError(Exception):
@@ -198,6 +208,83 @@ def prepare_request(root: Path, relative: str) -> tuple[dict, bytes]:
     return prepare_request_data(root, read_json(project_path(root, relative)))
 
 
+def curated_reference_size(width: int, height: int) -> tuple[int, int]:
+    # 1024×1024画素を上限とする64px刻みの候補から、対数アスペクト比が最も近いものを選ぶ。
+    portrait = [((1024 ** 2 // long_side // 64) * 64, long_side)
+                for long_side in range(4096, 1023, -64)]
+    landscape = [(h, w) for w, h in reversed(portrait[:-1])]
+    aspect = math.log(width / height)
+    return min(portrait + landscape, key=lambda size: abs(aspect - math.log(size[0] / size[1])))
+
+
+def encode_reference_image(path: Path, model: str) -> str:
+    try:
+        from PIL import Image, ImageOps
+    except ImportError:
+        raise ClientError("精密参照の画像処理にはPillowが必要です。作品の組版環境を使用してください。") from None
+
+    try:
+        with Image.open(path, formats=("PNG", "JPEG", "WEBP")) as source:
+            oriented = ImageOps.exif_transpose(source)
+            has_alpha = "A" in oriented.getbands() or "transparency" in oriented.info
+            image = oriented.convert("RGBA" if has_alpha else "RGB")
+            if model == "nai-diffusion-5-curated":
+                size = curated_reference_size(*image.size)
+                if image.size != size:
+                    image = ImageOps.fit(image, size, Image.Resampling.LANCZOS)
+            image.info.clear()
+            buffer = BytesIO()
+            image.save(buffer, format="PNG")
+    except (OSError, ValueError, SyntaxError, Image.DecompressionBombError):
+        raise ClientError("精密参照画像を読み込めません。作品内のPNG・JPEG・WebPを指定してください。") from None
+    return base64.b64encode(buffer.getvalue()).decode("ascii")
+
+
+def expand_precise_references(root: Path, model: str, params: dict) -> dict:
+    references = params["precise_references"]
+    if model not in PRECISE_REFERENCE_MODELS:
+        raise ClientError("precise_references はV5 Curated・V5 Fullの生成に対応しています。")
+    if any(name.startswith("director_reference_") for name in params):
+        raise ClientError("precise_references と director_reference_* は併用できません。")
+    if not isinstance(references, list) or not references:
+        raise ClientError("precise_references は1件以上の参照オブジェクトの配列にしてください。")
+
+    images, captions, strengths = [], [], []
+    for index, reference in enumerate(references, 1):
+        label = f"精密参照{index}"
+        if not isinstance(reference, dict) or set(reference) - {"type", "path", "strength"}:
+            raise ClientError(f"{label}: type・path・strength で指定してください。")
+        kind = reference.get("type")
+        if not isinstance(kind, str) or kind not in PRECISE_REFERENCE_TYPES:
+            raise ClientError(f"{label}: type は " + "、".join(PRECISE_REFERENCE_TYPES) + " から選んでください。")
+        path = reference.get("path")
+        if not isinstance(path, str) or not path.strip():
+            raise ClientError(f"{label}: path に作品内の相対パスを指定してください。")
+        strength = reference.get("strength", 1)
+        if type(strength) not in (int, float) or not 0 <= strength <= 5:
+            raise ClientError(f"{label}: strength は0〜5の数値にしてください。")
+        try:
+            images.append(encode_reference_image(project_path(root, path), model))
+        except ClientError as error:
+            raise ClientError(f"{label}: {error}") from None
+        captions.append({"caption": {"base_caption": PRECISE_REFERENCE_TYPES[kind],
+                                     "char_captions": []}, "legacy_uc": False})
+        strengths.append(strength)
+
+    params = dict(params)
+    del params["precise_references"]
+    params.update(director_reference_images=images, director_reference_descriptions=captions,
+                  director_reference_information_extracted=[1] * len(images),
+                  director_reference_strength_values=strengths,
+                  director_reference_secondary_strength_values=[0] * len(images))
+    return params
+
+
+def precise_reference_surcharge(params: dict) -> int:
+    images = params.get("director_reference_images")
+    return len(images) * PRECISE_REFERENCE_ANLAS if isinstance(images, list) else 0
+
+
 def prepare_request_data(root: Path, request: dict) -> tuple[dict, bytes]:
     if set(request) != {"action", "input", "model", "parameters"} or request.get("action") != "generate":
         raise ClientError("要求はaction=generate、input、model、parametersの４項目にしてください。")
@@ -208,6 +295,9 @@ def prepare_request_data(root: Path, request: dict) -> tuple[dict, bytes]:
     params = request["parameters"]
     if not isinstance(params, dict):
         raise ClientError("parametersはオブジェクトにしてください。")
+    if "precise_references" in params:
+        params = expand_precise_references(root, request["model"], params)
+        request = dict(request, parameters=params)
     if "width" in params or "height" in params:
         # コマ別の素材はコマより広い範囲を生成し、配置時にコマ枠・マスクで必要な部分を見せる。
         # 要求に書いた寸法を優先し、ページ全体の生成希望寸法との一致は求めない。
@@ -336,6 +426,9 @@ def run(args, root: Path) -> None:
     digest = hashlib.sha256(payload).hexdigest()
     params = request["parameters"]
     print(f"要求: {request['model']} / {params['width']}×{params['height']}px / {params['steps']} steps / １枚")
+    surcharge = precise_reference_surcharge(params)
+    if surcharge:
+        print(f"精密参照の追加分: {surcharge} Anlas（基本生成料金は別途確認）")
     print("要求SHA-256: " + digest)
     if not args.execute:
         print("送信なし。実行には--executeと費用確認の指定が必要です。")
@@ -355,7 +448,9 @@ def check_signature(request: dict) -> str:
     """費用に関わる条件。変わったら照会し直す。"""
     params = request["parameters"]
     extra = ",".join(sorted(set(params) - PLAIN_PARAMETERS))
-    return f"{request['model']}|{params['steps']}|{params['width']}x{params['height']}|{params['n_samples']}|{extra}"
+    signature = f"{request['model']}|{params['steps']}|{params['width']}x{params['height']}|{params['n_samples']}|{extra}"
+    surcharge = precise_reference_surcharge(params)
+    return f"{signature}|精密参照:{surcharge}" if surcharge else signature
 
 
 def read_check_state(root: Path) -> dict | None:

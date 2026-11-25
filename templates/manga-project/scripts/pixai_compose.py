@@ -289,8 +289,8 @@ def compose(root: Path, opts: argparse.Namespace, raw_chars: list[dict]) -> tupl
         notes.append("sampling（--sampler・--steps・--cfg-scale）はSDXL・SD v1だけで有効（公式）。Tsubaki系では効かない可能性がある")
     sampling = {k: v for k, v in (("method", opts.sampler), ("steps", opts.steps), ("cfgScale", opts.cfg_scale)) if v is not None}
     if not v1:
-        if len(loras) > 5:
-            raise ComposeError("v2 のLoRAは最大5件です（公式）。")
+        if len(loras) > api.LORA_MAX_MEMBER:
+            raise ComposeError(f"v2 のLoRAは最大{api.LORA_MAX_MEMBER}件です（会員の上限。会員でない場合は{api.LORA_MAX_FREE}件まで。公式）。")
         body = {"modelVersionId": model_id, "prompt": prompt, "aspectRatio": aspect, "size": opts.size,
                 "seed": seed, "batchSize": batch_size, "promptHelper": helper}
         if negative_source == "既定" and not opts.negative and not api.supports(model_id, kind, "negativePrompt"):
@@ -401,7 +401,7 @@ def parse_args(argv: list[str]):
     parser.add_argument("--style-preset", help="画風プリセット（Tsubaki系のみ。--list-styles で一覧）")
     parser.add_argument("--style-custom", help="画風の文をプロンプトの前に差し込む（Tsubaki系のみ。上級者向け）")
     parser.add_argument("--mode", choices=api.MODES, help="Tsubaki.2・Tsubaki.3 系の推論の段階（既定はモデルの一覧の default_mode。Tsubaki.2 は standard、Tsubaki.3 は pro）")
-    parser.add_argument("--lora", action="append", help="LoRA。ID[:重み[:トリガー語]]（IDは数字か ${PIXAI_LORA_…}）。v2は最大5件、v1は最大3件")
+    parser.add_argument("--lora", action="append", help="LoRA。ID[:重み[:トリガー語]]（IDは数字か ${PIXAI_LORA_…}）。v2は会員でない場合3件・会員15件まで、v1は最大3件")
     parser.add_argument("--aspect-ratio", help="縦横比（" + "・".join(api.RESOLUTIONS) + "）。既定は generationCanvas に最も近い比")
     parser.add_argument("--size", choices=api.SIZES, default="1k", help="解像度の段階（v2のみ。1.5kは長辺1536px）")
     parser.add_argument("--batch-size", type=int, choices=(1, 4),

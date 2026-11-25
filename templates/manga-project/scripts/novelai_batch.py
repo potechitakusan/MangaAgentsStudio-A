@@ -508,8 +508,10 @@ def generate(root: Path, args) -> None:
         output = f"{CANDIDATES_DIR}/{request_id}/r{number:03d}.png"
         params = request["parameters"]
         plan.append((request_id, request, payload, output))
+        surcharge = api.precise_reference_surcharge(params)
+        reference_note = f" / 精密参照の追加分 {surcharge} Anlas" if surcharge else ""
         print(f"{request_id}: {params['width']}×{params['height']}px / {params['steps']} steps / seed {params['seed']}"
-              f" / 変数 {','.join(sorted(used)) or 'なし'} → {output}")
+              f"{reference_note} / 変数 {','.join(sorted(used)) or 'なし'} → {output}")
         for note in notes:
             print(f"  [警告] {note}")
         if notes:

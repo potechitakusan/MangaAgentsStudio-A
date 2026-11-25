@@ -38,7 +38,7 @@
 
 API通信や要求JSONの組み立て（テキストのみ）、WebUIの起動自体は **Python 3.10以上**の標準ライブラリだけで動きますが、以下の画像処理・組版・PSD工程には追加パッケージが必要です。
 
-- **PNG組版・マスク作成・i2i/インペイント寸法確認・WebP/JPEG応答のPNG変換**：Python 3.10以上 ＋ `Pillow`
+- **PNG組版・マスク作成・NovelAI V5の精密参照・i2i/インペイント寸法確認・WebP/JPEG応答のPNG変換**：Python 3.10以上 ＋ `Pillow`
 - **組版済みPSDの書き出しと再読込検証（`--write-psd`）**：**Python 3.12以上** ＋ 同梱の `scripts/requirements-composition.txt`（`Pillow==12.3.0`・`numpy==2.5.3`・`psd-tools==1.19.0`）。固定版 `numpy==2.5.3` の必要Python版は `>=3.12` です（[NumPy 2.5.3の配布情報](https://pypi.org/project/numpy/2.5.3/)、2026-10-25確認。適用範囲は同梱依存ファイルの固定版）。
 
 > **AIエージェントへ確認・準備を任せる場合の依頼文例：**
@@ -55,7 +55,7 @@ python -c "import PIL, numpy, psd_tools; print('PSD dependencies OK')"
 # 2A. PSD書き出し・再読込検証まで使う場合（Python 3.12以上・同梱の固定依存版を一括導入）
 python -m pip install -r scripts/requirements-composition.txt
 
-# 2B. PNG組版・マスク作成・画像変換のみ使う場合（Python 3.10以上）
+# 2B. PNG組版・マスク作成・精密参照・画像変換のみ使う場合（Python 3.10以上）
 python -m pip install Pillow==12.3.0
 ```
 
@@ -65,7 +65,7 @@ APIキーの追加設定は不要です。現在のCodexセッションで画像
 
 ### B. NovelAI APIを使う場合
 
-同梱の `scripts/novelai_api.py`・`scripts/novelai_compose.py`・`scripts/novelai_batch.py` で、キーの自動読込・契約照会・要求の組み立て・一括生成・採用・ページの組み直しができます（通信・生成自体はPython 3.10以上の標準ライブラリのみで動作し、組版・PNGの `build` には `Pillow` を使います。PSD出力は上記の共通条件に従い、Python 3.12以上と `Pillow`・`numpy`・`psd-tools` を用意します）。詳細は [NovelAI APIの接続手順](knowledge/novelai-api.md) と [NovelAIでの制作手順](knowledge/novelai-composed-production.md) を参照してください。
+同梱の `scripts/novelai_api.py`・`scripts/novelai_compose.py`・`scripts/novelai_batch.py` で、キーの自動読込・契約照会・要求の組み立て・一括生成・採用・ページの組み直しができます（通信・生成自体はPython 3.10以上の標準ライブラリのみで動作し、V5の精密参照と組版・PNGの `build` には `Pillow` を使います。PSD出力は上記の共通条件に従い、Python 3.12以上と `Pillow`・`numpy`・`psd-tools` を用意します）。詳細は [NovelAI APIの接続手順](knowledge/novelai-api.md) と [NovelAIでの制作手順](knowledge/novelai-composed-production.md) を参照してください。
 
 1. **APIキーの用意**：作品の `.env` または `.secrets/novelai.env`（あるいは環境変数 `NOVELAI_API_KEY`）に、Persistent API tokenを次の1行で書きます。
    ```dotenv
@@ -77,7 +77,7 @@ APIキーの追加設定は不要です。現在のCodexセッションで画像
    python -X utf8 scripts/novelai_api.py status
    ```
    `key-status` は外部通信のないローカル確認です。`status` はAPIキーを認証ヘッダーに使って契約を照会し、作品のプロンプトや画像は送りません。接続確認用の [依頼プロンプト](knowledge/novelai-api.md#確認を依頼するプロンプト) も用意しています。
-3. **要求の組み立てと費用確認**：要求JSONは原則として `scripts/novelai_compose.py`（V5が既定、V4.5はユーザー指定時のみ。使い方は [標準スクリプトの説明](knowledge/novelai-api.md#compose-standard)）で組み立てます。生成コマンドは `--execute` がなければ送信しません。有効なOpus契約なら [Anlasを消費しない生成条件](knowledge/ai-production.md#novelai-opus)を確認し、1回1枚・28ステップ以下（V5は初期値23、V4.5以前は28）・標準の [ページ設定](knowledge/page-layout.md)を基準にします。採用寸法・モデル・追加機能を含めた0 Anlasの確認とV5利用上限の残量確認を行い、有料（Anlas消費）生成は明示指示がある範囲だけ実行します（契約照会の成功だけでは費用・残枠の確認完了と扱いません）。
+3. **要求の組み立てと費用確認**：要求JSONは原則として `scripts/novelai_compose.py`（V5が既定、V4.5はユーザー指定時のみ。使い方は [標準スクリプトの説明](knowledge/novelai-api.md#compose-standard)）で組み立てます。生成コマンドは `--execute` がなければ送信しません。有効なOpus契約なら [Anlasを消費しない生成条件](knowledge/ai-production.md#novelai-opus)を確認し、1回1枚・28ステップ以下（V5は初期値23、V4.5以前は28）・標準の [ページ設定](knowledge/page-layout.md)を基準にします。採用寸法・モデル・追加機能を含めた0 Anlasの確認とV5利用上限の残量確認を行い、有料（Anlas消費）生成は明示指示がある範囲だけ実行します（契約照会の成功だけでは費用・残枠の確認完了と扱いません）。V5の精密参照は参照画像1枚につき追加5 Anlasで、有料生成の扱いです（[指定方法と費用](knowledge/novelai-api.md#v5-precise-reference)）。
 4. **プロンプト変数編集とローカルWebUI**：キャラクター・絵柄・背景を自分で編集して再生成したい場合は [NovelAIプロンプト編集のREADME](novelai-prompts/README.md) を参照してください（依頼があった場合だけ変数化し、`.env.novelai` の直接編集とテキストからの反映を選べます）。要求JSONとページ構成の準備後は、作品ルートで `python -X utf8 .agents/skills/novelai-batch-webui/novelai_webui.py` を実行してブラウザー画面（既定ポート `8765`）からも操作できます（[NovelAI WebUIスキル](../.agents/skills/novelai-batch-webui/SKILL.md)）。
 
 ### C. PixAI APIを使う場合

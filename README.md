@@ -62,7 +62,7 @@ ChatGPT Work等でリポジトリURLを参照させる場合は、次のよう�
 | 作画手段 | 必要な準備・APIキー | 追加費用・利用枠の扱い | 文字・フキダシ・枠の扱い | 検証状況・詳細ガイド |
 | --- | --- | --- | --- | --- |
 | **Codex内蔵の画像生成（imagegen）** | 画像生成ツールが利用可能なCodex環境（APIキーの追加設定は不要） | ChatGPT / Codexプランの画像生成利用枠を消費（サイズ・品質・再生成回数で変動） | 番号付きレイアウト画像を渡し、**文字・フキダシ込みで1ページ一括生成**するのが基本 | 動作確認済み。<br>[コマ割りと生成方針](docs/knowledge/panel-layout-policy.md) |
-| **NovelAI API**<br>（V5既定 / V4.5） | NovelAIアカウントと **Persistent API token**（`NOVELAI_API_KEY`）、Python 3.10以上 | 有効な**Opus契約**で条件内（1回1枚・28steps以下・標準寸法・追加有料機能なし）なら **0 Anlas**（V5利用上限の残量確認が必要）。未契約や有料条件はAnlasを消費（明示許可時のみ実行） | コマ別に文字・枠なしの絵を生成し、**後からスクリプトで枠・フキダシ・縦書き文字を組版** | 1枚生成・一括生成・WebUIを確認済み（i2i等の画像入力は未検証）。全11画風の見本あり。<br>[NovelAI制作手順](templates/manga-project/docs/knowledge/novelai-composed-production.md)・[API接続手順](docs/knowledge/novelai-api.md) |
+| **NovelAI API**<br>（V5既定 / V4.5） | NovelAIアカウントと **Persistent API token**（`NOVELAI_API_KEY`）、Python 3.10以上 | 有効な**Opus契約**で条件内（1回1枚・28steps以下・標準寸法・追加有料機能なし）なら **0 Anlas**（V5利用上限の残量確認が必要）。未契約や有料条件（V5の精密参照等）はAnlasを消費（明示許可時のみ実行） | コマ別に文字・枠なしの絵を生成し、**後からスクリプトで枠・フキダシ・縦書き文字を組版** | 1枚生成・一括生成・WebUIを確認済み。V5 Curatedの精密参照は1作品の生成例を確認（V5 Fullの精密参照とi2iは未検証）。全11画風の見本あり。<br>[NovelAI制作手順](templates/manga-project/docs/knowledge/novelai-composed-production.md)・[API接続手順](docs/knowledge/novelai-api.md) |
 | **PixAI API**<br>（Tsubaki.2既定・公式15モデル収録） | PixAIアカウントと **APIキー**（`PIXAI_API_KEY`）、Python 3.10以上 | **生成のたびにPixAIクレジットを消費。** 残高照会APIがないため、人間が残高と枚数を確認し明示許可した範囲だけ実行 | コマ別に文字・枠なしの絵を生成し、**後からスクリプトで枠・フキダシ・縦書き文字を組版** | v2生成・WebUI・一部v1機能を確認済み（検証途中の機能あり。LoRA効果・モデル別消費量は未確定）。モデル15種＋画風35種の見本あり。<br>[PixAI制作手順](templates/manga-project/docs/knowledge/pixai-composed-production.md)・[API接続手順](docs/knowledge/pixai-api.md) |
 | **外部生成・下絵参照i2i**<br>（ComfyUI / Qwen-Image 2.1等） | ローカルComfyUIまたは外部生成環境、下絵（Blender撮影画像等）やキャラ参照画像 | ローカル実行はマシン資源を使用（外部サービス利用時は各サービスの条件に従う） | コマ別に作画し、後から枠・フキダシ・文字を組版 | Qwen-Image 2.1での制作記録を収録（他モデルでの同等効果は未検証）。<br>[外部生成によるコマ作画](docs/knowledge/external-panel-i2i.md) |
 
@@ -73,7 +73,7 @@ ChatGPT Work等でリポジトリURLを参照させる場合は、次のよう�
 | 作業・工程 | 必要なOS・実行環境 | Python追加パッケージ・外部ツール |
 | --- | --- | --- |
 | **作品プロジェクトの作成** | ・Windows：Windows PowerShell 5.1以上<br>・Linux：Bash + Python 3.10以上<br>（※Macは公式アプリ手順の参照情報のみで実機未検証） | **追加パッケージ不要**（標準ライブラリのみ。Windowsでも前の作品から必須工程を引き継ぐ場合のみPython 3.10以上を使用）。通常利用ではGitも不要 |
-| **APIキー確認・契約照会・要求JSON作成・WebUIの起動自体** | Python 3.10以上（`novelai_api.py`、`novelai_compose.py`、`pixai_api.py`、`pixai_compose.py`、各WebUIサーバー） | キー確認・契約照会・通常のテキストからの要求作成・WebUI起動は**追加パッケージ不要**。PixAIの**i2i・インペイント要求作成**（元画像・マスクの寸法確認）とWebP/JPEG応答のPNG変換には **`Pillow` が必要** |
+| **APIキー確認・契約照会・要求JSON作成・WebUIの起動自体** | Python 3.10以上（`novelai_api.py`、`novelai_compose.py`、`pixai_api.py`、`pixai_compose.py`、各WebUIサーバー） | キー確認・契約照会・通常のテキストからの要求作成・WebUI起動は**追加パッケージ不要**。**NovelAI V5の精密参照**（参照画像の変換）、PixAIの**i2i・インペイント要求作成**（元画像・マスクの寸法確認）とWebP/JPEG応答のPNG変換には **`Pillow` が必要** |
 | **フキダシ・縦書き文字の組版、ページPNGビルド、マスク作成** | Python 3.10以上（`typeset_manga.py`、`novelai_batch.py build`、`pixai_batch.py build`、`pixai_mask.py`） | **`Pillow` が必要**（フォントは作品の `assets/fonts/` またはOS標準の日本語フォントを使用） |
 | **組版済みPSDの書き出しと再読込検証** | **Python 3.12以上**（同梱の固定依存版を使用する場合。`export_composed_psd.py`、各 `build --write-psd`） | **`Pillow`、`numpy`、`psd-tools` が必要**（作品の `scripts/requirements-composition.txt` に記載。固定版 `numpy==2.5.3` はPython 3.12以上が必要。出典は[作品側セットアップ](templates/manga-project/docs/SETUP.md)） |
 | **任意の日本語推敲スキル導入** | 作品の `OPTION.md` で有効にした場合のみ（既定は無効） | `humanizer-jp` は **Git** を使用。`japanese-natural-writing` は利用枠消費の明示許可が必要で、**Gemini側はご自身でAntigravityを直接操作して実行**します（エージェントは `agy` を起動しません） |
@@ -255,7 +255,7 @@ NovelAI（`novelai-batch-webui`）とPixAI（`pixai-batch-webui`）には、プ�
 #### 起動前に必要なもの
 
 - 作成済みの**作品フォルダ**（0.5.3以降でNovelAI WebUI、0.5.4以降でPixAI WebUIを同梱。古い既存作品には自動追加されないため、必要な場合はエージェントへ取り込みを依頼してください）
-- **WebUIの起動はPython 3.10以上**（ページPNGビルドやWebP/JPEG変換には `Pillow` が必要。**同梱の固定依存版でPSDもビルドする場合はPython 3.12以上**と `Pillow`・`numpy`・`psd-tools` を用意）
+- **WebUIの起動はPython 3.10以上**（ページPNGビルド、WebP/JPEG変換、NovelAI V5の精密参照には `Pillow` が必要。**同梱の固定依存版でPSDもビルドする場合はPython 3.12以上**と `Pillow`・`numpy`・`psd-tools` を用意）
 - 設定済みの**APIキー**（`NOVELAI_API_KEY` または `PIXAI_API_KEY`）
 - AIエージェントが作成した**各コマの要求JSON**（`input/novelai/requests/` または `input/pixai/requests/`）、**ページ構成・組版指定**（`input/pages/`・`input/typeset/`）、および必要に応じた**プロンプト変数**（`.env.novelai` または `.env.pixai`）
 
@@ -278,7 +278,7 @@ NovelAI（`novelai-batch-webui`）とPixAI（`pixai-batch-webui`）には、プ�
 1. **作品ルートから起動する**：上のコマンドを実行すると、`http://127.0.0.1:8765/?token=…`（PixAIは `8775`）のようなトークン付きURLが表示されます。
 2. **表示されたURLを人間がブラウザーで開く**：規則によりAIエージェントはブラウザーを起動・操作しないため、人間がURLを開きます。**トークン付きURLは外部へ公開・共有しないでください。**
 3. **変数・要求を編集する**：「変数」タブでキャラ・絵柄・背景等を編集するか、「コマ」タブで各コマのプロンプト・配置ピン（NovelAI）・縦横比やmode/LoRA（PixAI）を調整します。
-4. **費用・利用枠を確認して生成する**：生成ダイアログで費用確認チェックと確認内容メモ（`--cost-note`）を入力して生成します（NovelAIのWebUIは0 Anlas確認済みのみ対応し、有料Anlas生成は端末から行います）。
+4. **費用・利用枠を確認して生成する**：生成ダイアログで費用確認チェックと確認内容メモ（`--cost-note`）を入力して生成します（NovelAIのWebUIは0 Anlas確認済みのみ対応し、V5の精密参照を含む有料Anlas生成は端末から行います）。
 5. **候補を採用する**：生成された候補画像を見比べ、「採用」または「最新候補の一括採用」を選びます。
 6. **ページPNGをビルドして確認する**：「ページ」タブでページPNGをビルドし、「プレビュー」タブ（右から左へページ送り）や出力画像で確認します。
 7. **必要ならPSDをビルドする**：PNGに修正がなくなったら、必要な場合のみ「PSD」ビルドを実行します。
@@ -305,8 +305,8 @@ NovelAI（`novelai-batch-webui`）とPixAI（`pixai-batch-webui`）には、プ�
 | --- | --- | --- |
 | **AIエージェント本体**<br>（Codex / Claude / Antigravity） | 会話の指示文、エージェントが読み取った作品内の原稿・設定・確認用画像 | 各AIエージェントのプラン利用枠。APIキー等の秘密値を会話やログへ出力しないよう指示していますが、意図しない出力を100%防ぐ保証ではありません |
 | **Codex内蔵 `imagegen`** | コマ割りレイアウト画像、各コマの作画プロンプト | ChatGPT / Codexプランの画像生成利用枠（生成サイズ・品質・再生成回数により変動） |
-| **NovelAI API**<br>（`https://image.novelai.net`） | 要求JSONのプロンプト・除外文・モデル設定（i2i等を改造利用する場合は元画像） | ・**有効なOpus契約（`tier=3`）**で条件内（1回1枚・28ステップ以下［V5既定23／V4.5既定28］・標準寸法・追加有料機能なし）なら **0 Anlas**。<br>・ただし**Opusの0 Anlasと「未契約での無料利用」は異なります**（契約とV5利用上限の残量確認が必要）。<br>・Anlasを消費する有料生成は、**利用者の明示指示がある範囲だけ**端末から実行します（契約照会APIは初回と目安10回ごとに自動確認） |
-| **PixAI API**<br>（`https://api.pixai.art`） | 要求JSONのプロンプト・除外文・モデル／LoRA設定、i2i・マスク・参照指定時のアップロード画像 | ・**生成のたびにPixAIクレジットを消費**します。<br>・公式に残高・消費量の照会APIがないため、スクリプトやWebUIの費用確認チェック（`--confirm-credits`・`--cost-note`）は**無料判定や確定金額の自動計算ではなく、利用者自身が消費を許可した宣言**です。<br>・**1回4枚候補（`batchSize: 4`）**は1タスクで4枚生成するため、枚数とクレジット消費に影響します（既定の `auto` では既存候補があるコマの作り直しが4枚になります） |
+| **NovelAI API**<br>（`https://image.novelai.net`） | 要求JSONのプロンプト・除外文・モデル設定、V5の精密参照を指定した場合の参照画像（i2i等を改造利用する場合は元画像） | ・**有効なOpus契約（`tier=3`）**で条件内（1回1枚・28ステップ以下［V5既定23／V4.5既定28］・標準寸法・追加有料機能なし）なら **0 Anlas**。<br>・ただし**Opusの0 Anlasと「未契約での無料利用」は異なります**（契約とV5利用上限の残量確認が必要）。<br>・**V5の精密参照**は参照画像1枚につき追加5 Anlas（2026-11-25確認。生成本体の料金は別途確認）。<br>・Anlasを消費する有料生成は、**利用者の明示指示がある範囲だけ**端末から実行します（契約照会APIは初回と目安10回ごとに自動確認） |
+| **PixAI API**<br>（`https://api.pixai.art`） | 要求JSONのプロンプト・除外文・モデル／LoRA設定、i2i・マスク・参照指定時のアップロード画像 | ・**生成のたびにPixAIクレジットを消費**します。<br>・公式に残高の照会APIがないため、スクリプトやWebUIの費用確認チェック（`--confirm-credits`・`--cost-note`）は**無料判定や確定金額の自動計算ではなく、利用者自身が消費を許可した宣言**です。<br>・**1回4枚候補（`batchSize: 4`）**は1タスクで4枚生成するため、枚数とクレジット消費に影響します（既定の `auto` では既存候補があるコマの作り直しが4枚になります） |
 | **任意の日本語推敲スキル**<br>（`japanese-natural-writing`） | 推敲対象として指定したセリフ・ナレーション等の文章（**ご自身がAntigravityへ入力した場合に**Geminiへ送信） | **既定は無効。** 有効にした場合も、導入前に**文章の外部送信とGemini利用枠の消費許可**を必ず確認し、明示承諾がなければ導入しません。**Antigravity CLI（`agy`）等はCodex・Claude Code等のエージェントから起動せず、ご自身でAntigravityを直接操作して実行していただきます**（規約違反の可能性があるため。手順は[推敲スキルの手順](docs/knowledge/optional-skills.md)）（もう一つの `humanizer-jp` はGitHubからスキルを初回取得するだけで、推敲時に外部APIへ文章を送りません） |
 
 ### 2. 設定ファイルとAPIキーの保存先・読込優先順位
@@ -376,6 +376,22 @@ NovelAI（`novelai-batch-webui`）とPixAI（`pixai-batch-webui`）には、プ�
 **A.** 作品プロジェクト内の `OPTION.md` をご参照ください。コマ割りテンプレートの利用有無、コマ数別の採用率、横長3段の反復制限、文字方向、PSD作成などのオプションが指定可能です。  
 各設定によって実際にどのように挙動が変わるかについては、制作開始時などに `OPTION.md` についてCodexへ直接質問すると、各設定の内容について確認することもできます。
 特に指定しない場合はデフォルト設定で動作します。
+
+### Q. version 0.5.6では何が変わりましたか？
+
+**A.** NovelAI V5の精密参照に対応し、PixAIの公式仕様の更新などを反映しました。主な内容は次のとおりです。
+
+- **NovelAI V5の精密参照**：絵柄・キャラ・衣装の参照画像を、コマごとに組み合わせて指定できます。`novelai_compose.py` の `--reference`、または要求JSONの `precise_references` で指定します。
+  - 参照画像1枚につき追加で5 Anlasかかります（2026-11-25に[NovelAI公式発表](https://journal.novelai.net/precise-reference-v5-jp/)で確認）。送信なしの確認で追加分を表示し、利用者がAnlasの消費を明示許可した範囲だけ端末から生成します。有料生成に対応していないWebUIからは生成できません。
+  - 指定した参照画像はNovelAIへ送信されます。送信前の画像変換はスクリプトが自動で行い、Pythonの追加パッケージ `Pillow` を使います（ページの組版で導入済みなら追加の作業は不要です）。
+  - 書き方と費用は[API接続手順](docs/knowledge/novelai-api.md#v5-precise-reference)を参照してください。
+- **衣装の描き分けの手順**：V5 Curatedでの制作例を基に、参照を1着ずつに分ける、どの衣装がどこに見えるかを書く、生成後に特徴の混在を点検する、という手順を追加しました。詳しくは[NovelAIの制作手順](templates/manga-project/docs/knowledge/novelai-composed-production.md#costume-references)を参照してください。
+- **絵柄の参照素材を任せられるように**：NovelAIで絵柄の参照画像を指定した場合や、参照素材の選定をAIエージェントに任せた場合は、画風IDを選ばずに進められます。どちらもない場合は、これまでどおり画風IDの選択を待ちます。
+- **PixAIのLoRAの上限**：v2の上限を、5件から公式仕様の「会員でない場合3件・会員15件まで」に改めました。4件以上を指定すると、会員かどうかを確かめるよう注意を表示します。
+- **PixAI APIの仕様の更新**：参照画像・色のパレット・インペイント・タスクごとの消費クレジットなど、2026-11-22に確認したv2の公式仕様を[PixAI API接続手順](docs/knowledge/pixai-api.md)に追記しました。「キット未対応」と書いた項目は、公式文書の確認だけです。
+- **Claude／Antigravity用のモード**：PixAIを採用した作品ではPixAIの手順に従うことを明記しました。利用者の指定も作品の記録もない場合の既定は、これまでどおりNovelAIです。
+
+既存の作品には自動反映されません。取り込む場合は[既存の作品への更新の取り込み](#2-キットの更新を既存の作品へ取り込むとき)の依頼文例を使ってください。
 
 ### Q. version 0.5.4では何が変わりましたか？
 
