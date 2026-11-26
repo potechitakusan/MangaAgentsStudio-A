@@ -102,6 +102,15 @@ class ComposeTests(unittest.TestCase):
         with self.assertRaises(nc.ComposeError):
             nc.resolve_size(self.root, options(["--id", "p01-01", "--width", "832"]))
 
+    def test_precise_references_are_saved_in_order_and_strength_must_be_numeric(self):
+        request, _ = self.build(("--reference", "character", "input/a.png", "1", "--reference", "style", "input/b.png", "1.5"))
+        self.assertEqual(request["parameters"]["precise_references"],
+                         [{"type": "character", "path": "input/a.png", "strength": 1.0},
+                          {"type": "style", "path": "input/b.png", "strength": 1.5}])
+        self.assertNotIn("precise_references", self.build()[0]["parameters"])
+        with self.assertRaises(nc.ComposeError):
+            self.build(("--reference", "style", "input/b.png", "strong"))
+
     def test_composed_request_is_accepted_by_the_api_validator(self):
         request, _ = self.build()
         prepared, _ = api.prepare_request_data(self.root, request)

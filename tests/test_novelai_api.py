@@ -19,6 +19,11 @@ import zlib
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "templates/manga-project/scripts"))
 import novelai_api as api
 
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
+
 
 def sample_png():
     def chunk(kind, data):
@@ -164,6 +169,86 @@ class NovelAIClientTests(unittest.TestCase):
         request["parameters"]["director_reference_images"] = ["fixture"]
         with self.assertRaises(api.ClientError):
             api.check_cost(self.args, request)
+
+    def reference_request(self, references, model="nai-diffusion-5-curated"):
+        return {"action": "generate", "model": model, "input": "cat",
+                "parameters": {"seed": 1, "sampler": "k_euler_ancestral", "scale": 5, "precise_references": references}}
+
+    def write_reference(self, name="input/mio.png", size=(300, 200)):
+        Image.new("RGB", size, (10, 20, 30)).save(self.root / name)
+        return name
+
+    @unittest.skipUnless(Image, "精密参照の画像変換にはPillowが必要")
+    def test_precise_references_expand_in_order_without_changing_the_request(self):
+        path = self.write_reference()
+        source = self.reference_request([{"type": "character", "path": path}, {"type": "outfit", "path": path, "strength": 0.5},
+                                         {"type": "style", "path": path, "strength": 1.5}])
+        before = json.dumps(source, sort_keys=True)
+        for model, size in (("nai-diffusion-5-curated", api.curated_reference_size(300, 200)), ("nai-diffusion-5-full", (300, 200))):
+            with self.subTest(model=model):
+                prepared, payload = api.prepare_request_data(self.root, dict(source, model=model))
+                params = prepared["parameters"]
+                self.assertNotIn("precise_references", params)
+                self.assertNotIn(b"precise_references", payload)
+                self.assertEqual([d["caption"]["base_caption"] for d in params["director_reference_descriptions"]],
+                                 ["character", "costume", "style"])
+                self.assertEqual(params["director_reference_strength_values"], [1, 0.5, 1.5])
+                for encoded in params["director_reference_images"]:
+                    with Image.open(BytesIO(base64.b64decode(encoded))) as image:
+                        self.assertEqual((image.format, image.size), ("PNG", size))
+                self.assertEqual(api.precise_reference_surcharge(params), 15)
+                self.assertIn("精密参照:15", api.check_signature(prepared))
+        self.assertEqual(json.dumps(source, sort_keys=True), before)
+        self.assertLessEqual(api.curated_reference_size(300, 200)[0] * api.curated_reference_size(300, 200)[1], 1024 ** 2)
+
+    @unittest.skipUnless(Image, "精密参照の画像変換にはPillowが必要")
+    def test_invalid_precise_references_are_rejected(self):
+        path = self.write_reference()
+        good = {"type": "character", "path": path}
+        (self.root / "input/broken.png").write_bytes(b"not an image")
+        for references in ([], {}, ["mio"], [{**good, "type": "unknown"}], [{**good, "strength": 5.1}], [{**good, "strength": True}],
+                           [{**good, "strength": float("nan")}], [{**good, "path": ""}], [{**good, "path": "../mio.png"}],
+                           [{**good, "path": "input/none.png"}], [{**good, "path": "input/broken.png"}], [{**good, "extra": 1}]):
+            with self.subTest(references=references), self.assertRaises(api.ClientError):
+                api.prepare_request_data(self.root, self.reference_request(references))
+        with self.assertRaises(api.ClientError):
+            api.prepare_request_data(self.root, self.reference_request([good], "nai-diffusion-4-5-full"))
+        mixed = self.reference_request([good])
+        mixed["parameters"]["director_reference_images"] = ["fixture"]
+        with self.assertRaises(api.ClientError):
+            api.prepare_request_data(self.root, mixed)
+
+    @unittest.skipUnless(Image, "精密参照の画像変換にはPillowが必要")
+    def test_precise_references_are_never_sent_as_zero_anlas(self):
+        prepared, _ = api.prepare_request_data(self.root, self.reference_request([{"type": "style", "path": self.write_reference()}]))
+        self.args.cost_note, self.args.confirm_zero_anlas, self.args.confirm_v5_allowance = "確認用の架空条件", True, True
+        with self.assertRaises(api.ClientError):
+            api.check_cost(self.args, prepared)
+        self.args.confirm_zero_anlas, self.args.allow_anlas = False, True
+        api.check_cost(self.args, prepared)
+
+    def test_surcharge_only_permission_stops_when_contract_or_allowance_is_short(self):
+        os.environ["NOVELAI_API_KEY"] = "fixture-key"
+        self.request["model"] = "nai-diffusion-5-curated"
+        request, payload = api.prepare_request_data(self.root, self.request)
+        self.args.cost_note, self.args.allow_anlas = "テスト用の架空の許可", True
+        short = ({"active": True, "tier": 3, "usage": {"percent": 0}}, {"active": True, "tier": 3, "usage": {"isNegative": True}},
+                 {"active": True, "tier": 1}, {"active": False, "tier": 3})
+        for state in short:
+            # 追加料金だけの許可（--confirm-v5-allowance を併用）は、照会結果が不足を示せば送信しない
+            self.args.confirm_v5_allowance = True
+            with self.subTest(state=state), redirect_stdout(StringIO()), patch.object(api, "subscription", return_value=state), \
+                    patch.object(api, "api_request") as network:
+                with self.assertRaises(api.ClientError):
+                    api.execute_generation(self.root, request, payload, "output/a.png", self.args)
+                network.assert_not_called()
+        # 生成本体も含めた許可（併用しない）は、これまでどおり止めない
+        self.args.confirm_v5_allowance = False
+        response = json.dumps({"images": [{"image": base64.b64encode(sample_png()).decode()}]}).encode()
+        with redirect_stdout(StringIO()), patch.object(api, "subscription", return_value=short[0]), \
+                patch.object(api, "api_request", return_value=(response, "application/json")) as network:
+            api.execute_generation(self.root, request, payload, "output/b.png", self.args)
+        self.assertEqual(network.call_count, 1)
 
     def test_omitted_seed_is_randomized_and_invalid_seed_is_rejected(self):
         del self.request["parameters"]["seed"]

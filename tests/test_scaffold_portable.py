@@ -38,7 +38,7 @@ class PortableScaffoldTests(unittest.TestCase):
         self.assertFalse((project / 'AGENT-MODE.md').exists())
         self.assertFalse((project / 'agent-modes').exists())
         self.assertEqual(len(list((project / '.agents/skills').iterdir())), 12)
-        for relative in [Path('novelai-batch-webui') / name for name in ('SKILL.md', 'novelai_webui.py', 'lora_run.py', 'lora_apply.py')] + \
+        for relative in [Path('novelai-batch-webui') / name for name in ('SKILL.md', 'novelai_webui.py')] + \
                 [Path('pixai-batch-webui') / name for name in ('SKILL.md', 'pixai_webui.py')]:
             self.assertEqual((project / '.agents/skills' / relative).read_bytes(),
                              (ROOT / 'skills' / relative).read_bytes())

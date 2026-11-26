@@ -160,6 +160,12 @@ python -X utf8 scripts/novelai_compose.py --id p01-01 --scene '一人の全身�
 }
 ```
 
+絵柄を漫画全体で統一する場合は、作品全体の既定を `input/novelai/reference-defaults.json` に書ける（WebUIの変数タブの「絵柄（全コマの既定）」で設定）。`novelai_batch.py` は、絵柄（`style`・`character-and-style`・`character-and-style-same-outfit`）を指定していないV5の要求の先頭へ、この絵柄を足して送る。コマで絵柄を指定した要求はコマの指定を使い、`director_reference_*` を直接書いた要求とV5以外の要求には足さない。足した分も参照画像1枚として追加料金に数える。`novelai_api.py` へ要求ファイルを直接渡す生成では使わない。
+
+```json
+{"schema_version": 1, "style": {"path": "input/novelai/references/style-v1.png", "strength": 1}}
+```
+
 送信時はPNGをBase64にし、`director_reference_images`、同順の `director_reference_descriptions`（`caption.base_caption` に `style`・`character`・`costume` など）、`director_reference_strength_values`、`director_reference_information_extracted`（各1）、`director_reference_secondary_strength_values`（各0）へ展開する。Curatedでは約1メガ画素の対応寸法へ中央で切り抜き、Fullでは元の画像寸法を使う。公開Swaggerに残る寸法・強度・再現度の説明はV4.5向け。V5の送信値と画像処理は2026-11-25に公式画像画面の配信コードと照合した。Pillowによる画像変換と公式画面の画素単位の一致は未確認。[公開APIスキーマ](https://image.novelai.net/docs/doc.json)・[公式クライアントの要求組み立て](https://novelai.net/_next/static/chunks/09aajvaad_e63.js?dpl=b2fe159-45513015385-1)・[公式クライアントのモデル設定](https://novelai.net/_next/static/chunks/22-cczt97ry1s.js?dpl=b2fe159-45513015385-1)・[公式クライアントの画像整形](https://novelai.net/_next/static/chunks/2s4lj3fycctfh.js?dpl=b2fe159-45513015385-1)
 
 送信なし確認には追加の参照料金を表示する。実行時は通常の `generate` と同じく、明示許可の範囲で `--allow-anlas` と、生成本体・追加料金の確認根拠を記した `--cost-note` を使う。原画に加え、Base64を含む実際の送信内容も実行記録に残る。
@@ -178,7 +184,7 @@ V5では今回の要求を実行できる利用上限を確認した上で `--co
 
 無消費扱いでは28steps以下・1,048,576画素以下・１枚・テキスト生成を候補範囲とし、参照・アップスケール・未知のパラメーターを拒否する（`novelai_compose.py` が画面と同じ値で送る `controlnet_strength: 1.0` だけは通常の生成として扱う）。この範囲内というだけで0 Anlasを保証しない。費用が不明なら送信しない。
 
-ユーザーが**今回の設定でAnlasを消費することを明示指示した場合だけ** `--confirm-zero-anlas` の代わりに `--allow-anlas` を使い、`--cost-note` に確認した費用と許可範囲を記す。キーの設定、接続確認や生成の依頼だけでは有料利用の許可とみなさない。各実行に `--allow-anlas` と `--cost-note` を付けて記録する。生成総額の自動見積り・支払上限の強制は未実装。
+ユーザーが**今回の設定でAnlasを消費することを明示指示した場合だけ** `--confirm-zero-anlas` の代わりに `--allow-anlas` を使い、`--cost-note` に確認した費用と許可範囲を記す。キーの設定、接続確認や生成の依頼だけでは有料利用の許可とみなさない。各実行に `--allow-anlas` と `--cost-note` を付けて記録する。許可が精密参照等の追加料金だけで、V5の生成本体は利用上限の範囲で行う場合は、残量を確認して `--confirm-v5-allowance` を併用する。併用時は、契約照会の結果がOpus契約の無効・利用上限の不足を示せば送信しない（照会は目安10回ごと。生成本体が無料になることの保証ではない）。併用しない `--allow-anlas` は、生成本体のAnlas消費も含めた許可として扱い、不足でも止まらない。生成総額の自動見積り・支払上限の強制は未実装。
 
 保存先は作品の `output/` 内のPNGだけ。生成要求・費用確認の根拠・確認日時・要求SHA-256・６文字の照会ID・生成実寸を隣の `.novelai.json` へ記録する。キーは記録しない。生成要求と元PNGは作品の制作資料であり、公開時は従来どおりメタ情報を除去する。元PNGの実寸と希望寸法を区別し、[枠配置・最終PNG](page-layout.md)へ反映する。Anlasの実消費を自動測定していないため、`actualAnlasCost` は `null` とする。
 

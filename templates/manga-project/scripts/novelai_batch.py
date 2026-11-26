@@ -38,6 +38,9 @@ ADOPTED = "input/novelai/adopted.json"
 CANDIDATES_DIR = "output/novelai/candidates"
 PAGES_DIR = "input/pages"
 BUILD_DIR = "output/build"
+# 作品全体の精密参照の既定（V5）。絵柄は漫画全体で統一するため、コマで絵柄を指定しない要求に足す（WebUIの変数タブで設定）。
+REFERENCE_DEFAULTS = "input/novelai/reference-defaults.json"
+STYLE_REFERENCE_TYPES = ("style", "character-and-style", "character-and-style-same-outfit")
 # 設定ファイルは３つに分ける：.env（APIキー・URL等の共通設定）、.env.novelai（NovelAI用のプロンプト変数・補助設定）、
 # .env.pixai（PixAI用。このスクリプトは読まない）。APIキーは従来どおり .secrets/ にも置ける（novelai_api.py の KEY_FILES）。
 VAR_FILE = ".env.novelai"
@@ -418,8 +421,45 @@ def expand(value, variables: dict[str, tuple[str, str]], used: set[str]):
     return value
 
 
+def read_reference_defaults(root: Path) -> dict:
+    """作品全体の精密参照の既定（input/novelai/reference-defaults.json）。いまは絵柄（style）だけ。ファイルがなければ空。"""
+    path = api.project_path(root, REFERENCE_DEFAULTS)
+    if not path.is_file():
+        return {}
+    data = api.read_json(path)
+    if not isinstance(data, dict) or data.get("schema_version") != 1 or set(data) - {"schema_version", "style"}:
+        raise BatchError(f"{REFERENCE_DEFAULTS} は schema_version 1 と style だけにしてください。")
+    style = data.get("style")
+    if style is not None:
+        if not isinstance(style, dict) or set(style) - {"path", "strength"}:
+            raise BatchError(f"{REFERENCE_DEFAULTS} の style は path・strength で指定してください。")
+        if not isinstance(style.get("path"), str) or not style["path"].strip():
+            raise BatchError(f"{REFERENCE_DEFAULTS} の style.path に作品内の相対パスを指定してください。")
+        strength = style.get("strength", 1)
+        if type(strength) not in (int, float) or not 0 <= strength <= 5:
+            raise BatchError(f"{REFERENCE_DEFAULTS} の style.strength は0〜5の数値にしてください。")
+    return data
+
+
+def with_reference_defaults(request: dict, defaults: dict) -> dict:
+    """既定の絵柄を、絵柄を指定していないV5の要求の先頭に足す。コマで絵柄（style・キャラ＋絵柄）を指定していればコマの指定を使う。"""
+    style = defaults.get("style")
+    params = request.get("parameters") if isinstance(request, dict) else None
+    if not style or request.get("model") not in api.PRECISE_REFERENCE_MODELS or not isinstance(params, dict):
+        return request
+    if any(name.startswith("director_reference_") for name in params):
+        return request  # 直接書いた参照とは併用できないため足さない
+    references = params.get("precise_references", [])
+    if not isinstance(references, list):
+        return request  # 形の誤りは送信前の検証で止める
+    if any(isinstance(item, dict) and item.get("type") in STYLE_REFERENCE_TYPES for item in references):
+        return request
+    added = {"type": "style", "path": style["path"], "strength": style.get("strength", 1)}
+    return dict(request, parameters=dict(params, precise_references=[added, *references]))
+
+
 def resolved_request(root: Path, request_id: str, variables) -> tuple[dict, set[str]]:
-    raw = api.read_json(request_files(root)[request_id])
+    raw = with_reference_defaults(api.read_json(request_files(root)[request_id]), read_reference_defaults(root))
     used: set[str] = set()
     return expand(raw, variables, used), used
 

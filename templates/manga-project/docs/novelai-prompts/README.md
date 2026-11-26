@@ -27,9 +27,10 @@
 ---
 
 ### Step 1. `.env.novelai` のキャラクター変数を書き換える
-作品フォルダ直下の `.env.novelai` をテキストエディタで開き、該当キャラクターの行の右側（`"` の中）を書き換えて保存します（UTF-8、改行なしの1行）：
+作品フォルダ直下の `.env.novelai` をテキストエディタで開き、該当キャラクターの行の右側（`"` の中）を書き換えて保存します（UTF-8、改行なしの1行）。キャラの特徴（髪型など）と衣装は別の行です：
 ```dotenv
-NOVELAI_CHAR_MIO="girl, black twintails, blue jacket"
+NOVELAI_CHAR_MIO="girl, black twintails"
+NOVELAI_CHAR_MIO_OUTFIT="blue jacket"
 ```
 UTF-8かどうか判断できない場合は、日本語を書かず半角の英語や記号のみにしてください。
 
@@ -71,7 +72,7 @@ PSDは新しい版のフォルダ（例：`output/build/page-01/v002/page-01.psd
 ```powershell
 python -X utf8 .agents/skills/novelai-batch-webui/novelai_webui.py
 ```
-画面からの生成でも、0 Anlas・V5の利用枠の確認と確認内容の記入が必要です。有料の生成は画面からは行えません。画面の内容と守ることは [WebUIのSKILL](../../.agents/skills/novelai-batch-webui/SKILL.md) にあります。
+画面からの生成でも、0 Anlas・V5の利用枠の確認と確認内容の記入が必要です。画面からの有料の生成は、V5の精密参照の追加料金だけです（今回の範囲の許可と上限Anlasの入力が必要）。画面の内容と守ることは [WebUIのSKILL](../../.agents/skills/novelai-batch-webui/SKILL.md) にあります。
 
 > [!TIP]
 > **手順全体や詳しい仕組みを確認したい方へ**
@@ -126,7 +127,8 @@ AIエージェントが作品の設定に合わせて変数化を行い、編集
 
 | 種類 | 変数名の例 | 変更できる内容 |
 | --- | --- | --- |
-| **キャラクター** | `NOVELAI_CHAR_MIO` | 髪型、髪色、服、装飾などキャラクター固有の外見 |
+| **キャラクター** | `NOVELAI_CHAR_MIO` | 髪型、髪色、目、体格、衣装以外の装飾などキャラクター固有の特徴 |
+| **衣装** | `NOVELAI_CHAR_MIO_OUTFIT` | 服、靴、衣装に付く小物。**衣装が1つでもキャラクターの特徴とは別の変数**にします。衣装が複数なら `NOVELAI_CHAR_MIO_OUTFIT_GYM` のように衣装ごとに分けます |
 | **絵柄・画風** | `NOVELAI_STYLE_MAIN` | 線画のタッチ、塗り、色彩、全体の画風 |
 | **背景** | `NOVELAI_BACKGROUND_CLASSROOM` | 教室の机、窓、時間帯や光の描写など |
 
@@ -135,10 +137,11 @@ AIエージェントが作品の設定に合わせて変数化を行い、編集
 
 ```text
 Base（共通背景・絵柄） : 1girl, standing, ${NOVELAI_BACKGROUND_CLASSROOM}, ${NOVELAI_STYLE_MAIN}
-Character（人物外見）  : ${NOVELAI_CHAR_MIO}, smiling, on the left
+Character（人物外見）  : ${NOVELAI_CHAR_MIO}, ${NOVELAI_CHAR_MIO_OUTFIT}, smiling, on the left
 ```
 
-- 絵柄や背景は場面共通の文章（Base）へ、キャラクター外見は対応する人物別の文章（Character）へ配置されます。
+- 絵柄や背景は場面共通の文章（Base）へ、キャラクターの特徴と衣装は対応する人物別の文章（Character）へ配置されます。
+- 特徴と衣装を分けておくと、着替えや衣装の変更で衣装の変数だけを書き換えられます。V5の精密参照でキャラ・衣装の画像を差し替えた場合も、プロンプトに元の外見・衣装の説明が残っていると画像がプロンプトの方に引っ張られることがあるため、対応する変数も合わせて直してください。
 - ポーズ・表情・構図などはコマごとの個別要求に残されるため、外見や画風だけを綺麗に差し替えられます。
 - 背景変数は場所ごと（教室、廊下など）に分かれます。例えば教室の変数を変更しても、教室以外のコマには影響しません。
 
@@ -177,12 +180,14 @@ Test-Path scripts/novelai_batch.py
 
 ```dotenv
 # 変更前の例：
-NOVELAI_CHAR_MIO="girl, short black hair, blue jacket"
+NOVELAI_CHAR_MIO="girl, short black hair"
+NOVELAI_CHAR_MIO_OUTFIT="blue jacket"
 NOVELAI_STYLE_MAIN="clean lineart, soft colors, anime style"
 NOVELAI_BACKGROUND_CLASSROOM="classroom, desks, windows, daylight"
 
 # 変更後の例：
-NOVELAI_CHAR_MIO="girl, black twintails, blue jacket"
+NOVELAI_CHAR_MIO="girl, black twintails"
+NOVELAI_CHAR_MIO_OUTFIT="red hoodie"
 NOVELAI_STYLE_MAIN="bold lineart, vivid colors, cel shading"
 NOVELAI_BACKGROUND_CLASSROOM="classroom, desks, windows, warm sunset light"
 ```
@@ -201,11 +206,12 @@ NOVELAI_BACKGROUND_CLASSROOM="classroom, desks, windows, warm sunset light"
 例えば `input/novelai/prompts/mio.txt` を開き、以下の本文だけを書いて UTF-8 で保存します（変数名や `=`、外側の引用符は不要です）：
 
 ```text
-girl, black twintails, blue jacket
+girl, black twintails
 ```
 
 | テキストファイルの例 | 本文の記述例 |
 | --- | --- |
+| `input/novelai/prompts/mio-outfit.txt` | `red hoodie` |
 | `input/novelai/prompts/style-main.txt` | `bold lineart, vivid colors, cel shading` |
 | `input/novelai/prompts/background-classroom.txt` | `classroom, desks, windows, warm sunset light` |
 
@@ -213,6 +219,7 @@ girl, black twintails, blue jacket
 
 ```powershell
 python -X utf8 scripts/novelai_batch.py env-set NOVELAI_CHAR_MIO --value-file input/novelai/prompts/mio.txt
+python -X utf8 scripts/novelai_batch.py env-set NOVELAI_CHAR_MIO_OUTFIT --value-file input/novelai/prompts/mio-outfit.txt
 python -X utf8 scripts/novelai_batch.py env-set NOVELAI_STYLE_MAIN --value-file input/novelai/prompts/style-main.txt
 python -X utf8 scripts/novelai_batch.py env-set NOVELAI_BACKGROUND_CLASSROOM --value-file input/novelai/prompts/background-classroom.txt
 ```

@@ -361,6 +361,12 @@ def check_cost(args, request: dict) -> None:
             raise ClientError("V5は今回の生成に足りるOpus利用上限の確認も必要です。")
 
 
+def expects_free_base(args, request: dict) -> bool:
+    """生成本体にAnlasを使わない前提か。--allow-anlas と --confirm-v5-allowance の併用は、参照等の追加料金だけの許可として扱う。"""
+    return bool(args.confirm_zero_anlas
+                or (args.allow_anlas and args.confirm_v5_allowance and request["model"].startswith("nai-diffusion-5")))
+
+
 def image_bytes(body: bytes, content_type: str) -> bytes:
     try:
         if content_type in {"application/zip", "application/x-zip-compressed"} or body.startswith(b"PK\x03\x04"):
@@ -516,9 +522,10 @@ def execute_generation(root: Path, request: dict, payload: bytes, output_relativ
         raise ClientError("要求または費用メモへ認証情報を含めないでください。")
     state, check, signature = subscription_for_generation(root, key, request)
     print("契約照会: " + ("API呼び出し" if check["method"] == "api" else "省略（前回の結果を利用）") + " / " + check["reason"])
-    if args.confirm_zero_anlas and (state["active"] is not True or state["tier"] != 3):
-        raise ClientError("有効なOpus契約を確認できないため、無消費扱いの生成を停止しました。")
-    if args.confirm_zero_anlas and request["model"].startswith("nai-diffusion-5"):
+    free_base = expects_free_base(args, request)
+    if free_base and (state["active"] is not True or state["tier"] != 3):
+        raise ClientError("有効なOpus契約を確認できないため、生成本体を無消費とする生成を停止しました。")
+    if free_base and request["model"].startswith("nai-diffusion-5"):
         usage = state.get("usage", {})
         if usage.get("isNegative") is True or ("percent" in usage and usage["percent"] <= 0):
             raise ClientError("契約照会がV5利用上限の不足を示しています。回復を待ってください。")
@@ -591,7 +598,7 @@ def main() -> int:
     costs = generate.add_mutually_exclusive_group()
     costs.add_argument("--confirm-zero-anlas", action="store_true", help="今回の全設定で0 Anlasを確認済み")
     costs.add_argument("--allow-anlas", action="store_true", help="今回の設定でのAnlas消費をユーザーが明示許可済み")
-    generate.add_argument("--confirm-v5-allowance", action="store_true", help="今回のV5生成に足りる利用上限を確認済み")
+    generate.add_argument("--confirm-v5-allowance", action="store_true", help="今回のV5生成に足りる利用上限を確認済み。--allow-anlas と併用すると、追加料金だけの許可として扱い、照会結果が契約・利用上限の不足を示せば停止する")
     generate.add_argument("--cost-note", help="確認方法・日時・許可範囲。認証情報は書かない")
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]

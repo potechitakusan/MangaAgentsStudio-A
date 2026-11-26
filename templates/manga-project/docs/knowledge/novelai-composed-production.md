@@ -22,7 +22,7 @@ Codexでコマ割りと読み順を設計し、NovelAIは文字・枠のない�
 
 ### V5の精密参照で衣装を描き分ける
 
-使うかは[確認の手順](#precise-references)で決め、許可された範囲で次の方法を使う。V5の精密参照はコマの要求ごとに絵柄・キャラ・衣装を指定できる。着替えの前後で絵柄とキャラを保ちたい場合は、絵柄とキャラの参照を共通にし、衣装参照を着替え後の装いに差し替えて試す。採用した参照画像は版を固定して原本を保管し、各コマの要求で相対パス・種類・強度を記録する。[V5の精密参照の指定方法と費用](novelai-api.md#v5-precise-reference)
+使うかは[確認の手順](#precise-references)で決め、許可された範囲で次の方法を使う。V5の精密参照はコマの要求ごとに絵柄・キャラ・衣装を指定できる。着替えの前後で絵柄とキャラを保ちたい場合は、絵柄とキャラの参照を共通にし、衣装参照を着替え後の装いに差し替えて試す。採用した参照画像は版を固定して原本を保管し、各コマの要求で相対パス・種類・強度を記録する。絵柄を漫画全体で統一する場合は、各コマではなく作品全体の既定（`input/novelai/reference-defaults.json`。WebUIの変数タブで設定）に置き、絵柄を変えるコマだけコマで指定する。キャラ・衣装の画像を差し替えるときは、WebUIの変数タブの一覧から使っている画像ごとにまとめて置き換えられる。参照画像を大きく変えた場合は、プロンプトの特徴・衣装の説明も合わせて直す（元の説明が残ると画像がプロンプトの方に引っ張られた。2026-11-26の利用者の観察）。[V5の精密参照の指定方法と費用](novelai-api.md#v5-precise-reference)
 
 複数の衣装を描き分ける必要があるときは、次の方法から試す。
 
@@ -52,7 +52,7 @@ V5の精密参照は有料のため自動では使わず、許可された範囲
 
 - 追加料金は参照画像1枚につき5 Anlas。概算は「対象のコマ数×1コマの参照枚数（キャラ・衣装・絵柄の合計）×5 Anlas」。種類ごとの額と合計を示す。作り直しにも同じ額がかかる。コマ数が未確定なら、1コマの額とおおよその範囲を示す。
 - 生成本体の料金は別。参照付きの生成にOpusの無料条件が適用されるかは、キットでは未検証。
-- 参照画像はNovelAIへ送信される。参照付きの生成はWebUIではできず、端末から行う。
+- 参照画像はNovelAIへ送信される。参照の編集と参照付きの生成は、端末かWebUI（利用者が許可と上限Anlasを入力する）で行う。
 - 使わない場合は、上の表の方法で揃える（既定）。
 
 回答がない種類と「使わない」種類は、参照なしで進める。この回答待ちだけを理由に、企画・ネーム・人物試作・参照なしの作画を止めない。ただし、絵柄の参照が許可されず、画風IDも決まっていない場合は、画風IDの選択を待つ。「揃えてほしい」という依頼、参照画像の提供、参照素材の選定の委任だけでは、有料利用の許可とみなさない。
@@ -67,7 +67,7 @@ V5の精密参照は有料のため自動では使わず、許可された範囲
 3. **種類を選ぶ**。参照を足すほど追加料金が増えるため、必要な種類だけを付ける。
    - 服が変わらない人物は `character-same-outfit`、着替える人物は `character` から試す。別の衣装を着せるときは `character` と `outfit` を組み合わせる。
    - 絵柄だけなら `style`。キャラと絵柄を同じ画像から取る場合は `character-and-style`（服も優先するなら `character-and-style-same-outfit`）にすると、参照1枚で済む。
-4. **1人が映る1コマで試す**。送信なしの確認で追加料金を見てから、許可の範囲で1枚生成する。`--allow-anlas` を付けるとスクリプトはV5利用上限の不足では止まらない。許可が追加料金だけの場合は、送信前に `python -X utf8 scripts/novelai_api.py status` で残量を1回確かめ、不足・不明なら送信しない。生成後に `status` の残量の数値か、NovelAIの画面のAnlas残高を前後で比べ、実際の消費を記録する。見込みより多い場合や、確認できない場合は、残りを送信せずに報告する。
+4. **1人が映る1コマで試す**。送信なしの確認で追加料金を見てから、許可の範囲で1枚生成する。許可が追加料金だけの場合は、送信前に `python -X utf8 scripts/novelai_api.py status` で残量を1回確かめ、不足・不明なら送信しない。確かめた場合だけ `--allow-anlas` と `--confirm-v5-allowance` を併用する（照会結果が契約・利用上限の不足を示せば止まる。`--allow-anlas` だけでは不足でも止まらない）。生成後に `status` の残量の数値か、NovelAIの画面のAnlas残高を前後で比べ、実際の消費を記録する。見込みより多い場合や、確認できない場合は、残りを送信せずに報告する。
 5. **効き方を見比べる**。キャラは顔・髪・服、衣装は襟・飾り・裾など、絵柄は線・塗り・色が参照と合うかを見る。参照元の角度・表情・背景まで写っていないか、別の種類の特徴が混ざっていないかも見る。強すぎるときは強度を下げて試す（許可の範囲内）。参照なしと差がなければ、使わない方法へ戻すことを提案する。
 6. **本番のコマに付ける**。外見文・衣装の特徴・採用した画風文は省かず、参照と食い違わせない。キットの送信形式には参照と人物を対応させる項目がないため、2人以上が映るコマは特徴が混ざり得る。先に1コマで試し、混ざる場合は参照を減らす。人物が小さいコマ・後ろ姿・手元だけのコマはキャラの参照なしを、衣装の特徴が見えないコマは衣装の参照なしを候補にする。
 
@@ -76,8 +76,8 @@ V5の精密参照は有料のため自動では使わず、許可された範囲
 python -X utf8 scripts/novelai_compose.py --id p01-01 <構図・人物・画風の指定> --reference character input/novelai/references/mio-v1.png 1 --reference outfit input/novelai/references/mio-uniform-v1.png 1 --reference style input/novelai/references/style-v1.png 1
 # 追加料金を含む送信なしの確認
 python -X utf8 scripts/novelai_batch.py generate --ids p01-01
-# 明示許可の範囲だけ
-python -X utf8 scripts/novelai_batch.py generate --ids p01-01 --execute --allow-anlas --cost-note '許可の内容・上限・確認した費用と日付'
+# 明示許可の範囲だけ（追加料金だけの許可なら、残量を確かめて --confirm-v5-allowance も付ける）
+python -X utf8 scripts/novelai_batch.py generate --ids p01-01 --execute --allow-anlas --confirm-v5-allowance --cost-note '許可の内容・上限・確認した費用と日付'
 ```
 
 この手順はユーザー指示（2026-11-25）に基づく制作提案。衣装の混在は少数の試作で観察した（[制作根拠E6](image-generation/production-evidence.md#e6)）。キャラ・絵柄の参照による一貫性の比較、2人以上のコマでの効果、最適な強度は未検証。[V5の精密参照の指定方法と費用](novelai-api.md#v5-precise-reference)・[参照画像の作り方](ai-production.md)
@@ -286,8 +286,10 @@ python -X utf8 scripts/novelai_compose.py --id p01-03 --seed 123 `
 人間が見た目を一括で変えて再生成できるように、キャラクター・絵柄・背景のプロンプトを作品ルートの `.env.novelai` の変数にし、要求JSONからは `${NOVELAI_CHAR_MIO}`・`${NOVELAI_STYLE_MAIN}`・`${NOVELAI_BACKGROUND_CLASSROOM}` のように参照できる。**人間から依頼があった場合だけ**行う。
 
 1. 変数名の案（用途に応じて `NOVELAI_CHAR_`・`NOVELAI_STYLE_`・`NOVELAI_BACKGROUND_` ＋半角英大文字・数字・`_`）と、各変数に入れるプロンプトを示し、ユーザーに確認する。
-2. `python -X utf8 scripts/novelai_batch.py env-set NOVELAI_CHAR_MIO --value-file input/novelai/char-mio.txt` で `.env.novelai` へ書く。`.env.novelai` の他の行は変更しない。APIキーは共通設定の `.env` 等にあり、表示・変更しない。
-3. `templatize NOVELAI_CHAR_MIO --dry-run` で置き換える箇所を確認し、`templatize NOVELAI_CHAR_MIO` で要求JSON内の同じ文を変数に置き換える。
+   - **キャラの特徴と衣装は、衣装が１つでも別の変数に分ける。** 特徴（髪型・髪色・目・体格・衣装以外の装飾）は `NOVELAI_CHAR_MIO`、衣装（服・靴・衣装に付く小物）は `NOVELAI_CHAR_MIO_OUTFIT` に入れる。衣装が複数なら `NOVELAI_CHAR_MIO_OUTFIT_UNIFORM`・`NOVELAI_CHAR_MIO_OUTFIT_GYM` のように衣装ごとに分ける。人物別の文では `${NOVELAI_CHAR_MIO}, ${NOVELAI_CHAR_MIO_OUTFIT}, smiling` のように並べる。
+   - 分ける理由：V5の精密参照でキャラ・衣装の画像を差し替えても、プロンプトに元の外見・衣装の説明が残ると画像がプロンプトの方に引っ張られた（2026-11-26の利用者の観察。条件・強度ごとの比較は未検証）。分けておけば、差し替えた画像に合わせて衣装や特徴の文だけを直せる。
+2. `python -X utf8 scripts/novelai_batch.py env-set NOVELAI_CHAR_MIO --value-file input/novelai/char-mio.txt` で `.env.novelai` へ書く（衣装は `NOVELAI_CHAR_MIO_OUTFIT` を同じように書く）。`.env.novelai` の他の行は変更しない。APIキーは共通設定の `.env` 等にあり、表示・変更しない。
+3. `templatize NOVELAI_CHAR_MIO --dry-run` で置き換える箇所を確認し、`templatize NOVELAI_CHAR_MIO` で要求JSON内の同じ文を変数に置き換える。特徴と衣装が１つの文に続けて書かれている場合は、それぞれの値がその文の一部と一致するように分け、両方の変数で templatize する。置き換え後の文を `--dry-run` の件数と要求JSONで確かめる。
 4. `vars` で変数名を確認し、変数名と使う要求を [NovelAI一括生成の記録](../production/NOVELAI-BATCH.md) に残す。
 
 以後、人間は `.env.novelai` の値を書き換えてから `generate` を再実施できる。生成時には変数を展開した要求が実行記録に残る。`NOVELAI_CHAR_*`・`NOVELAI_STYLE_*`・`NOVELAI_BACKGROUND_*` 以外の変数・APIキーは要求へ展開しない。同じ変数が環境変数と `.env.novelai` の両方にあると止まる。以前の版で `.env`・`.secrets/` に置いた変数・補助設定が残っていると止まり、`python -X utf8 scripts/novelai_batch.py env-migrate` で `.env.novelai` へ移すよう案内する（APIキー等の他の行は残す。`--dry-run` で確認のみ）。移行先への保存が成功してから元の行を除く。途中で保存に失敗した場合は両方に同じ変数が残ることがあるため、移行先の値を確認してから重複を整理する。

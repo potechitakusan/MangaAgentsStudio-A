@@ -11,7 +11,7 @@
 | `docs/knowledge/image-generation/` | モデル・版・実行環境別の画像入力と観察、匿名化した制作根拠の要約 | 同じ相対パスへコピー。作品の原画・ログは含めない |
 | `docs/knowledge/supervision/` | 場面ごとの監修知識・出典・利用手順 | 明示リストの文書とマニフェストを同梱 |
 | `skills/` | 役割別スキルの原本 | `.agents/skills/` へコピー |
-| `skills/novelai-batch-webui/` | NovelAI一括制作（`.env.novelai` の変数・要求JSONの編集、生成・採用・ページのビルド・プレビュー）を人間が画面で操作するローカルWebUI。処理は作品の `novelai_batch.py`・`novelai_api.py` を呼ぶ。LoRA適用の差し込み口 `lora_apply.py` は空の雛形 | `.agents/skills/` へコピー。WebUI自体はPython標準ライブラリのみ。作品ごとの `lora_apply.py` の実装は配布元へ戻さない |
+| `skills/novelai-batch-webui/` | NovelAI一括制作（`.env.novelai` の変数・要求JSON・V5の精密参照の編集、生成・採用・ページのビルド・プレビュー）を人間が画面で操作するローカルWebUI。処理は作品の `novelai_batch.py`・`novelai_api.py` を呼ぶ（NovelAIはLoRAを指定できないため、LoRA適用モードは0.5.7で削除） | `.agents/skills/` へコピー。WebUI自体はPython標準ライブラリのみ |
 | `skills/pixai-batch-webui/` | PixAI一括制作（`.env.pixai` の変数・要求JSONの編集、生成・取得し直し・採用・ページのビルド・プレビュー）を人間が画面で操作するローカルWebUI。処理は作品の `pixai_batch.py`・`pixai_api.py` を呼ぶ。NovelAI用のWebUIとは独立し、互いを参照しない | `.agents/skills/` へコピー |
 | `templates/manga-project/` | 作品設定・記録の雛形、コマ割りテンプレート素材 | 作品ルートへコピー |
 | `templates/manga-project/docs/knowledge/novelai-composed-production.md` | NovelAIの画風選択・素材生成・組版の運用原本 | 雛形から `docs/knowledge/novelai-composed-production.md` へコピー |

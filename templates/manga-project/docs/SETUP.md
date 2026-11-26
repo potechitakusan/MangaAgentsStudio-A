@@ -78,7 +78,7 @@ APIキーの追加設定は不要です。現在のCodexセッションで画像
    ```
    `key-status` は外部通信のないローカル確認です。`status` はAPIキーを認証ヘッダーに使って契約を照会し、作品のプロンプトや画像は送りません。接続確認用の [依頼プロンプト](knowledge/novelai-api.md#確認を依頼するプロンプト) も用意しています。
 3. **要求の組み立てと費用確認**：要求JSONは原則として `scripts/novelai_compose.py`（V5が既定、V4.5はユーザー指定時のみ。使い方は [標準スクリプトの説明](knowledge/novelai-api.md#compose-standard)）で組み立てます。生成コマンドは `--execute` がなければ送信しません。有効なOpus契約なら [Anlasを消費しない生成条件](knowledge/ai-production.md#novelai-opus)を確認し、1回1枚・28ステップ以下（V5は初期値23、V4.5以前は28）・標準の [ページ設定](knowledge/page-layout.md)を基準にします。採用寸法・モデル・追加機能を含めた0 Anlasの確認とV5利用上限の残量確認を行い、有料（Anlas消費）生成は明示指示がある範囲だけ実行します（契約照会の成功だけでは費用・残枠の確認完了と扱いません）。V5の精密参照は参照画像1枚につき追加5 Anlasで、有料生成の扱いです（[指定方法と費用](knowledge/novelai-api.md#v5-precise-reference)）。
-4. **プロンプト変数編集とローカルWebUI**：キャラクター・絵柄・背景を自分で編集して再生成したい場合は [NovelAIプロンプト編集のREADME](novelai-prompts/README.md) を参照してください（依頼があった場合だけ変数化し、`.env.novelai` の直接編集とテキストからの反映を選べます）。要求JSONとページ構成の準備後は、作品ルートで `python -X utf8 .agents/skills/novelai-batch-webui/novelai_webui.py` を実行してブラウザー画面（既定ポート `8765`）からも操作できます（[NovelAI WebUIスキル](../.agents/skills/novelai-batch-webui/SKILL.md)）。
+4. **プロンプト変数編集とローカルWebUI**：キャラクター・絵柄・背景を自分で編集して再生成したい場合は [NovelAIプロンプト編集のREADME](novelai-prompts/README.md) を参照してください（依頼があった場合だけ変数化し、`.env.novelai` の直接編集とテキストからの反映を選べます）。要求JSONとページ構成の準備後は、作品ルートで `python -X utf8 .agents/skills/novelai-batch-webui/novelai_webui.py` を実行してブラウザー画面（既定ポート `8765`）からも操作できます。V5の精密参照の編集と、許可・上限Anlasを入力した参照付きの生成にも対応します（[NovelAI WebUIスキル](../.agents/skills/novelai-batch-webui/SKILL.md)）。
 
 ### C. PixAI APIを使う場合
 

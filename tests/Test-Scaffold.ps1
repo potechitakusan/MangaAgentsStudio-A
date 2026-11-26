@@ -34,7 +34,7 @@ $project = Get-Content -LiteralPath (Join-Path $projectRoot 'project.json') -Raw
 Check ($project.name -ceq $japaneseName) 'Japanese project name survives JSON round trip'
 Check ((Split-Path $projectRoot -Parent) -eq $testRoot) 'Project is a direct child of the selected parent'
 Check (@(Get-ChildItem -LiteralPath (Join-Path $projectRoot '.agents\skills') -Directory).Count -eq 12) '監修・プロセスチェッカー・外部コマ作画・NovelAI WebUI・PixAI WebUIを含む12のスキルが同梱される'
-foreach ($webuiFile in @('novelai-batch-webui/SKILL.md', 'novelai-batch-webui/novelai_webui.py', 'novelai-batch-webui/lora_run.py', 'novelai-batch-webui/lora_apply.py', 'pixai-batch-webui/SKILL.md', 'pixai-batch-webui/pixai_webui.py')) {
+foreach ($webuiFile in @('novelai-batch-webui/SKILL.md', 'novelai-batch-webui/novelai_webui.py', 'pixai-batch-webui/SKILL.md', 'pixai-batch-webui/pixai_webui.py')) {
     $webuiCopy = Join-Path $projectRoot ('.agents/skills/' + $webuiFile)
     $webuiSource = Join-Path $root ('skills/' + $webuiFile)
     Check ((Test-Path -LiteralPath $webuiCopy -PathType Leaf) -and

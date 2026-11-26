@@ -8,25 +8,30 @@
 できること
   - .env.novelai のキャラクター・絵柄・背景の変数（NOVELAI_CHAR_・NOVELAI_STYLE_・NOVELAI_BACKGROUND_）の表示・編集・追加、templatize、
     以前の版で .env に置いた変数の移動（env-migrate）
-  - 要求JSON（input/novelai/requests/）のプロンプト・人物別本文・配置ピン・除外・寸法・seedの編集、差し替え案の複製、変数展開後の確認
+  - 要求JSON（input/novelai/requests/）のプロンプト・人物別本文・配置ピン・除外・寸法・seed・V5の精密参照（キャラ・衣装・絵柄等）の編集、
+    差し替え案の複製、変数展開後の確認
+  - 精密参照の一括設定（変数タブ）：絵柄の全コマの既定（input/novelai/reference-defaults.json）、キャラ・衣装の画像ごとの置換
   - 生成（送信なし確認／実行）、候補の比較と採用、最新候補の一括採用
   - ページ構成（input/pages/）・組版指定（input/typeset/）のJSON編集、build（PSDは指定時のみ）、ページ送りの確認
   - APIキーの読込確認（key-status）と契約照会（status）
 
 守ること
   - 生成・採用・組み直し・.env.novelai の書き込みは、作品の scripts/novelai_batch.py・novelai_api.py をそのまま呼ぶ。
-    費用確認・実行記録・自動再送しない扱いはスクリプト側のまま。WebUIは有料生成（--allow-anlas）を出さない。
+    費用確認・実行記録・自動再送しない扱いはスクリプト側のまま。有料生成（--allow-anlas）は、V5の精密参照の追加料金だけを、
+    利用者が今回の範囲を許可し、上限Anlasを入力した場合に限って渡す。参照以外の有料機能は出さない。
   - APIキーは読まない・表示しない（変数は novelai_batch.read_variables が許可した接頭辞だけ）。
   - 127.0.0.1 だけで待ち受け、起動ごとのトークンがないAPI呼び出しを拒否する。ブラウザーは自動で開かない。
   - JSONを保存するときは、前の内容を output/webui/history/ に残す。
-Python 3.10以上の標準ライブラリだけで動く（build には作品の既存要件の Pillow が必要）。
+Python 3.10以上の標準ライブラリだけで動く（build と、精密参照付きの要求の確認・生成には作品の既存要件の Pillow が必要）。
 """
 from __future__ import annotations
 
 import argparse
+import copy
 from datetime import datetime
 import json
 import mimetypes
+import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import re
@@ -35,13 +40,24 @@ import shutil
 import subprocess
 import sys
 import threading
+from types import SimpleNamespace
 from urllib.parse import parse_qs, urlparse
 
 IMAGE_TYPES = {".png", ".jpg", ".jpeg", ".webp"}
-SERVE_DIRS = ("output/", "input/", "templates/onomatopoeia/")
-HERE = Path(__file__).resolve().parent
-SETTINGS = "output/webui/settings.json"
-LORA_OUTPUT = "output/lora"
+SERVE_DIRS = ("output/", "input/", "assets/", "templates/onomatopoeia/")
+# 精密参照の画像の候補にするフォルダ（隠しフォルダ・隠しファイルは除く）。一覧は画面上部の「候補画像を更新」で取り直す。
+# 候補には、このほかページに属さない要求（人物試作など）の採用画像も加える（reference_candidates）。
+REFERENCE_ROOTS = ("input", "assets")
+# 精密参照の種類の表示名。送れる種類・モデル・料金は作品の novelai_api.py に従う（対応していない版では画面に出さない）。
+REFERENCE_LABELS = {
+    "character": "キャラ", "character-same-outfit": "キャラ（参照元の服を優先）", "outfit": "衣装", "style": "絵柄",
+    "character-and-style": "キャラ＋絵柄", "character-and-style-same-outfit": "キャラ＋絵柄（参照元の服を優先）",
+}
+# 変数タブの一括置換で扱う種類。キャラの一覧には、キャラを含む種類（キャラ＋絵柄も）をまとめて出す。
+REFERENCE_GROUPS = {
+    "character": ("character", "character-same-outfit", "character-and-style", "character-and-style-same-outfit"),
+    "outfit": ("outfit",),
+}
 MAX_LIMIT = 1000  # generate --max の上限（novelai_batch.py の既定は30件）
 PAGE_FILE = re.compile(r"page-(\d{2,3})\.json")
 
@@ -61,44 +77,7 @@ class Project:
         self.batch = novelai_batch
         self.job: dict | None = None
         self.lock = threading.Lock()
-        import importlib.util
-        spec = importlib.util.spec_from_file_location("lora_run", HERE / "lora_run.py")
-        self.lora_runner = importlib.util.module_from_spec(spec)
-        sys.modules["lora_run"] = self.lora_runner  # dataclass の解決に必要
-        spec.loader.exec_module(self.lora_runner)
-        self.lora = self.lora_check()
-
-    # ------------------------------------------------------------ LoRA適用モード
-    def settings(self) -> dict:
-        path = self.root / SETTINGS
-        try:
-            return json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
-        except (OSError, json.JSONDecodeError):
-            return {}
-
-    def lora_check(self) -> dict:
-        """lora_apply.py の準備（READY・apply・check()）を確かめる。準備前は保存済みのONも無効にする。"""
-        ready, message, name = self.lora_runner.readiness(self.root)
-        mode = bool(self.settings().get("lora_mode")) and ready
-        return {"ready": ready, "message": message, "name": name, "mode": mode}
-
-    def set_lora_mode(self, on: bool) -> dict:
-        self.lora = self.lora_check()
-        if on and not self.lora["ready"]:
-            raise ValueError("LoRA適用の準備が完了していないため、ONにできません。" + self.lora["message"] +
-                             "作品ごとに .agents/skills/novelai-batch-webui/lora_apply.py へ処理を実装し、READY を True にしてください。")
-        data = self.settings()
-        data["lora_mode"] = bool(on)
-        path = self.root / SETTINGS
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-        self.lora = self.lora_check()
-        return self.lora
-
-    def lora_results(self, request_id: str) -> list[str]:
-        folder = self.root / LORA_OUTPUT / request_id
-        found = [p for p in folder.glob("l*.png") if re.fullmatch(r"l\d{3,}\.png", p.name)] if folder.is_dir() else []
-        return [self.rel(p) for p in sorted(found, key=lambda p: int(p.stem[1:]))]
+        self.images: list[str] | None = None  # 精密参照の画像の候補（最初の表示時と「候補画像を更新」で作る）
 
     # ------------------------------------------------------------ パス
     def rel(self, path: Path) -> str:
@@ -123,6 +102,232 @@ class Project:
         temporary = path.with_suffix(path.suffix + ".tmp")
         temporary.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         temporary.replace(path)
+
+    # ------------------------------------------------------------ 精密参照（V5）
+    def reference_spec(self) -> dict:
+        """作品の novelai_api.py が対応する精密参照の種類・モデル・料金。対応していない版では types が空になる。"""
+        api = self.batch.api
+        types = getattr(api, "PRECISE_REFERENCE_TYPES", {})
+        order = [k for k in REFERENCE_LABELS if k in types] + [k for k in types if k not in REFERENCE_LABELS]
+        return {"types": [[k, REFERENCE_LABELS.get(k, k)] for k in order],
+                "models": sorted(getattr(api, "PRECISE_REFERENCE_MODELS", ())),
+                "anlas": getattr(api, "PRECISE_REFERENCE_ANLAS", 0),
+                "paid": bool(types) and hasattr(api, "expects_free_base")}
+
+    def reference_images(self, rescan: bool = False) -> list[str]:
+        """input/・assets/ の画像をすべて返す（フォルダ順、その中は相対パス順）。ファイルを足したら rescan で取り直す。"""
+        if self.images is None or rescan:
+            found: list[str] = []
+            for name in REFERENCE_ROOTS:
+                folder = self.root / name
+                listed = []
+                for current, dirs, files in os.walk(folder):
+                    dirs[:] = [d for d in dirs if not d.startswith(".")]  # 隠しフォルダは参照に使えないため出さない
+                    for file in files:
+                        path = Path(current) / file
+                        if not file.startswith(".") and path.suffix.lower() in IMAGE_TYPES:
+                            listed.append(path.relative_to(self.root).as_posix())
+                found += sorted(listed)
+            self.images = found
+        return self.images
+
+    def reference_candidates(self, rescan: bool = False) -> list[str]:
+        """精密参照の画像の候補：input/・assets/ の画像と、ページに属さない要求（人物試作など）の採用画像。
+        採用画像は採用のたびに変わるため、毎回 adopted.json から読む（フォルダの一覧だけを取り直しの対象にする）。"""
+        adopted = self.batch.load_adopted(self.root)["adopted"]
+        trials = [adopted[i]["path"] for i in self.batch.request_files(self.root)
+                  if self.batch.page_of(i) is None and isinstance(adopted.get(i), dict) and isinstance(adopted[i].get("path"), str)]
+        return list(dict.fromkeys(self.reference_images(rescan) + trials))
+
+    @staticmethod
+    def references_of(request) -> list:
+        params = request.get("parameters") if isinstance(request, dict) else None
+        references = params.get("precise_references") if isinstance(params, dict) else None
+        return references if isinstance(references, list) else []
+
+    def check_references(self, data: dict) -> None:
+        params, spec = data["parameters"], self.reference_spec()
+        if "precise_references" not in params or not spec["types"]:
+            return
+        references = params["precise_references"]
+        if not isinstance(references, list) or not references:
+            raise ValueError("精密参照は1件以上の一覧にしてください（使わない場合は項目ごと外す）。")
+        if data.get("model") not in spec["models"]:
+            raise ValueError("精密参照を使えるモデルは " + "、".join(spec["models"]) + " です。")
+        names = [k for k, _ in spec["types"]]
+        for index, item in enumerate(references, 1):
+            label = f"精密参照{index}"
+            if not isinstance(item, dict) or set(item) - {"type", "path", "strength"}:
+                raise ValueError(f"{label}: 種類・画像・強度で指定してください。")
+            if item.get("type") not in names:
+                raise ValueError(f"{label}: 種類は " + "、".join(names) + " から選んでください。")
+            self.check_strength(label, item.get("strength", 1))
+            item["path"] = self.check_reference_path(label, item.get("path"))
+
+    @staticmethod
+    def check_strength(label: str, strength) -> None:
+        if type(strength) not in (int, float) or not 0 <= strength <= 5:
+            raise ValueError(f"{label}: 強度は0〜5の数値にしてください。")
+
+    def check_reference_path(self, label: str, path) -> str:
+        """参照画像のパスを確かめ、区切りを / にそろえて返す。変数を含むパスは、展開後に送信なし確認で確かめる。"""
+        if not isinstance(path, str) or not path.strip():
+            raise ValueError(f"{label}: 画像のパスを指定してください。")
+        if "${" in path:
+            return path
+        path = path.strip().replace("\\", "/")
+        parts = Path(path).parts
+        if Path(path).is_absolute() or Path(path).drive or any(p.startswith(".") for p in parts):
+            raise ValueError(f"{label}: 画像は作品ルートからの相対パスで指定してください（.. と隠しフォルダは使えません）。")
+        if Path(path).suffix.lower() not in IMAGE_TYPES:
+            raise ValueError(f"{label}: 画像は PNG・JPEG・WebP を指定してください。")
+        self.inside(path)
+        return path
+
+    # ------------------------------------------------------------ 精密参照の一括設定（変数タブ）
+    def defaults_supported(self) -> bool:
+        return bool(self.reference_spec()["types"]) and hasattr(self.batch, "with_reference_defaults")
+
+    def reference_defaults(self) -> dict:
+        """作品全体の既定（絵柄）。作品の scripts/ が対応していない版では supported が False。"""
+        if not self.defaults_supported():
+            return {"supported": False, "style": None}
+        try:
+            return {"supported": True, "style": self.batch.read_reference_defaults(self.root).get("style")}
+        except Exception as error:  # 書式の誤りは画面に出して直してもらう
+            return {"supported": True, "style": None, "error": str(error)}
+
+    def effective(self, raw, defaults: dict | None = None):
+        """生成で使う参照（既定の絵柄を足したもの）を数えるための要求。変数は展開しない。"""
+        defaults = self.reference_defaults() if defaults is None else defaults
+        if not defaults.get("style") or not isinstance(raw, dict):
+            return raw
+        return self.batch.with_reference_defaults(raw, {"style": defaults["style"]})
+
+    def save_reference_defaults(self, style) -> dict:
+        if not self.defaults_supported():
+            raise ValueError("作品の scripts/ が既定の絵柄に対応していません（配布版0.5.7以降で対応）。")
+        if style is not None:
+            if not isinstance(style, dict) or set(style) - {"path", "strength"}:
+                raise ValueError("既定の絵柄は画像と強度で指定してください。")
+            strength = style.get("strength", 1)
+            self.check_strength("既定の絵柄", strength)
+            style = {"path": self.check_reference_path("既定の絵柄", style.get("path")), "strength": strength}
+        with self.lock:
+            if self.job and self.job["state"] == "running":
+                raise ValueError("実行中の操作があります。終わってから変更してください。")
+            self.write_json(self.root / self.batch.REFERENCE_DEFAULTS, {"schema_version": 1, "style": style})
+        self.note("既定の絵柄 → " + (f"{style['path']}（強度 {style['strength']}）" if style else "なし"))
+        return self.reference_defaults()
+
+    def reference_groups(self, kind: str) -> list[dict]:
+        """キャラ・衣装の参照画像ごとに、使うコマと種類をまとめる（要求JSONの書いたままのパス。変数も展開しない）。"""
+        types = REFERENCE_GROUPS.get(kind)
+        if types is None:
+            raise ValueError("一覧の種類が不正です")
+        groups: dict[str, dict] = {}
+        for request_id, path in self.batch.request_files(self.root).items():
+            try:
+                references = self.references_of(json.loads(path.read_text(encoding="utf-8-sig")))
+            except (OSError, ValueError):
+                continue
+            for item in references:
+                if isinstance(item, dict) and item.get("type") in types and isinstance(item.get("path"), str):
+                    group = groups.setdefault(item["path"], {"path": item["path"], "types": [], "ids": []})
+                    if item["type"] not in group["types"]:
+                        group["types"].append(item["type"])
+                    if request_id not in group["ids"]:
+                        group["ids"].append(request_id)
+        return sorted(groups.values(), key=lambda g: g["path"])
+
+    @staticmethod
+    def merges(groups: list[dict], mapping: dict) -> bool:
+        """置換後に別の画像の一覧と同じ画像になり、元の区別がつかなくなるか。"""
+        finals = [mapping.get(g["path"], g["path"]) for g in groups]
+        return len(set(finals)) < len(finals)
+
+    def replace_references(self, body: dict) -> dict:
+        kind, mapping = body.get("kind"), body.get("mapping")
+        groups = self.reference_groups(kind)
+        if not isinstance(mapping, dict) or not all(isinstance(k, str) and isinstance(v, str) for k, v in mapping.items()):
+            raise ValueError("置換の指定が不正です")
+        current = {g["path"] for g in groups}
+        unknown = [k for k in mapping if k not in current]
+        if unknown:
+            raise ValueError("一覧にない画像です（一覧を表示し直してください）: " + ", ".join(unknown))
+        mapping = {old: self.check_reference_path(old, new) for old, new in mapping.items() if new.strip()}
+        mapping = {old: new for old, new in mapping.items() if new != old}
+        if not mapping:
+            raise ValueError("変更する画像がありません。")
+        if self.merges(groups, mapping) and body.get("merge_ok") is not True:
+            raise ValueError("変換後の画像が既に採用されているものもあります。確認してから置換してください。")
+        types, changed = REFERENCE_GROUPS[kind], {}
+        with self.lock:
+            if self.job and self.job["state"] == "running":
+                raise ValueError("実行中の操作があります。終わってから置換してください。")
+            for request_id, path in self.batch.request_files(self.root).items():
+                data = json.loads(path.read_text(encoding="utf-8-sig"))
+                count = 0
+                for item in self.references_of(data):
+                    if isinstance(item, dict) and item.get("type") in types and item.get("path") in mapping:
+                        item["path"] = mapping[item["path"]]
+                        count += 1
+                if count:
+                    self.write_json(path, data)
+                    changed[request_id] = count
+        for old, new in mapping.items():
+            self.note(f"参照の一括置換（{kind}） {old} → {new}")
+        return {"changed": changed, "groups": self.reference_groups(kind)}
+
+    def generation_ids(self, body: dict, ids: list[str], pages: list[int]) -> list[str]:
+        files = self.batch.request_files(self.root)
+        if body.get("all"):
+            return [i for i in files if self.batch.page_of(i) is not None]
+        if ids:
+            return [i for i in ids if i in files]
+        return [i for i in files if self.batch.page_of(i) in pages]
+
+    def has_references(self, request_id: str) -> bool:
+        try:
+            path = self.batch.request_files(self.root)[request_id]
+            return bool(self.references_of(self.effective(json.loads(path.read_text(encoding="utf-8-sig")))))
+        except (OSError, ValueError, KeyError):
+            return False  # 読めない要求は novelai_batch.py がエラーを表示して止まる
+
+    def paid_reference_flags(self, ids: list[str], body: dict, note: str) -> list[str]:
+        """精密参照の追加料金だけを使う生成の引数。許可・上限・参照以外の条件を満たさなければ送信前に止める。"""
+        api, spec = self.batch.api, self.reference_spec()
+        if not spec["paid"]:
+            raise ValueError("精密参照付きの生成を画面から行うには、作品の scripts/ が配布版0.5.7以降である必要があります。")
+        if not ids:
+            raise ValueError("精密参照付きのコマがありません。")
+        if body.get("allow_reference_anlas") is not True or not note:
+            raise ValueError("精密参照付きの生成には、今回の範囲でAnlasの消費を許可するチェックと確認内容（cost-note）が必要です。")
+        if body.get("confirm_v5_allowance") is not True:
+            raise ValueError("生成本体の分として、V5の利用上限の残量が足りることの確認が必要です。")
+        limit = body.get("anlas_limit")
+        if type(limit) is not int or limit < 1:
+            raise ValueError("今回の上限Anlasを1以上の整数で入力してください。")
+        total = 0
+        for request_id in ids:
+            try:
+                request, _ = self.batch.resolved_request(self.root, request_id, self.batch.read_variables(self.root))
+                references = self.references_of(request)
+                if not references:
+                    raise ValueError(f"{request_id}: 精密参照がありません。参照なしのコマは分けて生成してください。")
+                # 参照を除いた要求が、0 Anlasの生成と同じ条件（寸法・steps・追加機能）を満たすかを同じ判定で確かめる。
+                base = copy.deepcopy(request)
+                del base["parameters"]["precise_references"]
+                prepared, _ = api.prepare_request_data(self.root, base)
+                api.check_cost(SimpleNamespace(cost_note=note, confirm_zero_anlas=True, allow_anlas=False,
+                                               confirm_v5_allowance=True), prepared)
+            except api.ClientError as error:
+                raise ValueError(f"{request_id}: 画面からは生成できません。参照以外の条件を確認してください。{error}") from None
+            total += len(references) * spec["anlas"]
+        if total > limit:
+            raise ValueError(f"精密参照の追加料金の見込み{total} Anlasが、今回の上限{limit} Anlasを超えます。送信していません。")
+        return ["--execute", "--allow-anlas", "--confirm-v5-allowance", "--cost-note",
+                f"{note}（WebUI：精密参照の追加{total} Anlasの見込み、今回の上限{limit} Anlas）"]
 
     # ------------------------------------------------------------ 読み取り
     def variables(self) -> list[dict]:
@@ -155,19 +360,36 @@ class Project:
 
     def state(self) -> dict:
         adopted = self.batch.load_adopted(self.root)["adopted"]
+        defaults = self.reference_defaults()
         requests = []
         for request_id, path in self.batch.request_files(self.root).items():
             text = path.read_text(encoding="utf-8-sig")
+            count, style = self.reference_count(text, defaults)
             requests.append({
                 "id": request_id, "page": self.batch.page_of(request_id),
                 "candidates": [self.rel(p) for p in self.batch.candidates(self.root, request_id)],
-                "lora": self.lora_results(request_id),
                 "adopted": adopted.get(request_id, {}).get("path"),
                 "vars": sorted(set(self.batch.PLACEHOLDER.findall(text))),
+                "references": count,  # 既定の絵柄を足した、生成で使う参照の枚数
+                "style": style,  # 絵柄：own（コマで指定）・default（既定を使う）・none
             })
+        reference = {**self.reference_spec(), "images": self.reference_candidates(), "defaults": defaults,
+                     "style_types": list(getattr(self.batch, "STYLE_REFERENCE_TYPES", ()))}
         return {"project": json.loads((self.root / "project.json").read_text(encoding="utf-8-sig")).get("name", self.root.name),
                 "requests": requests, "pages": self.pages(), "variables": self.variables(), "job": self.job_view(),
-                "lora": self.lora}
+                "reference": reference}
+
+    def reference_count(self, text: str, defaults: dict) -> tuple[int, str]:
+        try:
+            raw = json.loads(text)
+        except ValueError:
+            return 0, "none"
+        own = self.references_of(raw)
+        used = self.references_of(self.effective(raw, defaults))
+        if len(used) > len(own):
+            return len(used), "default"
+        styles = getattr(self.batch, "STYLE_REFERENCE_TYPES", ())
+        return len(used), "own" if any(isinstance(i, dict) and i.get("type") in styles for i in own) else "none"
 
     def request(self, request_id: str) -> dict:
         path = self.batch.request_files(self.root).get(request_id)
@@ -186,6 +408,7 @@ class Project:
             raise ValueError("要求IDは英数字・-・_ で書いてください（例 p01-03b）")
         if not isinstance(data, dict) or not isinstance(data.get("parameters"), dict) or not isinstance(data.get("input"), str):
             raise ValueError("要求JSONの形（input・parameters）がありません")
+        self.check_references(data)
         path = self.root / self.batch.REQUESTS_DIR / f"{request_id}.json"
         if new and path.exists():
             raise ValueError("同じIDの要求があります: " + request_id)
@@ -235,9 +458,19 @@ class Project:
         if action == "generate":
             if not target:
                 raise ValueError("対象（ID・ページ・全ページ）を指定してください")
-            args = script + ["generate", *target, "--seed", body.get("seed", "auto")]
             if body.get("seed") not in ("auto", "request", "random"):
                 raise ValueError("seed の指定が不正です")
+            scope = body.get("scope", "all")  # all：対象のまま／plain：参照なしのコマだけ／reference：精密参照付きのコマだけ
+            if scope not in ("all", "plain", "reference"):
+                raise ValueError("対象の絞り込みの指定が不正です")
+            chosen = self.generation_ids(body, ids, pages)
+            referenced = [i for i in chosen if self.has_references(i)]
+            if scope != "all":
+                chosen = referenced if scope == "reference" else [i for i in chosen if i not in referenced]
+                if not chosen:
+                    raise ValueError("対象のコマがありません。")
+                target = ["--ids", ",".join(chosen)]
+            args = script + ["generate", *target, "--seed", body["seed"]]
             limit = int(body.get("max") or 30)
             if not 1 <= limit <= MAX_LIMIT:
                 raise ValueError(f"上限件数は1～{MAX_LIMIT}で指定してください")
@@ -245,11 +478,19 @@ class Project:
                 args += ["--max", str(limit)]
             if body.get("execute"):
                 note = str(body.get("cost_note", "")).strip()
-                if not body.get("confirm_zero_anlas") or not note:
-                    raise ValueError("実行には「0 Anlasを確認した」と確認内容（cost-note）が必要です。WebUIは有料生成を行いません。")
-                args += ["--execute", "--confirm-zero-anlas", "--cost-note", note]
-                if body.get("confirm_v5_allowance"):
-                    args.append("--confirm-v5-allowance")
+                if scope == "reference":
+                    if len(chosen) > limit:
+                        raise ValueError(f"対象が{len(chosen)}件で上限{limit}件を超えます。")
+                    args += self.paid_reference_flags(chosen, body, note)
+                else:
+                    if not body.get("confirm_zero_anlas") or not note:
+                        raise ValueError("実行には「0 Anlasを確認した」と確認内容（cost-note）が必要です。")
+                    if scope == "all" and referenced:
+                        raise ValueError("精密参照付きのコマ（" + "、".join(referenced[:5]) + ("ほか" if len(referenced) > 5 else "") +
+                                         "）は追加のAnlasがかかるため、0 Anlasの生成に含められません。対象を分けてください。")
+                    args += ["--execute", "--confirm-zero-anlas", "--cost-note", note]
+                    if body.get("confirm_v5_allowance"):
+                        args.append("--confirm-v5-allowance")
                 if body.get("accept_warnings"):
                     args.append("--accept-warnings")
             return args
@@ -280,22 +521,6 @@ class Project:
             if not self.batch.VAR_NAME.fullmatch(name):
                 raise ValueError("変数名は " + self.batch.VAR_HELP)
             return script + ["env-set", name, "--value", value]
-        if action == "adopt-file":
-            path = str(body.get("path", ""))
-            if len(ids) != 1 or not path.startswith(LORA_OUTPUT + "/") or not self.inside(path).is_file():
-                raise ValueError("採用には要求IDと output/lora/ の画像が必要です")
-            return script + ["adopt", ids[0], "--file", path]
-        if action == "lora":
-            self.lora = self.lora_check()
-            if not self.lora["mode"]:
-                raise ValueError("LoRA適用モードがONではありません（" + self.lora["message"] + "）")
-            if not target:
-                raise ValueError("対象（コマ・ページ・全ページ）を指定してください")
-            if body.get("input", "adopted") not in ("adopted", "latest"):
-                raise ValueError("元画像の指定が不正です")
-            runner = (HERE / "lora_run.py").resolve()
-            runner = runner.relative_to(self.root.resolve()).as_posix() if runner.is_relative_to(self.root.resolve()) else str(runner)
-            return [runner, *target, "--input", body.get("input", "adopted"), "--root", str(self.root)] + (["--adopt"] if body.get("adopt") else [])
         if action in ("key-status", "status"):
             return ["scripts/novelai_api.py", action]
         raise ValueError("未対応の操作です: " + action)
@@ -345,8 +570,7 @@ class Project:
     def kinds(self, request_id: str) -> dict:
         if not self.batch.REQUEST_ID.fullmatch(request_id):
             raise ValueError("要求IDが不正です: " + request_id)
-        return {"novelai": (self.root / self.batch.CANDIDATES_DIR / request_id, "r", "novelai.json"),
-                "lora": (self.root / LORA_OUTPUT / request_id, "l", "lora.json")}
+        return {"novelai": (self.root / self.batch.CANDIDATES_DIR / request_id, "r", "novelai.json")}
 
     def records(self, request_id: str) -> dict:
         adopted = self.batch.load_adopted(self.root)["adopted"].get(request_id, {}).get("path")
@@ -382,11 +606,11 @@ class Project:
     def scan_unknown(self) -> list[dict]:
         found = []
         ids = set(self.batch.request_files(self.root))
-        for base in (self.root / self.batch.CANDIDATES_DIR, self.root / LORA_OUTPUT):
-            ids |= {p.name for p in base.iterdir() if p.is_dir()} if base.is_dir() else set()
+        base = self.root / self.batch.CANDIDATES_DIR
+        ids |= {p.name for p in base.iterdir() if p.is_dir()} if base.is_dir() else set()
         for request_id in sorted(i for i in ids if self.batch.REQUEST_ID.fullmatch(i)):
             data = self.records(request_id)
-            for kind in ("novelai", "lora"):
+            for kind in self.kinds(request_id):
                 for e in data[kind]["entries"]:
                     if e["unknown"]:
                         found.append({"id": request_id, "kind": kind, "n": e["n"], "status": e["record"].get("status")})
@@ -502,9 +726,8 @@ def make_handler(project: Project, token: str, port: int):
                     return self.reply(project.records(query["id"][0]))
                 if url.path == "/api/records/scan":
                     return self.reply(project.scan_unknown())
-                if url.path == "/api/lora":
-                    project.lora = project.lora_check()
-                    return self.reply(project.lora)
+                if url.path == "/api/references/groups":
+                    return self.reply(project.reference_groups(query["kind"][0]))
                 if url.path == "/api/job":
                     return self.reply(project.job_view())
                 if url.path == "/api/request":
@@ -533,8 +756,12 @@ def make_handler(project: Project, token: str, port: int):
                 if url.path == "/api/page":
                     project.save_page(int(body["page"]), body.get("manifest"), body.get("typeset"))
                     return self.reply({"ok": True})
-                if url.path == "/api/lora":
-                    return self.reply(project.set_lora_mode(bool(body.get("on"))))
+                if url.path == "/api/reference-images":
+                    return self.reply({"images": project.reference_candidates(rescan=True)})
+                if url.path == "/api/reference-defaults":
+                    return self.reply(project.save_reference_defaults(body.get("style")))
+                if url.path == "/api/references/replace":
+                    return self.reply(project.replace_references(body))
                 if url.path == "/api/records":
                     return self.reply(project.move(body))
                 if url.path == "/api/job/stop":
@@ -569,7 +796,7 @@ section.view{overflow:auto;padding:1rem}
 .item img{width:44px;height:44px;object-fit:cover;border-radius:4px;background:var(--line)}
 .muted{color:var(--sub);font-size:12px}.row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin:.4rem 0}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:.8rem;margin-bottom:1rem}
-.card h3{margin:0 0 .5rem;font-size:14px}
+.card h3{margin:0 0 .5rem;font-size:14px}.card h4{margin:.9rem 0 .3rem;font-size:13px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.6rem}
 .cand{border:2px solid transparent;border-radius:8px;padding:.3rem;background:var(--bg)}.cand.adopted{border-color:var(--ok)}
 .cand img{width:100%;height:170px;object-fit:contain;cursor:zoom-in}
@@ -581,9 +808,11 @@ dialog{border:1px solid var(--line);border-radius:12px;background:var(--panel);c
 .pageimg{max-width:100%;max-height:75vh;border:1px solid var(--line);background:#fff}
 label.chk{display:flex;gap:.4rem;align-items:flex-start;margin:.3rem 0}
 #jobbar{margin-left:auto;font-size:12px}
-.toggle{display:flex;gap:.35rem;align-items:center;border:1px solid var(--line);border-radius:999px;padding:.2rem .7rem;font-size:12.5px;cursor:pointer;white-space:nowrap}
-.toggle.on{border-color:var(--accent);color:var(--accent);font-weight:600}.toggle.unready{color:var(--sub)}
+#refimgs{white-space:nowrap}
 .range input{width:4.5em}
+[hidden]{display:none!important}
+.refs,.paid{border:1px dashed var(--line);border-radius:8px;padding:.5rem;margin:.4rem 0}.paid{border-color:var(--warn)}
+.refthumb img{width:64px;height:64px;object-fit:contain;background:var(--bg);border-radius:4px;cursor:zoom-in}
 @media (max-width:800px){main{grid-template-columns:1fr;height:auto}aside{max-height:40vh}}
 </style>
 <header>
@@ -595,35 +824,35 @@ label.chk{display:flex;gap:.4rem;align-items:flex-start;margin:.3rem 0}
     <button data-tab="preview">プレビュー</button>
     <button data-tab="log">実行ログ・接続</button>
   </nav>
-  <label class="toggle unready" id="loraToggle" title="作品ごとに実装する外部処理（lora_apply.py）でLoRAを適用するモード"><input type="checkbox" id="loraMode"><span id="loraLabel">LoRA適用モード（準備は未実施）</span></label>
+  <button id="refimgs" title="精密参照の画像の候補（input/・assets/ の画像と、人物試作などページに属さない要求の採用画像）を取り直します。ファイルを追加したときに押してください">候補画像を更新</button>
+  <span id="refimgsinfo" class="muted"></span>
   <span id="jobbar" class="muted"></span>
 </header>
 <main>
   <aside id="side"></aside>
   <section class="view" id="view"></section>
 </main>
+<datalist id="refimages"></datalist>
 <dialog id="gen">
   <form method="dialog" id="genform">
     <h3 id="gentitle">生成</h3>
-    <p class="muted">送信は作品の novelai_batch.py generate が行います。確認していない項目にチェックを付けないでください。WebUIからは有料生成（--allow-anlas）はできません。</p>
+    <p class="muted">送信は作品の novelai_batch.py generate が行います。確認していない項目にチェックを付けないでください。WebUIからの有料生成は、V5の精密参照の追加料金だけです。</p>
+    <p id="genrefs"></p>
+    <div class="row" id="genscope">対象：<select name="scope"><option value="plain">参照なしのコマだけ（0 Anlas）</option><option value="reference">精密参照付きのコマだけ（追加Anlasあり）</option></select></div>
     <div class="row">seed：<select name="seed"><option value="auto">auto（初回は要求のseed、以後は乱数）</option><option value="request">request（要求のseedで固定）</option><option value="random">random</option></select></div>
     <div class="row">１回の上限件数（--max）：<input type="number" name="max" min="1" max="1000" value="30" style="width:7em"><span class="muted">既定30件。全ページなど30件を超える対象はここを増やす。送信間隔（既定3秒）と失敗時に止まる扱いは同じ</span></div>
-    <label class="chk"><input type="checkbox" name="confirm_zero_anlas">今回の全設定（モデル・寸法・steps・枚数・追加機能）が0 Anlasであることを確認した（--confirm-zero-anlas）</label>
+    <label class="chk" id="genzero"><input type="checkbox" name="confirm_zero_anlas">今回の全設定（モデル・寸法・steps・枚数・追加機能）が0 Anlasであることを確認した（--confirm-zero-anlas）</label>
     <label class="chk"><input type="checkbox" name="confirm_v5_allowance">V5の利用上限の残量が足りることを確認した（V5のとき必要。--confirm-v5-allowance）</label>
     <label class="chk"><input type="checkbox" name="accept_warnings">送信なし確認の警告を確認し、残す理由を記録した（--accept-warnings）</label>
+    <div class="paid" id="genpaid">
+      <label class="chk"><input type="checkbox" name="allow_reference_anlas">精密参照の追加料金としてAnlasを消費することを、今回の範囲で許可する（--allow-anlas）</label>
+      <div class="row">今回の上限：<input type="number" name="anlas_limit" min="1" style="width:7em"> Anlas</div>
+      <label class="chk"><input type="checkbox" name="remember_reference">精密参照の入力内容を記憶（上の許可と上限Anlasを、このURL（トークン）で開いている間は次回も入れておく。OFFにすると記憶を消す）</label>
+      <p class="muted">見込みが上限を超えると送信しません。上限は今回の生成だけのもので、前回までの消費や作り直しの合計は数えません。生成本体の料金は別で、参照付きの生成にOpusの無料条件が適用されるかは未確認です。まず１コマで、NovelAIの画面のAnlas残高を前後で比べてください。記憶した許可も、対象や枚数が変わったら確かめ直してください。</p>
+    </div>
     <div>確認した方法・日時（--cost-note）<textarea name="cost_note" rows="2"></textarea></div>
-    <p class="muted">チェックと上限件数は、このURL（トークン）で開いている間は記憶します。サーバーを起動し直して新しいURLで開くと消えます。</p>
+    <p class="muted">チェックと上限件数は、このURL（トークン）で開いている間は記憶します（Anlasの許可と上限Anlasは「精密参照の入力内容を記憶」をONにした場合だけ）。サーバーを起動し直して新しいURLで開くと消えます。</p>
     <div class="row"><button value="cancel">やめる</button><button value="dry">送信なしで確認</button><button value="exec" class="primary">生成する</button></div>
-  </form>
-</dialog>
-<dialog id="loradlg">
-  <form method="dialog" id="loraform">
-    <h3 id="loratitle">LoRA適用</h3>
-    <p class="muted" id="loraname"></p>
-    <p class="muted">作品ごとに実装した外部処理（.agents/skills/novelai-batch-webui/lora_apply.py）を１コマずつ実行します。費用・利用条件はその処理の実装に従います。結果は output/lora/ に保存され、NovelAIの候補は変更しません。失敗すると残りを実行せずに止まります。</p>
-    <div class="row">元にする画像：<select name="input"><option value="adopted">採用中の画像（未採用のコマは最新の候補）</option><option value="latest">最新の候補</option></select></div>
-    <label class="chk"><input type="checkbox" name="adopt">結果を採用する（adopt --file と同じ。あとから候補へ戻せます）</label>
-    <div class="row"><button value="cancel">やめる</button><button value="run" class="primary">LoRA適用する</button></div>
   </form>
 </dialog>
 <dialog id="zoom"><img alt=""></dialog>
@@ -641,19 +870,20 @@ async function api(path, body) {
 function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
 let S = null, tab = 'panels', sel = {panel: null, page: null}, lastJob = null, renderSeq = 0;
 
-async function refresh() { S = await api('/api/state'); $('#title').textContent = 'NovelAI制作パネル — ' + S.project; renderLora(); render(); }
-// ---------------------------------------------------------------- LoRA適用モード（準備が完了している場合だけONにできる）
-const loraOn = () => !!(S && S.lora && S.lora.mode);
-function renderLora() { const L = S.lora || {}, t = $('#loraToggle'); $('#loraMode').checked = !!L.mode;
-  $('#loraLabel').textContent = !L.ready ? 'LoRA適用モード（準備は未実施）' : L.mode ? 'LoRA適用モード：ON（' + L.name + '）' : 'LoRA適用モード：OFF';
-  t.className = 'toggle' + (L.mode ? ' on' : !L.ready ? ' unready' : ''); t.title = L.ready ? '処理：' + L.name : L.message || ''; }
-$('#loraMode').onchange = async e => { const on = e.target.checked;
-  try { S.lora = await api('/api/lora', {on}); } catch (err) { alert(err.message); try { S.lora = await api('/api/lora'); } catch (e2) {} }
-  renderLora(); render(); };
-function loraDialog(target, label) { if (!loraOn()) return alert('LoRA適用モードがONではありません。');
-  const d = $('#loradlg'), f = n => $('#loraform').elements.namedItem(n); $('#loratitle').textContent = 'LoRA適用：' + label;
-  $('#loraname').textContent = '処理：' + S.lora.name; d.returnValue = ''; d.showModal();
-  d.onclose = () => { if (d.returnValue === 'run') run('lora', {...target, input: f('input').value, adopt: f('adopt').checked}); }; }
+async function refresh() { S = await api('/api/state'); $('#title').textContent = 'NovelAI制作パネル — ' + S.project; fillRefImages(); render(); }
+// ---------------------------------------------------------------- 精密参照の画像の候補（input/・assets/ の画像と人物試作などの採用画像。手入力もできる）
+// フォルダの一覧はサーバーが最初の表示時に作り、「候補画像を更新」で取り直す（採用画像は表示のたびに最新）。編集中の入力を消さないよう、画面は作り直さない。
+function fillRefImages() { const L = (S && S.reference && S.reference.images) || [];
+  $('#refimages').replaceChildren(...L.map(p => h('option', {value: p}))); $('#refimgsinfo').textContent = '候補 ' + L.length + '件'; }
+// 参照画像の欄（コマ画面と変数タブで共通）：候補から選ぶか手入力。例には保存済みのパス（なければ従来の例）を出し、サムネイルを表示する。
+function refField({value = '', placeholder, onchange} = {}) {
+  const path = h('input', {list: 'refimages', placeholder: placeholder || value || '例 input/novelai/references/mio-v1.png', style: 'width:24em'}), thumb = h('span', {class: 'refthumb'});
+  path.value = value || '';
+  const show = () => { thumb.replaceChildren(); const p = path.value.trim(); if (!p || p.includes('${')) return; const e = img(p, {onclick: () => zoom(p)}); e.onerror = () => thumb.replaceChildren(h('span', {class: 'lint'}, '画像が見つからないか、表示できる場所（input/・output/・assets/）にありません')); thumb.append(e); };
+  path.onchange = () => { show(); if (onchange) onchange(); }; show(); return {path, thumb}; }
+function strengthField(value) { const e = h('input', {type: 'number', step: '0.1', min: 0, max: 5, style: 'width:5em'}); e.value = value ?? 1; return e; }
+const refLabel = t => ((S.reference.types || []).find(([k]) => k === t) || [t, t])[1];
+$('#refimgs').onclick = async () => { try { const j = await api('/api/reference-images', {}); S.reference.images = j.images; fillRefImages(); } catch (e) { alert(e.message); } };
 // ページ範囲（指定ページから指定ページまで）
 function pageNumbers() { return [...new Set(S.requests.map(r => r.page).filter(p => p !== null))].sort((a, b) => a - b); }
 function rangeControl() { const nums = pageNumbers(); if (!nums.length) return null;
@@ -661,8 +891,7 @@ function rangeControl() { const nums = pageNumbers(); if (!nums.length) return n
   const pick = () => { const x = +a.value, y = +b.value; store('rangeFrom', a.value); store('rangeTo', b.value); const lo = Math.min(x, y), hi = Math.max(x, y);
     const pages = nums.filter(n => n >= lo && n <= hi); if (!pages.length) { alert('範囲に要求のあるページがありません。'); return null; } return {pages, label: `${lo}～${hi}ページ（${S.requests.filter(r => pages.includes(r.page)).length}件）`}; };
   return h('div', {class: 'row range'}, a, '～', b, 'ページ',
-    h('button', {onclick: () => { const r = pick(); if (r) generateDialog({pages: r.pages}, r.label); }}, '範囲を生成…'),
-    loraOn() ? h('button', {onclick: () => { const r = pick(); if (r) loraDialog({pages: r.pages}, r.label); }}, '範囲をLoRA適用…') : null); }
+    h('button', {onclick: () => { const r = pick(); if (r) generateDialog({pages: r.pages}, r.label); }}, '範囲を生成…')); }
 function zoom(path) { const d = $('#zoom'); $('img', d).src = '/file?path=' + encodeURIComponent(path) + '&token=' + TOKEN + '&t=' + Date.now(); d.showModal(); d.onclick = () => d.close(); }
 async function run(action, body = {}) {
   try { const j = await api('/api/run', {action, ...body}); showJob(j); poll(); } catch (e) { alert(e.message); } }
@@ -671,32 +900,47 @@ function showJob(j) { lastJob = j; const step = j ? [...j.log.matchAll(/\[(\d+)\
   $('#jobbar').className = j && j.state === 'failed' ? 'err' : j && j.state === 'done' ? 'ok' : 'muted'; if (tab === 'log') render(); }
 async function poll() { const j = await api('/api/job'); showJob(j); if (j && j.state === 'running') setTimeout(poll, 1200); else { await refresh(); if (j && j.state === 'failed' && tab !== 'log') { if (confirm('失敗しました。ログを開きますか？')) { tab = 'log'; tabs(); render(); } } } }
 // 生成画面のチェックと上限件数は、起動ごとのトークン単位で記憶する（新しいURLで開くと古いトークンの記憶は消す）。
-const CHECKS = ['confirm_zero_anlas', 'confirm_v5_allowance', 'accept_warnings'], GEN_KEY = 'genOptions:' + TOKEN;
-try { for (let i = localStorage.length - 1; i >= 0; i--) { const k = localStorage.key(i); if (k.startsWith('genOptions:') && k !== GEN_KEY) localStorage.removeItem(k); } } catch (e) {}
+// 精密参照の許可と上限Anlasは、「精密参照の入力内容を記憶」をONにした場合だけ同じトークン単位で記憶する。
+const CHECKS = ['confirm_zero_anlas', 'confirm_v5_allowance', 'accept_warnings'], GEN_KEY = 'genOptions:' + TOKEN, REF_KEY = 'genReference:' + TOKEN;
+try { for (let i = localStorage.length - 1; i >= 0; i--) { const k = localStorage.key(i);
+  if ((k.startsWith('genOptions:') && k !== GEN_KEY) || (k.startsWith('genReference:') && k !== REF_KEY)) localStorage.removeItem(k); } } catch (e) {}
+function forget(k) { try { localStorage.removeItem(k); } catch (e) {} }
+function referenceTotals(target) {
+  const list = S.requests.filter(r => target.all ? r.page !== null : target.ids ? target.ids.includes(r.id) : target.pages.includes(r.page));
+  const paid = list.filter(r => r.references), images = paid.reduce((n, r) => n + r.references, 0);
+  return {plain: list.length - paid.length, paid: paid.length, images, anlas: images * S.reference.anlas}; }
 function generateDialog(target, label) {
   const d = $('#gen'), f = n => $('#genform').elements.namedItem(n); $('#gentitle').textContent = '生成：' + label;
+  const T = referenceTotals(target), scope = () => !T.paid ? 'all' : !T.plain ? 'reference' : f('scope').value;
+  const sync = () => { const paid = scope() === 'reference'; $('#genscope').hidden = !(T.paid && T.plain); $('#genzero').hidden = paid; $('#genpaid').hidden = !paid; };
+  $('#genrefs').textContent = T.paid ? `参照なし ${T.plain}件／精密参照付き ${T.paid}件（参照画像 のべ${T.images}枚・追加 ${T.anlas} Anlasの見込み）` + (S.reference.paid ? '' : '。画面からの参照付き生成には、作品の scripts/ が配布版0.5.7以降である必要があります') : '';
+  $('#genrefs').className = T.paid ? 'lint' : 'muted'; f('scope').value = 'plain'; f('scope').onchange = sync;
+  let kept = {}; try { kept = JSON.parse(store(REF_KEY) || '{}'); } catch (e) {} const keep = kept.remember === true;
+  f('remember_reference').checked = keep; f('allow_reference_anlas').checked = keep && kept.allow === true;
+  f('anlas_limit').value = keep && kept.limit ? kept.limit : ''; f('anlas_limit').placeholder = T.paid ? '見込み ' + T.anlas : ''; sync();
   let saved = {}; try { saved = JSON.parse(store(GEN_KEY) || '{}'); } catch (e) {}
   f('cost_note').value = store('costNote') || ''; CHECKS.forEach(n => f(n).checked = !!saved[n]); f('max').value = saved.max || 30;
   d.returnValue = ''; d.showModal();
   d.onclose = () => { const v = d.returnValue; if (v !== 'dry' && v !== 'exec') return;
     const options = {max: +f('max').value || 30}; CHECKS.forEach(n => options[n] = f(n).checked); store(GEN_KEY, JSON.stringify(options));
+    if (scope() === 'reference') { if (f('remember_reference').checked) store(REF_KEY, JSON.stringify({remember: true, allow: f('allow_reference_anlas').checked, limit: f('anlas_limit').value}));
+      else forget(REF_KEY); }
     const body = {...target, seed: f('seed').value, max: options.max};
-    if (v === 'exec') { Object.assign(body, options, {execute: true, cost_note: f('cost_note').value}); store('costNote', f('cost_note').value); }
+    if (v === 'exec') { Object.assign(body, options, {execute: true, scope: scope(), cost_note: f('cost_note').value}); store('costNote', f('cost_note').value);
+      if (body.scope === 'reference') { body.confirm_zero_anlas = false; body.allow_reference_anlas = f('allow_reference_anlas').checked; body.anlas_limit = Math.trunc(+f('anlas_limit').value) || 0; } }
     run('generate', body); }; }
 
 // ---------------------------------------------------------------- コマ
 function sidePanels() {
   const side = $('#side'); side.replaceChildren(h('div', {class: 'row'}, h('span', {class: 'muted'}, '要求（input/novelai/requests）'),
-    h('button', {onclick: () => generateDialog({all: true}, '全ページ（' + S.requests.filter(r => r.page !== null).length + '件。上限件数を確認）')}, '全ページを生成…'), h('button', {onclick: () => confirm('全ページの各コマで、最新（最大番号）の候補を採用しますか？（候補のないコマがあると何も変更せずに止まります）') && run('adopt-latest', {all: true})}, '全ページで最新を採用'),
-    loraOn() ? h('button', {onclick: () => loraDialog({all: true}, '全ページ')}, '全ページをLoRA適用…') : null), rangeControl());
+    h('button', {onclick: () => generateDialog({all: true}, '全ページ（' + S.requests.filter(r => r.page !== null).length + '件。上限件数を確認）')}, '全ページを生成…'), h('button', {onclick: () => confirm('全ページの各コマで、最新（最大番号）の候補を採用しますか？（候補のないコマがあると何も変更せずに止まります）') && run('adopt-latest', {all: true})}, '全ページで最新を採用')), rangeControl());
   const groups = {}; for (const r of S.requests) (groups[r.page ?? 'その他'] ||= []).push(r);
   for (const [g, list] of Object.entries(groups)) {
     side.append(h('div', {class: 'row'}, h('b', {}, g === 'その他' ? 'その他（人物試作など）' : g + 'ページ'),
       g !== 'その他' ? h('button', {onclick: () => generateDialog({pages: [+g]}, g + 'ページ全体')}, '生成') : null,
-      g !== 'その他' ? h('button', {onclick: () => confirm(g + 'ページの各コマで最新の候補を採用しますか？') && run('adopt-latest', {pages: [+g]})}, '最新を採用') : null,
-      g !== 'その他' && loraOn() ? h('button', {onclick: () => loraDialog({pages: [+g]}, g + 'ページ')}, 'LoRA適用') : null));
+      g !== 'その他' ? h('button', {onclick: () => confirm(g + 'ページの各コマで最新の候補を採用しますか？') && run('adopt-latest', {pages: [+g]})}, '最新を採用') : null));
     for (const r of list) side.append(h('div', {class: 'item' + (sel.panel === r.id ? ' on' : ''), onclick: () => { sel.panel = r.id; render(); }},
-      r.adopted ? img(r.adopted) : h('img', {alt: ''}), h('div', {}, h('div', {}, r.id), h('div', {class: 'muted'}, `候補${r.candidates.length}` + (r.lora.length ? `・LoRA${r.lora.length}` : '') + `・${r.adopted ? (r.adopted.startsWith('output/lora/') ? 'LoRA結果を採用' : '採用済み') : '未採用'}`))));
+      r.adopted ? img(r.adopted) : h('img', {alt: ''}), h('div', {}, h('div', {}, r.id), h('div', {class: 'muted'}, `候補${r.candidates.length}` + (r.references ? `・参照${r.references}` : '') + `・${r.adopted ? '採用済み' : '未採用'}`))));
   } }
 async function viewPanel() {
   const v = $('#view'); if (!sel.panel) { v.replaceChildren(h('p', {class: 'muted'}, '左の一覧から要求を選んでください。')); return; }
@@ -711,7 +955,29 @@ async function viewPanel() {
     const x = h('input', {type: 'number', step: '0.01', min: 0, max: 1, style: 'width:6em'}), y = x.cloneNode(); x.value = c.centers?.[0]?.x ?? 0.5; y.value = c.centers?.[0]?.y ?? 0.5;
     const n = h('textarea', {rows: 1}); n.value = neg.char_captions?.[i]?.char_caption || '';
     return {t, x, y, n, el: h('div', {class: 'char'}, h('b', {}, '人物' + (i + 1)), t, h('div', {class: 'row'}, '配置ピン x', x, 'y', y, '（0〜1、左上が原点）'), h('div', {class: 'muted'}, '人物別の除外'), n)}; });
+  // V5の精密参照。送信順は一覧の順。料金は作品の novelai_api.py の値で計算する。
+  const F = S.reference, refOn = F.types.length > 0 && F.models.includes(raw.model), refBox = h('div'), refSum = h('div'), refDefault = h('div'), refs = [];
+  // 既定の絵柄（変数タブ）は、このコマで絵柄（絵柄・キャラ＋絵柄）を指定していなければ生成時に足される。
+  const D = F.defaults || {}, styleTypes = F.style_types || [];
+  const usesDefault = () => !!(refOn && D.style && !P.director_reference_images && !refs.some(r => styleTypes.includes(r.type.value)));
+  function refSync() { const extra = usesDefault() ? 1 : 0, n = refs.length + extra;
+    refSum.className = n ? 'lint' : 'muted'; refSum.textContent = n ? `参照画像${n}枚${extra ? '（既定の絵柄を含む）' : ''}：１枚生成するごとに追加 ${n * F.anlas} Anlas（生成本体の料金は別）` : '参照なし（追加料金なし）';
+    refDefault.className = 'muted'; refDefault.textContent = refOn && D.style ? `既定の絵柄（変数タブ）：${D.style.path}（強度 ${D.style.strength ?? 1}）。` +
+      (extra ? 'このコマでも使います。このコマで「絵柄」か「キャラ＋絵柄」を指定すると、そのコマの指定で上書きします。' : 'このコマは絵柄を指定しているため、既定の絵柄は使いません。') : ''; }
+  function addRef(item) { item = item || {}; const type = h('select', {}, F.types.map(([k, label]) => h('option', {value: k}, `${label}（${k}）`)));
+    if (item.type && !F.types.some(([k]) => k === item.type)) type.append(h('option', {value: item.type}, item.type)); type.value = item.type || F.types[0][0]; type.onchange = refSync;
+    // 保存済みの参照は、その画像のパスを例に出す（欄を空にして候補を選び直すときの目安。保存すると新しいパスになる）。
+    const {path, thumb} = refField({value: item.path}), strength = strengthField(item.strength);
+    const row = {type, path, strength}, el = h('div', {class: 'row'}, thumb, type, path, '強度', strength, h('button', {onclick: () => { refs.splice(refs.indexOf(row), 1); el.remove(); refSync(); }}, '外す'));
+    refs.push(row); refBox.append(el); refSync(); }
+  if (refOn) (Array.isArray(P.precise_references) ? P.precise_references : []).forEach(addRef); refSync();
+  const refCard = h('div', {class: 'refs'}, h('b', {}, '精密参照（V5のキャラ・衣装・絵柄）'),
+    refOn ? [h('div', {class: 'muted'}, `参照画像１枚につき追加 ${F.anlas} Anlas。画像は作品ルートからの相対パス（PNG・JPEG・WebP）、強度は0〜5。画像はNovelAIへ送信されます。候補には input/・assets/ の画像と、人物試作などの採用画像が出ます（手入力も可。ファイルを足したら画面上部の「候補画像を更新」）。人物試作の採用画像はその時点の候補ファイルを指すため、採用し直しても参照は変わりません。服も参照元のままにする場合は「参照元の服を優先」、別の服を着せる場合は「キャラ」と「衣装」を組み合わせます。`),
+      refBox, h('div', {class: 'row'}, h('button', {onclick: () => addRef()}, '参照を追加'), refSum), refDefault]
+      : h('div', {class: 'muted'}, F.types.length ? 'このモデルでは使えません（V5だけ）。' : '作品の scripts/novelai_api.py が精密参照に対応していません（配布版0.5.6以降で対応）。'),
+    P.director_reference_images ? h('div', {class: 'lint'}, 'director_reference_* が直接書かれています。画面では編集できず、精密参照とは併用できません。') : null);
   function collect() { const d = JSON.parse(JSON.stringify(raw)), p = d.parameters;
+    if (refOn) { if (refs.length) p.precise_references = refs.map(r => ({type: r.type.value, path: r.path.value.trim(), strength: r.strength.value === '' ? 1 : +r.strength.value})); else delete p.precise_references; }
     d.input = base.value; p.negative_prompt = negative.value; p.width = +W.value; p.height = +H.value; p.seed = +seed.value;
     if (p.v4_prompt) { p.v4_prompt.caption.base_caption = base.value; p.v4_prompt.use_coords = coords.checked;
       chars.forEach((c, i) => { const cc = p.v4_prompt.caption.char_captions[i]; cc.char_caption = c.t.value; cc.centers = [{x: +c.x.value, y: +c.y.value}];
@@ -719,7 +985,7 @@ async function viewPanel() {
     if (p.v4_negative_prompt) p.v4_negative_prompt.caption.base_caption = negative.value; return d; }
   async function save(id = sel.panel, isNew = false) { try { await api('/api/request', {id, data: collect(), new: isNew}); sel.panel = id; await refresh(); return true; } catch (e) { alert(e.message); return false; } }
   const varsInfo = S.variables.filter(x => x.name).map(x => x.name);
-  const resolved = h('pre', {class: 'log'}, R.resolved ? JSON.stringify({input: R.resolved.input, char_captions: (R.resolved.parameters.v4_prompt?.caption?.char_captions || []).map(c => c.char_caption)}, null, 2) : '展開できません');
+  const resolved = h('pre', {class: 'log'}, R.resolved ? JSON.stringify({input: R.resolved.input, char_captions: (R.resolved.parameters.v4_prompt?.caption?.char_captions || []).map(c => c.char_caption), precise_references: R.resolved.parameters.precise_references}, null, 2) : '展開できません');
   const cands = h('div', {class: 'grid'}, ...info.candidates.slice().reverse().map(p => { const n = +p.match(/r(\d+)\.png$/)[1];
     return h('div', {class: 'cand' + (info.adopted === p ? ' adopted' : '')}, img(p, {onclick: () => zoom(p)}),
       h('div', {class: 'row'}, 'r' + String(n).padStart(3, '0'), info.adopted === p ? h('span', {class: 'ok'}, '採用中') : h('button', {onclick: () => run('adopt', {ids: [sel.panel], candidate: n})}, '採用'),
@@ -730,23 +996,19 @@ async function viewPanel() {
       h('div', {class: 'chars'}, chars.map(c => c.el)),
       h('label', {class: 'chk'}, coords, '配置ピンを使う（use_coords）'),
       h('div', {class: 'muted'}, '除外（negative_prompt と v4_negative_prompt の base_caption）'), negative,
+      refCard,
       h('div', {class: 'row'}, '幅', W, '高さ', H, 'seed', seed, h('span', {class: 'muted'}, `steps ${P.steps}・${raw.model}`)),
       R.lint.length ? h('div', {class: 'lint'}, '点検の警告：' + R.lint.join(' / ')) : h('div', {class: 'muted'}, '点検の警告なし（語の検出のみ。内容の照合は別に行う）'),
       h('div', {class: 'row'}, h('button', {class: 'primary', onclick: () => save()}, '保存'),
         h('button', {onclick: async () => { if (await save()) generateDialog({ids: [sel.panel]}, sel.panel); }}, '保存して生成…'),
-        loraOn() ? h('button', {onclick: () => loraDialog({ids: [sel.panel]}, sel.panel)}, 'このコマをLoRA適用…') : null,
         h('button', {onclick: () => { const id = prompt('差し替え案のID（例 ' + sel.panel + 'b）', sel.panel + 'b'); if (id) save(id, true); }}, '差し替え案として複製'))),
     h('div', {class: 'card'}, h('h3', {}, '候補（新しい順）'), info.candidates.length ? cands : h('p', {class: 'muted'}, 'まだ候補がありません。')),
-    (info.lora || []).length ? h('div', {class: 'card'}, h('h3', {}, 'LoRA適用の結果（新しい順。output/lora/）'), h('div', {class: 'grid'}, ...info.lora.slice().reverse().map(p =>
-      h('div', {class: 'cand' + (info.adopted === p ? ' adopted' : '')}, img(p, {onclick: () => zoom(p)}),
-        h('div', {class: 'row'}, p.split('/').pop(), info.adopted === p ? h('span', {class: 'ok'}, '採用中') : h('button', {onclick: () => run('adopt-file', {ids: [sel.panel], path: p})}, '採用')))))) : null,
     h('details', {class: 'card'}, h('summary', {}, '変数を展開した送信内容（保存済みの版）'), resolved)); }
 
 // ---------------------------------------------------------------- ページ
 function sidePages() { const side = $('#side');
   side.replaceChildren(h('div', {class: 'row'}, h('b', {}, 'ページ'), h('button', {onclick: () => confirm('全ページのPNGを組み直しますか？') && run('build', {all: true})}, '全ページPNG'),
-    h('button', {onclick: () => confirm('全ページのPSDを作りますか？（同じ版のPNGも作られます。PNG確認後・依頼がある場合）') && run('build', {all: true, write_psd: true})}, '全ページPSD'), h('button', {onclick: () => confirm('全ページの各コマで、最新（最大番号）の候補を採用しますか？（候補のないコマがあると何も変更せずに止まります）') && run('adopt-latest', {all: true})}, '全ページで最新を採用'),
-    loraOn() ? h('button', {onclick: () => loraDialog({all: true}, '全ページ')}, '全ページをLoRA適用…') : null), rangeControl());
+    h('button', {onclick: () => confirm('全ページのPSDを作りますか？（同じ版のPNGも作られます。PNG確認後・依頼がある場合）') && run('build', {all: true, write_psd: true})}, '全ページPSD'), h('button', {onclick: () => confirm('全ページの各コマで、最新（最大番号）の候補を採用しますか？（候補のないコマがあると何も変更せずに止まります）') && run('adopt-latest', {all: true})}, '全ページで最新を採用')), rangeControl());
   for (const p of S.pages) side.append(h('div', {class: 'item' + (sel.page === p.page ? ' on' : ''), onclick: () => { sel.page = p.page; render(); }},
     p.latest?.display ? img(p.latest.display) : h('img', {alt: ''}), h('div', {}, h('div', {}, p.page + 'ページ'), h('div', {class: 'muted'}, p.latest ? '最新 ' + p.latest.version : '未ビルド')))); }
 async function viewPage() { const v = $('#view'); if (!sel.page) { v.replaceChildren(h('p', {class: 'muted'}, '左の一覧からページを選んでください。')); return; }
@@ -763,7 +1025,6 @@ async function viewPage() { const v = $('#view'); if (!sel.page) { v.replaceChil
       h('div', {class: 'row'}, h('button', {class: 'primary', onclick: () => save('png')}, '保存してPNGをビルド'),
         h('button', {onclick: () => confirm('PSDを作りますか？（同じ版のPNGも作られます。PNG確認後・依頼がある場合）') && save('psd')}, '保存してPSDをビルド'),
         h('button', {onclick: () => generateDialog({pages: [sel.page]}, sel.page + 'ページ全体')}, 'このページを生成…'),
-        loraOn() ? h('button', {onclick: () => loraDialog({pages: [sel.page]}, sel.page + 'ページ')}, 'このページをLoRA適用…') : null,
         h('button', {onclick: () => confirm('各コマの最新候補を採用しますか？') && run('adopt-latest', {pages: [sel.page]})}, '最新を採用')),
       L ? h('div', {class: 'muted'}, `組版の点検：エラー${L.summary?.error ?? '?'}・警告${L.summary?.warning ?? '?'}` + (L.notes && Object.keys(L.notes).length ? '／配置の注記：' + JSON.stringify(L.notes) : '')) : null,
       L ? h('div', {class: 'row'}, L.display ? img(L.display, {class: 'pageimg', onclick: () => zoom(L.png)}) : null, L.check ? img(L.check, {class: 'pageimg', style: 'max-width:45%', onclick: () => zoom(L.check)}) : null) : null),
@@ -790,8 +1051,53 @@ function viewVars() { $('#side').replaceChildren(h('p', {class: 'muted'}, '.env.
         h('button', {onclick: () => confirm('要求JSON内の同じ文を ${' + x.name + '} に置き換えますか？') && run('templatize', {name: x.name})}, '要求へ取り込む（templatize）'))); });
   const name = h('input', {placeholder: 'NOVELAI_CHAR_NAME', style: 'width:22em'}), val = h('textarea', {rows: 2});
   const empty = !list.some(x => !x.error) ? h('div', {class: 'err', style: 'font-weight:bold'}, h('p', {}, VARS_GUIDE), h('p', {}, VARS_EXAMPLE)) : null;
-  v.replaceChildren(...blocks, ...(empty ? [empty] : []), h('div', {class: 'card'}, h('h3', {}, '変数を追加'), h('div', {class: 'muted'}, 'NOVELAI_CHAR_・NOVELAI_STYLE_・NOVELAI_BACKGROUND_ で始まる半角英大文字・数字・_。値は１行。追加後に「要求へ取り込む」で既存の要求の同じ文を変数参照にできます。'),
-    name, val, h('div', {class: 'row'}, h('button', {class: 'primary', onclick: () => run('env-set', {name: name.value.trim(), value: val.value.replace(/\s*\n\s*/g, ' ')})}, '追加（env-set）')))); }
+  v.replaceChildren(...blocks, ...(empty ? [empty] : []), h('div', {class: 'card'}, h('h3', {}, '変数を追加'), h('div', {class: 'muted'}, 'NOVELAI_CHAR_・NOVELAI_STYLE_・NOVELAI_BACKGROUND_ で始まる半角英大文字・数字・_。値は１行。キャラの特徴（髪型など）と衣装は、衣装が１つでも分けます（例 NOVELAI_CHAR_MIO と NOVELAI_CHAR_MIO_OUTFIT。衣装が複数なら NOVELAI_CHAR_MIO_OUTFIT_GYM など）。追加後に「要求へ取り込む」で既存の要求の同じ文を変数参照にできます。'),
+    name, val, h('div', {class: 'row'}, h('button', {class: 'primary', onclick: () => run('env-set', {name: name.value.trim(), value: val.value.replace(/\s*\n\s*/g, ' ')})}, '追加（env-set）'))), refBulkCard()); }
+
+// 精密参照の一括設定（変数タブの下部）。絵柄は作品全体の既定、キャラ・衣装は使っている画像ごとに置き換える。
+let refKind = null;  // 表示中の一覧（character／outfit）。置換・再表示のあとも開いたままにする
+function refBulkCard() { const F = S.reference, D = F.defaults || {};
+  const card = (...kids) => h('div', {class: 'card', id: 'refbulk'}, h('h3', {}, '精密参照の一括設定（V5）'), ...kids);
+  if (!F.types.length) return card(h('p', {class: 'muted'}, '作品の scripts/novelai_api.py が精密参照に対応していません（配布版0.5.6以降で対応）。'));
+  let styleBox;
+  if (!D.supported) styleBox = h('p', {class: 'muted'}, '既定の絵柄には、作品の scripts/ が配布版0.5.7以降である必要があります。');
+  else { const field = refField({value: D.style?.path || ''}), strength = strengthField(D.style?.strength);
+    const own = S.requests.filter(r => r.style === 'own').map(r => r.id), uses = S.requests.filter(r => r.style === 'default').length;
+    const saveStyle = async style => { try { await api('/api/reference-defaults', {style}); await refresh(); } catch (e) { alert(e.message); } };
+    styleBox = h('div', {}, D.error ? h('p', {class: 'err'}, D.error) : null,
+      h('div', {class: 'muted'}, `絵柄は漫画全体で統一するため、各コマでは指定せず、ここで全コマの既定を設定します。各コマで「絵柄」か「キャラ＋絵柄」を指定したコマは、そのコマの指定で上書きします。V5のコマだけに使います。設定すると、参照のなかったコマも１枚生成するごとに追加 ${F.anlas} Anlas になり、0 Anlasの生成には含められません。`),
+      h('div', {class: 'row'}, field.thumb, field.path, '強度', strength,
+        h('button', {class: 'primary', onclick: () => { const p = field.path.value.trim(); if (!p) return alert('画像のパスを入力してください。');
+          saveStyle({path: p, strength: strength.value === '' ? 1 : +strength.value}); }}, '既定の絵柄を保存'),
+        D.style ? h('button', {onclick: () => confirm('既定の絵柄を外しますか？（各コマで指定した絵柄はそのまま）') && saveStyle(null)}, '外す') : null),
+      h('div', {class: 'muted'}, D.style ? `既定の絵柄を使うコマ：${uses}件／各コマの指定で上書き：${own.join('、') || 'なし'}` : '既定の絵柄：なし' + (own.length ? `（各コマで指定：${own.join('、')}）` : ''))); }
+  const listBox = h('div');
+  async function showList(kind) { refKind = kind; try { drawGroups(kind, await api('/api/references/groups?kind=' + kind)); } catch (e) { alert(e.message); } }
+  function drawGroups(kind, groups) { const label = kind === 'character' ? 'キャラ' : '衣装';
+    if (!groups.length) { listBox.replaceChildren(h('h3', {}, label + '画像の一覧'), h('p', {class: 'muted'}, `各コマで指定した${label}の画像はありません。`)); return; }
+    const rows = groups.map(g => { const now = h('span', {class: 'refthumb'});
+      if (!g.path.includes('${')) { const e = img(g.path, {onclick: () => zoom(g.path)}); e.onerror = () => now.replaceChildren(h('span', {class: 'lint'}, '画像が見つかりません')); now.append(e); }
+      const field = refField({placeholder: g.path});
+      return {g, field, el: h('div', {class: 'card'}, h('div', {class: 'row'}, now, h('b', {}, g.path), h('span', {class: 'muted'}, g.types.map(refLabel).join('・'))),
+        h('div', {class: 'muted'}, `使うコマ（${g.ids.length}件）：${g.ids.join('、')}`), h('div', {class: 'row'}, '→ 変更後の画像', field.thumb, field.path))}; });
+    async function apply() { const mapping = {};
+      for (const r of rows) { const v = r.field.path.value.trim(); if (v && v !== r.g.path) mapping[r.g.path] = v; }
+      if (!Object.keys(mapping).length) return alert('変更後の画像を入力してください。');
+      // 置換後に一覧の別の画像と同じになると、元がどの画像だったか区別できなくなるため確認する
+      const finals = groups.map(g => mapping[g.path] || g.path), merge = new Set(finals).size < finals.length;
+      if (merge && !confirm('変換後の画像が既に採用されているものもあります、よろしいですか？')) return;
+      try { await api('/api/references/replace', {kind, mapping, merge_ok: merge}); await refresh(); } catch (e) { alert(e.message); } }
+    listBox.replaceChildren(h('h3', {}, label + '画像の一覧（現在の画像 → 変更後の画像）'),
+      h('div', {class: 'muted'}, '変更する画像だけ、変更後の画像を選ぶか入力します（空欄は変更しません）。その画像を使う全コマの要求JSONを書き換えます（変更前の内容は output/webui/history/ に残ります）。置換のあとに各コマで指定した画像は、そのコマの指定になります。${…} のパスは書いたままの文字で一覧にします。'),
+      // 参照画像を変えても、プロンプトに元の説明が残っていると画像がプロンプトの方に引っ張られる（利用者の観察）
+      h('div', {class: 'err', style: 'font-weight:bold'}, kind === 'character'
+        ? 'キャラを大きく変えた場合は、プロンプトの髪型・髪色などの特徴の説明（キャラの変数や人物別の文）も修正してください。元の説明が残っていると、画像がプロンプトの方に引っ張られます。'
+        : '衣装を大きく変えた場合は、プロンプトの衣装の説明（衣装の変数や人物別の文）も修正してください。元の説明が残っていると、画像がプロンプトの方に引っ張られます。'),
+      ...rows.map(r => r.el), h('div', {class: 'row'}, h('button', {class: 'primary', onclick: apply}, label + 'の画像を置換'), h('button', {onclick: () => { refKind = null; listBox.replaceChildren(); }}, '閉じる'))); }
+  if (refKind) setTimeout(() => showList(refKind), 0);
+  return card(h('h4', {}, '絵柄（全コマの既定）'), styleBox,
+    h('h4', {}, 'キャラ・衣装の画像の置換'), h('div', {class: 'muted'}, '各コマで指定しているキャラ・衣装の画像を一覧にし、画像ごとに変更後の画像を選んで、まとめて置き換えます。'),
+    h('div', {class: 'row'}, h('button', {onclick: () => showList('character')}, 'キャラ画像一覧表示'), h('button', {onclick: () => showList('outfit')}, '衣装画像一覧表示')), listBox); }
 
 // ---------------------------------------------------------------- プレビュー
 function viewPreview() { $('#side').replaceChildren(h('p', {class: 'muted'}, '各ページの最新ビルド（掲載幅の確認用画像）。← で次のページ（右から左へ読む）。'));
@@ -803,7 +1109,7 @@ function viewPreview() { $('#side').replaceChildren(h('p', {class: 'muted'}, '�
   document.onkeydown = e => { if (tab !== 'preview') return; if (e.key === 'ArrowLeft') show(i + 1); if (e.key === 'ArrowRight') show(i - 1); }; }
 
 // ---------------------------------------------------------------- ログ
-async function discard(id, kind, n) { if (!confirm(`${id} の ${kind === 'lora' ? 'l' : 'r'}${String(n).padStart(3, '0')} を discarded/ へ移しますか？（削除はしません。整理の欄から戻せます）`)) return;
+async function discard(id, kind, n) { if (!confirm(`${id} の r${String(n).padStart(3, '0')} を discarded/ へ移しますか？（削除はしません。整理の欄から戻せます）`)) return;
   try { await api('/api/records', {action: 'discard', id, kind, n}); await refresh(); } catch (e) { alert(e.message); } }
 // 実行結果の整理：記録をサブフォルダ（failed/・discarded/）へ移す。ファイルは削除しない。
 function recordsPane() { const id = h('input', {placeholder: '要求ID（例 p07-03）', list: 'reqids', style: 'width:12em'}), out = h('div');
@@ -813,15 +1119,15 @@ function recordsPane() { const id = h('input', {placeholder: '要求ID（例 p07
     try { draw(await api('/api/records?id=' + encodeURIComponent(v))); } catch (e) { out.replaceChildren(h('p', {class: 'err'}, e.message)); } }
   async function act(body) { try { draw(await api('/api/records', body)); refresh(); } catch (e) { alert(e.message); } }
   function draw(D) { const kids = [h('div', {class: 'muted'}, `${D.id}：${D.exists ? '要求あり' : '要求JSONなし'}／採用中 ${D.adopted || 'なし'}`)];
-    for (const [kind, label, pre] of [['novelai', 'NovelAIの候補', 'r'], ['lora', 'LoRA適用の結果', 'l']]) { const K = D[kind];
+    for (const [kind, label, pre] of [['novelai', 'NovelAIの候補', 'r']]) { const K = D[kind];
       if (!K.entries.length && !K.moved.length) { kids.push(h('div', {class: 'muted'}, label + '：なし')); continue; }
       kids.push(h('h3', {}, label + '（' + (K.folder || '') + '）'));
       for (const e of K.entries) { const name = pre + String(e.n).padStart(3, '0'), rec = e.record;
         if (e.unknown) { const ok = h('input', {type: 'checkbox'});
           kids.push(h('div', {class: 'card'}, h('b', {class: 'err'}, name + '：結果不明（画像なし）'),
             h('div', {class: 'muted'}, `状態：${rec.status || '記録なし'}／開始：${rec.startedAt || rec.started_at || '?'}` + (rec.correlationId ? `／照会ID：${rec.correlationId}` : '') + (rec.error ? `／${rec.error}` : '') + `／ファイル：${e.files.join(', ')}`),
-            h('div', {class: 'muted'}, kind === 'novelai' ? 'NovelAIの画像の履歴とAnlasの消費を確認してください。画像ができていた場合は、その画像を ' + K.folder + '/' + name + '.png として保存すれば結果として扱えます（移す必要はありません）。' : '外部処理（lora_apply.py）の側で結果ができていないか確認してください。'),
-            h('label', {class: 'chk'}, ok, kind === 'novelai' ? 'NovelAI側の結果と消費を確認した（画像はできていない、または不要）' : '外部処理の結果を確認した'),
+            h('div', {class: 'muted'}, 'NovelAIの画像の履歴とAnlasの消費を確認してください。画像ができていた場合は、その画像を ' + K.folder + '/' + name + '.png として保存すれば結果として扱えます（移す必要はありません）。'),
+            h('label', {class: 'chk'}, ok, 'NovelAI側の結果と消費を確認した（画像はできていない、または不要）'),
             h('button', {class: 'primary', onclick: () => act({action: 'move-unknown', id: D.id, kind, n: e.n, confirmed: ok.checked})}, 'failed/ へ移す')));
         } else kids.push(h('div', {class: 'row'}, img(e.png, {style: 'width:64px;height:64px;object-fit:cover', onclick: () => zoom(e.png)}), name,
             e.adopted ? h('span', {class: 'ok'}, '採用中') : h('button', {onclick: () => confirm(name + ' を discarded/ へ移しますか？') && act({action: 'discard', id: D.id, kind, n: e.n})}, '廃棄'),
@@ -830,7 +1136,7 @@ function recordsPane() { const id = h('input', {placeholder: '要求ID（例 p07
         m.where === 'discarded' ? h('button', {onclick: () => act({action: 'restore', id: D.id, kind, folder: m.folder})}, '戻す') : null)); }
     out.replaceChildren(...kids); }
   async function scan() { try { const L = await api('/api/records/scan');
-      out.replaceChildren(L.length ? h('div', {}, h('b', {}, '結果不明の記録'), ...L.map(x => h('div', {class: 'row'}, `${x.id}（${x.kind === 'lora' ? 'LoRA' : 'NovelAI'} ${x.kind === 'lora' ? 'l' : 'r'}${String(x.n).padStart(3, '0')}：${x.status || '?'}）`,
+      out.replaceChildren(L.length ? h('div', {}, h('b', {}, '結果不明の記録'), ...L.map(x => h('div', {class: 'row'}, `${x.id}（NovelAI r${String(x.n).padStart(3, '0')}：${x.status || '?'}）`,
         h('button', {onclick: () => { id.value = x.id; show(); }}, '開く')))) : h('p', {class: 'ok'}, '結果不明の記録はありません。')); } catch (e) { alert(e.message); } }
   if (id.value) setTimeout(show, 0);
   return h('div', {class: 'card', id: 'recpane'}, h('h3', {}, '実行結果の整理'),
